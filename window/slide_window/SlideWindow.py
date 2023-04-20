@@ -50,7 +50,7 @@ class SlideWindow(QFrame):
     def init_shortcut(self):
         self.saveAnnShortcut = QShortcut(QKeySequence("Ctrl+S"), self)
         self.stopDrawShortcut = QShortcut(QKeySequence(Qt.Key_Escape), self)
-        self.deleteAnnotation = QShortcut(QKeySequence(Qt.Key_Delete), self)
+        self.deleteAnnShortcut = QShortcut(QKeySequence(Qt.Key_Delete), self)
 
     # 连接信号与槽
     def connectSignalSlot(self):
@@ -128,6 +128,7 @@ class SlideWindow(QFrame):
         """快捷键"""
         self.saveAnnShortcut.activated.connect(self.saveAnnotations)
         self.stopDrawShortcut.activated.connect(self.stopDraw)
+        self.deleteAnnShortcut.activated.connect(self.deleteAnnotation)
 
 
     # 将WSI加载到slide_viewer中
