@@ -440,6 +440,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.setStyleSheet("""* {font-size: 16px;}""")
 
 
+    # 关闭窗口的时候保存标注
+    def closeEvent(self, event):
+        for subwindow in self.mdiArea.subWindowList():
+            subwindow.closeEvent(event)
+
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     # app.setAttribute(Qt.AA_EnableHighDpiScaling)

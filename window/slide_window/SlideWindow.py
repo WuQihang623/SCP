@@ -1,8 +1,11 @@
+import os
+
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import QKeySequence
 from window.slide_window import *
 from window.slide_window.SlideViewer_pair import SlideviewerPair
 from PyQt5.QtCore import Qt
+from window.slide_window.utils.AffirmDialog import CloseDialog
 
 class SlideWindow(QFrame):
     def __init__(self, file_path):
@@ -166,6 +169,23 @@ class SlideWindow(QFrame):
             if self.splitter.widget(0).isVisible():
                 self.annotation.deleteAnnotation()
 
+    # 关闭窗口的时候保存标注
+    def closeEvent(self, event):
+        if hasattr(self, 'annotation'):
+            if self.annotation.Annotations:
+                if not hasattr(self.annotation, 'slide_path'):
+                    text = ''
+                else:
+                    text = os.path.basename(self.annotation.slide_path)
+                dialog = CloseDialog(f"是否要保存{text}标注？")
+                if dialog.exec_() == QDialog.Accepted:
+                    if dialog.text == '保存':
+                        self.annotation.saveAnnotations()
+                    else:
+                        event.accept()
+                else:
+                    event.ignore()
+        return
 
 if __name__ == '__main__':
     import sys
