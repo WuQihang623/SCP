@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1085</width>
+    <height>803</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <widget class="QMdiArea" name="mdiArea">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>1081</width>
+      <height>731</height>
+     </rect>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1085</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menu">
+    <property name="title">
+     <string>开始</string>
+    </property>
+    <widget class="QMenu" name="paired_slide_menu">
+     <property name="title">
+      <string>同步图像</string>
+     </property>
+     <addaction name="open_paired_action"/>
+     <addaction name="open_paired_win_action"/>
+     <addaction name="close_paired_win_action"/>
+     <addaction name="synchronization_action"/>
+    </widget>
+    <widget class="QMenu" name="file_manager_menu">
+     <property name="title">
+      <string>文件管理</string>
+     </property>
+     <addaction name="open_file_manager_action"/>
+     <addaction name="change_file_manager_action"/>
+     <addaction name="batch_process"/>
+    </widget>
+    <addaction name="open_slide_action"/>
+    <addaction name="paired_slide_menu"/>
+    <addaction name="file_manager_menu"/>
+    <addaction name="fill_screen_action"/>
+    <addaction name="shot_screen_action"/>
+    <addaction name="separator"/>
+    <addaction name="quit"/>
+   </widget>
+   <widget class="QMenu" name="edit_menu">
+    <property name="title">
+     <string>编辑</string>
+    </property>
+    <addaction name="recall_action"/>
+    <addaction name="rect_resiz_action"/>
+    <addaction name="convert_color_space_action"/>
+   </widget>
+   <widget class="QMenu" name="tool_menu">
+    <property name="title">
+     <string>工具</string>
+    </property>
+    <addaction name="fixed_rect_action"/>
+    <addaction name="rect_action"/>
+    <addaction name="polygon_action"/>
+    <addaction name="measure_tool_action"/>
+    <addaction name="modify_action"/>
+    <addaction name="move_action"/>
+   </widget>
+   <widget class="QMenu" name="mode_menu">
+    <property name="title">
+     <string>模式选择</string>
+    </property>
+    <addaction name="annotation_action"/>
+    <addaction name="diagnose_action"/>
+    <addaction name="microenv_action"/>
+    <addaction name="pdl1_action"/>
+   </widget>
+   <addaction name="menu"/>
+   <addaction name="edit_menu"/>
+   <addaction name="tool_menu"/>
+   <addaction name="mode_menu"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <widget class="QToolBar" name="toolBar">
+   <property name="windowTitle">
+    <string>toolBar</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="open_slide_action"/>
+   <addaction name="separator"/>
+   <addaction name="annotation_action"/>
+   <addaction name="diagnose_action"/>
+   <addaction name="microenv_action"/>
+   <addaction name="pdl1_action"/>
+   <addaction name="separator"/>
+   <addaction name="move_action"/>
+   <addaction name="modify_action"/>
+   <addaction name="fixed_rect_action"/>
+   <addaction name="rect_action"/>
+   <addaction name="polygon_action"/>
+   <addaction name="measure_tool_action"/>
+   <addaction name="separator"/>
+   <addaction name="convert_color_space_action"/>
+  </widget>
+  <action name="open_slide_action">
+   <property name="icon">
+    <iconset>
+     <normaloff>../log/load.png</normaloff>../log/load.png</iconset>
+   </property>
+   <property name="text">
+    <string>导入文件</string>
+   </property>
+  </action>
+  <action name="fill_screen_action">
+   <property name="text">
+    <string>全屏模式</string>
+   </property>
+  </action>
+  <action name="shot_screen_action">
+   <property name="text">
+    <string>截图</string>
+   </property>
+  </action>
+  <action name="quit">
+   <property name="text">
+    <string>退出</string>
+   </property>
+  </action>
+  <action name="rect_resiz_action">
+   <property name="text">
+    <string>矩形尺寸设置</string>
+   </property>
+  </action>
+  <action name="recall_action">
+   <property name="text">
+    <string>撤回</string>
+   </property>
+  </action>
+  <action name="fixed_rect_action">
+   <property name="icon">
+    <iconset>
+     <normaloff>../log/ROI.png</normaloff>../log/ROI.png</iconset>
+   </property>
+   <property name="text">
+    <string>固定矩形</string>
+   </property>
+  </action>
+  <action name="rect_action">
+   <property name="icon">
+    <iconset>
+     <normaloff>../log/rect.png</normaloff>../log/rect.png</iconset>
+   </property>
+   <property name="text">
+    <string>矩形</string>
+   </property>
+  </action>
+  <action name="polygon_action">
+   <property name="icon">
+    <iconset>
+     <normaloff>../log/line.png</normaloff>../log/line.png</iconset>
+   </property>
+   <property name="text">
+    <string>多边形</string>
+   </property>
+  </action>
+  <action name="measure_tool_action">
+   <property name="icon">
+    <iconset>
+     <normaloff>../log/rule.png</normaloff>../log/rule.png</iconset>
+   </property>
+   <property name="text">
+    <string>测量工具</string>
+   </property>
+  </action>
+  <action name="modify_action">
+   <property name="icon">
+    <iconset>
+     <normaloff>../log/change.png</normaloff>../log/change.png</iconset>
+   </property>
+   <property name="text">
+    <string>修改工具</string>
+   </property>
+  </action>
+  <action name="move_action">
+   <property name="icon">
+    <iconset>
+     <normaloff>../log/delete.png</normaloff>../log/delete.png</iconset>
+   </property>
+   <property name="text">
+    <string>移动</string>
+   </property>
+  </action>
+  <action name="annotation_action">
+   <property name="icon">
+    <iconset>
+     <normaloff>../log/annotation.png</normaloff>../log/annotation.png</iconset>
+   </property>
+   <property name="text">
+    <string>图像标注</string>
+   </property>
+  </action>
+  <action name="diagnose_action">
+   <property name="icon">
+    <iconset>
+     <normaloff>../log/diagnose.png</normaloff>../log/diagnose.png</iconset>
+   </property>
+   <property name="text">
+    <string>全切片辅助诊断</string>
+   </property>
+  </action>
+  <action name="microenv_action">
+   <property name="icon">
+    <iconset>
+     <normaloff>../log/cell_segment.png</normaloff>../log/cell_segment.png</iconset>
+   </property>
+   <property name="text">
+    <string>肿瘤微环境分析</string>
+   </property>
+  </action>
+  <action name="pdl1_action">
+   <property name="icon">
+    <iconset>
+     <normaloff>../log/IHC.png</normaloff>../log/IHC.png</iconset>
+   </property>
+   <property name="text">
+    <string>PD-L1评分</string>
+   </property>
+  </action>
+  <action name="open_paired_action">
+   <property name="text">
+    <string>导入同步图像</string>
+   </property>
+  </action>
+  <action name="open_paired_win_action">
+   <property name="text">
+    <string>打开同步图像</string>
+   </property>
+  </action>
+  <action name="close_paired_win_action">
+   <property name="text">
+    <string>关闭同步图像</string>
+   </property>
+  </action>
+  <action name="synchronization_action">
+   <property name="text">
+    <string>同步</string>
+   </property>
+  </action>
+  <action name="open_file_manager_action">
+   <property name="text">
+    <string>打开文件管理</string>
+   </property>
+  </action>
+  <action name="change_file_manager_action">
+   <property name="text">
+    <string>更改管理文件夹</string>
+   </property>
+  </action>
+  <action name="batch_process">
+   <property name="text">
+    <string>批处理</string>
+   </property>
+  </action>
+   <property name="text">
+    <string>打开最近文件</string>
+   </property>
+  </action>
+  <action name="convert_color_space_action">
+   <property name="icon">
+    <iconset>
+     <normaloff>../log/color.ico</normaloff>../log/color.ico</iconset>
+   </property>
+   <property name="text">
+    <string>颜色空间转换</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
