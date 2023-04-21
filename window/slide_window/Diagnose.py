@@ -115,9 +115,10 @@ class DiagnoseWidget(UI_Diagnose):
     # 点击某个矩形，则将画面跳转到那个视图下
     def mousePressEvent(self, event):
         if event.type() == QEvent.MouseButtonPress:
-            item = self.view.itemAt(event.pos())
-            if hasattr(item, 'key'):
-                self.sendDiagnoseRectIdxSignal.emit(item.key - 1)
+            pos = self.view.mapFrom(self, event.pos())
+            item = self.view.itemAt(pos)
+            if hasattr(item, 'key') and isinstance(item, MyGraphicsPixmapItem):
+                self.sendDiagnoseRectIdxSignal.emit(item.key)
 
     def diagnose(self):
         kwargs = {"slidepath": self.slide_helper.slide_path,

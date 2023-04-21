@@ -46,10 +46,10 @@ class UI_Diagnose(QWidget):
         btn_layout.addWidget(self.diagnoseConclusion_label, 4, 0, 1, 1)
         btn_layout.addWidget(self.diagnoseProb_label, 5, 0, 1, 1)
         btn_layout.addWidget(line, 6, 0, 1, 1)
-        btn_layout.addWidget(self.view, 7, 0, 1, 1)
 
         diagnoseBox.setLayout(btn_layout)
         mainlayout.addWidget(diagnoseBox)
+        mainlayout.addWidget(self.view)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

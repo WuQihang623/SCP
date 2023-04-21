@@ -90,7 +90,7 @@ class SlideWindow(QFrame):
         self.diagnose.loadDiagnoseSignal.connect(self.slide_viewer.load_diagnose)
         # 开关热图信号
         self.diagnose.showHeatmap_btn.toggled.connect(self.slide_viewer.show_or_close_diagnose_heatmap)
-        # 发送诊断框
+        # 发送诊断框到slideviewer中用于显示
         self.diagnose.sendDiagnoseRectSignal.connect(self.slide_viewer.receiveDiagnoseRect)
         # 点击诊断框，跳转到对应视图
         self.diagnose.sendDiagnoseRectIdxSignal.connect(self.slide_viewer.move2DiagnoseRect)
