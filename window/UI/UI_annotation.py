@@ -30,10 +30,12 @@ class UI_Annotation(QFrame):
         self.annotationTree.setHeaderLabels(['标注名称', '类型', '形状', '颜色'])
         self.save_btn = QPushButton('保存标注')
         self.loadAnnotation_btn = QPushButton('导入标注')
+        self.clearAnnotation_btn = QPushButton('清空标注')
         self.annotaion_layout = QGridLayout()
-        self.annotaion_layout.addWidget(self.annotationTree, 0, 0, 1, 2)
+        self.annotaion_layout.addWidget(self.annotationTree, 0, 0, 1, 3)
         self.annotaion_layout.addWidget(self.save_btn, 1, 1, 1, 1)
         self.annotaion_layout.addWidget(self.loadAnnotation_btn, 1, 0, 1, 1)
+        self.annotaion_layout.addWidget(self.clearAnnotation_btn, 1, 2, 1, 1)
 
         self.type_widget = QWidget()
         self.type_widget.setLayout(self.type_layout)

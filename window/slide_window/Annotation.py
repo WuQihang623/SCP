@@ -85,6 +85,8 @@ class AnnotationWidget(UI_Annotation):
         self.loadAnnotation_btn.clicked.connect(self.loadAnnotation)
         # 保存标注
         self.save_btn.clicked.connect(self.saveAnnotations)
+        # 删除所有标注
+        self.clearAnnotation_btn.clicked.connect(self.clearAnnotations)
 
     def init_AnnotationTypeTree(self):
         for key, rgb in self.AnnotationTypes.items():
@@ -283,6 +285,24 @@ class AnnotationWidget(UI_Annotation):
 
         else:
             QMessageBox.warning(self, '警告', '请先选择要删除的标注')
+
+    # 删除所有的标注
+    def clearAnnotations(self):
+        if self.Annotations:
+            dialog = AffirmDialog("是否要删除所有标注？")
+            if dialog.exec_() == QDialog.Accepted:
+                rows = self.annotationTree.topLevelItemCount()
+                # 从下至上进行删除
+                self.choosed_idx = None
+                for row in range(rows-1, -1, -1):
+                    item_to_remove = self.annotationTree.topLevelItem(row)
+                    self.annotationTree.setCurrentItem(item_to_remove)
+                    self.annotationTree.clearSelection()
+                    self.Annotations = delDictItem(self.Annotations, row)
+                    # 删除Tree中的元素
+                    self.annotationTree.takeTopLevelItem(self.annotationTree.indexOfTopLevelItem(item_to_remove))
+                    # 将idx发送给ToolManager，并对key进行重命名
+                    self.deleteAnnotationSignal.emit(row)
 
     # 设置当前slide的路径
     def set_slide_path(self, slide_path):

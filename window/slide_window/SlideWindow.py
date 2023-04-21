@@ -41,7 +41,7 @@ class SlideWindow(QFrame):
         self.splitter.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.splitter.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
-        self.splitter.setSizes([1, 1, 1, 1, 1000])
+        self.splitter.setSizes([300, 300, 300, 300, 1000])
         self.splitter_viewer.setSizes([1, 1])
         for i in range(1, 4):
             self.splitter.widget(i).hide()
