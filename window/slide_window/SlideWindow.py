@@ -22,7 +22,7 @@ class SlideWindow(QFrame):
     def init_UI(self):
         main_layout = QVBoxLayout(self)
         self.slide_viewer = SlideViewer()
-        self.slide_viewer_pair = SlideviewerPair()
+        self.slide_viewer_pair = SlideViewer()
         self.annotation = AnnotationWidget()
         self.diagnose = DiagnoseWidget()
         self.microenv = MicroenvWidget()

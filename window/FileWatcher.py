@@ -120,7 +120,7 @@ class FileWatcher(QWidget):
                 self.add_table_item(os.path.basename(file_path), file_path, extension, row)
                 self.files.append(file_path)
                 row += 1
-        self.update_timer.start(3000)
+        self.update_timer.start(10000)
         self.check_timer.start(10000)
 
     # 查看当前的目录是否比之前的多，如果是，则添加到表单中

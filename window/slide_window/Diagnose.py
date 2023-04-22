@@ -13,6 +13,8 @@ from window.slide_window.utils.SlideHelper import SlideHelper
 from window.slide_window.utils.MyGraphicsPixmapItem import MyGraphicsPixmapItem
 from Inference.diagnose.diagnose import Thread_Diagnose
 from Inference.progress_bar import progress_dialog
+from function.sample_from_probmap import sample_from_porbmap
+from window.utils.DiagnoseReport import DiagnoseReport
 
 
 class DiagnoseWidget(UI_Diagnose):
@@ -32,6 +34,7 @@ class DiagnoseWidget(UI_Diagnose):
     def btn_connect(self):
         self.loadDiagnoseResults_btn.clicked.connect(self.load_result)
         self.diagnose_btn.clicked.connect(self.diagnose)
+        self.show_report_btn.clicked.connect(self.show_report)
 
     # 加载诊断结论
     def setText(self, preds):
@@ -49,6 +52,7 @@ class DiagnoseWidget(UI_Diagnose):
     # 离线载入淋巴结转移结果
     def load_result(self, path):
         slide_name, _ = os.path.splitext(os.path.basename(self.slide_path))
+        self.slide_name = slide_name
         # 如果不存在，就根据当前文本框的路径加上文件名设置默认的载入路径
         if not os.path.exists(path) or not isinstance(path, str):
             # options = QFileDialog.Options()
@@ -80,28 +84,40 @@ class DiagnoseWidget(UI_Diagnose):
                        int(self.slide_helper.get_level_dimension(0)[1] / size))
         self.probs = cv2.resize(self.probs, probs_shape, cv2.INTER_LINEAR)
         self.scene.setSceneRect(0, 0, 256, (256 + 10) * 50)
-        probs_1d = self.probs.flatten()
-        idx_1d = probs_1d.argsort()[-50:]
-        y_idx, x_idx = np.unravel_index(idx_1d, self.probs.shape)
+
         downsample = self.slide_helper.get_level_dimension(0)[0] / self.probs.shape[1]
+        coords = sample_from_porbmap(self.probs)
         num = 0
         self.rect_list = []
-        for x, y in zip(x_idx, y_idx):
-            if self.probs[y][x] > 0.5:
-                original_x = int(x * downsample)
-                original_y = int(y * downsample)
-                level = 0
-                if level > self.slide_helper.get_max_level():
-                    level = self.slide_helper.get_max_level()
-                pil_image = self.slide_helper.read_region((original_x, original_y), level, (size, size))
-                pixmap = self.pilimage_to_pixmap(pil_image)
-                item = MyGraphicsPixmapItem(pixmap, num)
-                item.setScale(256 / size)
-                item.setPos(0, num * (256 + 10))
-                self.scene.addItem(item)
-                self.rect_list.append([original_x, original_y, size, size])
-                num += 1
+        for coord in coords:
+            original_x = int(coord[1] * downsample)
+            original_y = int(coord[0] * downsample)
+
+            level = 0
+            if level > self.slide_helper.get_max_level():
+                level = self.slide_helper.get_max_level()
+            pil_image = self.slide_helper.read_region((original_x, original_y), level, (size, size))
+            os.makedirs(f'results/Diagnose/{slide_name}/images', exist_ok=True)
+            pil_image.convert('RGB').save(f'results/Diagnose/{slide_name}/images/{num}.jpg')
+            pixmap = self.pilimage_to_pixmap(pil_image)
+            item = MyGraphicsPixmapItem(pixmap, num)
+            item.setScale(256 / size)
+            item.setPos(0, num * (256 + 10))
+            self.scene.addItem(item)
+            self.rect_list.append([original_x, original_y, size, size])
+            num += 1
+
+            if num == 50:
+                break
         self.sendDiagnoseRectSignal.emit(self.rect_list)
+
+    # 生成诊断报告
+    def show_report(self):
+        if hasattr(self, 'slide_name'):
+            self.diagnose_report = DiagnoseReport(f'results/Diagnose/{self.slide_name}/images',
+                                                  f"results/Diagnose/{self.slide_name}/report.pdf",
+                                                  self.diagnoseConclusion_label.text()[5:])
+            self.diagnose_report.show()
 
     def pilimage_to_pixmap(self, pilimage):
         qim = ImageQt(pilimage)

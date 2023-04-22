@@ -1,14 +1,23 @@
 import cv2
 import numpy as np
 import openslide
+import matplotlib.pyplot as plt
 from PyQt5.QtGui import QPixmap, QImage
 from window.slide_window.utils.SlideHelper import SlideHelper
+
+def get_mpl_colormap(cmap_name):
+    cmap = plt.get_cmap(cmap_name)
+    # Initialize the matplotlib color map
+    sm = plt.cm.ScalarMappable(cmap=cmap)
+    # Obtain linear color range
+    color_range = sm.to_rgba(np.linspace(0, 1, 256), bytes=True)[:,2::-1]
+    return color_range.reshape(256, 1, 3)
 
 def show_cam_on_image(img: np.ndarray,
                       mask: np.ndarray,
                       use_rgb: bool = False,
                       colormap: int = cv2.COLORMAP_JET,
-                      image_weight: float = 0.7) -> np.ndarray:
+                      image_weight: float = 0.75) -> np.ndarray:
     """ This function overlays the cam mask on the image as an heatmap.
     By default the heatmap is in BGR format.
 

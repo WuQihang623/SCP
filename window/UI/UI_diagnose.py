@@ -26,6 +26,7 @@ class UI_Diagnose(QWidget):
         self.diagnoseConclusion_label = QLabel("诊断结果：")
         self.diagnoseProb_label = QLabel("置信度：")
 
+
         # 用于显示置信度高的区域patch的图像
         self.view = QGraphicsView()
         self.scene = QGraphicsScene()
@@ -50,6 +51,9 @@ class UI_Diagnose(QWidget):
         diagnoseBox.setLayout(btn_layout)
         mainlayout.addWidget(diagnoseBox)
         mainlayout.addWidget(self.view)
+
+        self.show_report_btn = QPushButton("生成诊断报告")
+        mainlayout.addWidget(self.show_report_btn)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

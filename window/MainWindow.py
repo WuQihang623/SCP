@@ -110,7 +110,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     # 设置action使能
     def setEnable(self):
-        self.paired_slide_menu.setEnabled(False)
+        # self.paired_slide_menu.setEnabled(False)
         self.fill_screen_action.setEnabled(False)
         self.quit.setEnabled(False)
         self.recall_action.setEnabled(False)
@@ -186,7 +186,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 slide_viewer_pair.load_slide(file_path)
                 splitter_viewer = sub_active.widget().splitter_viewer
                 splitter_viewer.widget(1).show()
-                sub_active.widget().slide_viewer.synchronousSignal.connect(slide_viewer_pair.eventFilter1)
+                # sub_active.widget().slide_viewer.synchronousSignal.connect(slide_viewer_pair.eventFilter1)
             else:
                 if waning_text is None:
                     return
