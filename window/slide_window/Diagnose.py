@@ -33,7 +33,7 @@ class DiagnoseWidget(UI_Diagnose):
 
     def btn_connect(self):
         self.loadDiagnoseResults_btn.clicked.connect(self.load_result)
-        self.diagnose_btn.clicked.connect(self.diagnose)
+        self.diagnose_btn.clicked.connect(self.load_result)
         self.show_report_btn.clicked.connect(self.show_report)
 
     # 加载诊断结论
@@ -58,7 +58,7 @@ class DiagnoseWidget(UI_Diagnose):
             # options = QFileDialog.Options()
             # path, _ = QFileDialog.getOpenFileName(self, "选择诊断结果存放的路径", self.file_dir,
             #                                       "热图(*.jpg)", options=options)
-            path = os.path.join(self.folderselector.FileDir(), 'Diagnose', slide_name, f"{slide_name}_result.jpg")
+            path = os.path.join('results', 'Diagnose', slide_name, f"{slide_name}_result.jpg")
         if not os.path.exists(path):
             QMessageBox.warning(self, '警告', '路径不存在！')
             return
@@ -127,6 +127,7 @@ class DiagnoseWidget(UI_Diagnose):
     def set_slide_path(self, slide_path):
         self.slide_path = slide_path
         self.slide_helper = SlideHelper(slide_path)
+        self.wsi_path_text.setText(f"   {slide_path}")
 
     # 点击某个矩形，则将画面跳转到那个视图下
     def mousePressEvent(self, event):

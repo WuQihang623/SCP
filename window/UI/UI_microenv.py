@@ -1,5 +1,6 @@
 import sys
 from PyQt5.QtWidgets import *
+from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt
 from window.utils.ComCheckbox import ComboCheckBox
 from window.utils.FolderSelector import FolderSelector
@@ -18,6 +19,10 @@ class UI_Microenv(QFrame):
         box_layout = QGridLayout()
         box_layout.setContentsMargins(10, 0, 20, 0)
         self.folderselector = FolderSelector()
+        self.wsi_path_label = QLabel("输入WSI图像")
+        self.wsi_path_label.setStyleSheet("font-weight: bold;")
+        self.wsi_path_label.setAlignment(Qt.AlignCenter)
+        self.wsi_path_text = QLabel("")
         self.param_btn = QPushButton("参数设置")
         self.microenv_btn = QPushButton("微环境分析")
         self.loadMicroenv_btn = QPushButton("载入微环境分析结果")
@@ -38,6 +43,9 @@ class UI_Microenv(QFrame):
         line2 = QFrame()
         line2.setFrameShape(QFrame.HLine)
         line2.setFrameShadow(QFrame.Sunken)
+        label = QLabel("肿瘤微环境分析结果")
+        label.setStyleSheet("font-weight: bold;")
+        label.setAlignment(Qt.AlignCenter)
         self.tumorNum_label = QLabel("肿瘤细胞数量：")
         self.lymphNum_label = QLabel("淋巴细胞数量：")
         self.neutrophilsNum_label = QLabel("中性粒细胞数量：")
@@ -47,24 +55,28 @@ class UI_Microenv(QFrame):
         line3.setFrameShadow(QFrame.Sunken)
         null = QSpacerItem(20, 20, QSizePolicy.Expanding, QSizePolicy.Expanding)
 
-        box_layout.addWidget(self.folderselector, 0, 0, 1, 2)
-        box_layout.addWidget(self.param_btn, 1, 0, 1, 1)
-        box_layout.addWidget(self.microenv_btn, 1, 1, 1, 1)
-        box_layout.addWidget(self.loadMicroenv_btn, 2, 0, 1, 1)
+        box_layout.addWidget(self.wsi_path_label, 0, 0, 1, 2)
+        box_layout.addWidget(self.wsi_path_text, 1, 0, 1, 2)
+        # box_layout.addWidget(self.param_btn, 1, 0, 1, 1)
+        box_layout.addWidget(self.microenv_btn, 2, 0, 1, 1)
+        # box_layout.addWidget(self.loadMicroenv_btn, 2, 0, 1, 1)
         box_layout.addWidget(self.showCombox, 2, 1, 1, 1)
         box_layout.addWidget(self.loadComparison_btn, 3, 0, 1, 1)
         box_layout.addWidget(self.showComparisionCombox, 3, 1 ,1, 1)
-        box_layout.addWidget(line1, 4, 0, 1, 2)
-        box_layout.addWidget(showNucleiType_Label, 5, 0, 1, 1)
-        box_layout.addWidget(self.showNucleiType_Combox, 5, 1, 1, 1)
-        box_layout.addWidget(showRegionType_Label, 6, 0, 1 ,1)
-        box_layout.addWidget(self.showRegionType_Combox, 6, 1, 1, 1)
-        box_layout.addWidget(line2, 7, 0, 1, 2)
-        box_layout.addWidget(self.tumorNum_label, 8, 0, 1, 2)
-        box_layout.addWidget(self.lymphNum_label, 9, 0, 1, 2)
-        box_layout.addWidget(self.neutrophilsNum_label, 10, 0, 1, 2)
-        box_layout.addWidget(self.stromaNum_label, 11, 0, 1, 2)
-        box_layout.addWidget(line3, 12, 0, 1, 2)
+        box_layout.addWidget(line2, 4, 0, 1, 2)
+        box_layout.addWidget(label, 5, 0, 1, 2)
+        box_layout.addWidget(self.tumorNum_label, 6, 0, 1, 2)
+        box_layout.addWidget(self.lymphNum_label, 7, 0, 1, 2)
+        box_layout.addWidget(self.neutrophilsNum_label, 8, 0, 1, 2)
+        box_layout.addWidget(self.stromaNum_label, 9, 0, 1, 2)
+        box_layout.addWidget(line3, 10, 0, 1, 2)
+
+        # box_layout.addWidget(line1, 4, 0, 1, 2)
+        box_layout.addWidget(showNucleiType_Label, 11, 0, 1, 1)
+        box_layout.addWidget(self.showNucleiType_Combox, 11, 1, 1, 1)
+        box_layout.addWidget(showRegionType_Label, 12, 0, 1, 1)
+        box_layout.addWidget(self.showRegionType_Combox, 12, 1, 1, 1)
+
         box_layout.addItem(null, 13, 0, 1, 2)
         box_layout.setVerticalSpacing(25)
 

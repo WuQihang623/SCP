@@ -29,7 +29,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def init_UI(self):
         self.setupUi(self)
         self.setStyleSheet("QMenuBar{font-family:微软雅黑; font: bold 14px;font-weight:400}")
-        self.setWindowTitle('华南理工大学计算病理平台（SCUT Computational Pathology Platform）')
+        self.setWindowTitle('智能病理辅助诊断平台（Computational Pathology Platform）')
         icon = QIcon('logo/logo.png')
         self.setWindowIcon(icon)
         self.setCentralWidget(self.mdiArea)
@@ -411,6 +411,21 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         except:
             pass
 
+        # 如果激活了文件监控窗口，则打开定时器
+        # 如果激活的不是文件监控窗口，则关闭定时器
+        try:
+            if sub_active.windowTitle() == '文件监控窗口':
+                file_watcher = sub_active.window().file_watcher
+                file_watcher.start_timer()
+            else:
+                windows = self.mdiArea.subWindowList()
+                for sub_window in windows:
+                    # print(sub_window.windowTitle())
+                    if sub_window.windowTitle() == '文件监控窗口':
+                        file_watcher = sub_window.window().file_watcher
+                        file_watcher.stop_timer()
+        except:
+            pass
     # TODO: 关闭子窗口时会触发mdiArea.subWindowActivated，要避免这种情况
 
     # 增加action

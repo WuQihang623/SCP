@@ -15,23 +15,25 @@ class PDL1Widget(UI_PDL1):
 
     def setEnable(self):
         self.param_btn.setEnabled(False)
-        self.pdl1_btn.setEnabled(False)
-        self.loadComparison_btn.setEnabled(False)
-        self.showComparisionCombox.setEnabled(False)
+        # self.pdl1_btn.setEnabled(False)
+        # self.loadComparison_btn.setEnabled(False)
+        # self.showComparisionCombox.setEnabled(False)
 
     def setConnect(self):
         self.loadpdl1_btn.clicked.connect(self.load_result)
+        self.pdl1_btn.clicked.connect(self.load_result)
 
     # 载入当前的文件信息，用于设置保存路径
     def set_slide_path(self, slide_path):
         self.slide_path = slide_path
         self.slide_helper = SlideHelper(slide_path)
+        self.wsi_path_text.setText(f"  {slide_path}")
 
     # 载入PDL1分析结果
     def load_result(self, path):
         slide_name, _ = os.path.splitext(os.path.basename(self.slide_path))
         if not os.path.exists(path) or not isinstance(path, str):
-            path = os.path.join(self.folderselector.FileDir(), 'PD-L1', slide_name, f"{slide_name}.pkl")
+            path = os.path.join('results', 'PD-L1', slide_name, f"{slide_name}.pkl")
             if slide_name not in path:
                 QMessageBox.warning(self, '警告', '结果文件与图片不匹配！')
                 return

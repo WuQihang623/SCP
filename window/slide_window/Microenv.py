@@ -15,19 +15,21 @@ class MicroenvWidget(UI_Microenv):
         self.setConnect()
 
     def setConnect(self):
+        self.microenv_btn.clicked.connect(self.load_result)
         self.loadMicroenv_btn.clicked.connect(self.load_result)
 
     # 设置按键使能
     def setEnable(self):
         self.param_btn.setEnabled(False)
-        self.microenv_btn.setEnabled(False)
-        self.loadComparison_btn.setEnabled(False)
-        self.showComparisionCombox.setEnabled(False)
+        # self.microenv_btn.setEnabled(False)
+        # self.loadComparison_btn.setEnabled(False)
+        # self.showComparisionCombox.setEnabled(False)
 
     # 载入当前的文件信息，用于设置保存路径
     def set_slide_path(self, slide_path):
         self.slide_path = slide_path
         self.slide_helper = SlideHelper(slide_path)
+        self.wsi_path_text.setText(f"  {slide_path}")
 
     # 载入微环境分析结果
     def load_result(self, path):
@@ -36,7 +38,7 @@ class MicroenvWidget(UI_Microenv):
             # options = QFileDialog.Options()
             # path, _ = QFileDialog.getOpenFileName(self, "选择为环境分析结果存放的路径", self.file_dir,
             #                                       "结果(*.pkl)", options=options)
-            path = os.path.join(self.folderselector.FileDir(), 'Microenv', slide_name, f"{slide_name}.pkl")
+            path = os.path.join("results", 'Microenv', slide_name, f"{slide_name}.pkl")
         if slide_name not in path:
             QMessageBox.warning(self, '警告', '结果文件与图片不匹配！')
             return

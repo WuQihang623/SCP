@@ -144,6 +144,8 @@ class BatchProcessThread(QThread):
                     self.file_watcher.table_widget.viewport().update()
                     self.row = row
                     slide_path = self.file_watcher.files[row]
+                    if not os.path.exists(slide_path):
+                        continue
                     if self.mode == '诊断':
                         self.kwargs = self.param_diagnose(slide_path)
                         result, preds, heatmap, downsample, probs, overview_shape = diagnosis(**self.kwargs)

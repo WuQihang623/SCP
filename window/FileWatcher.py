@@ -87,6 +87,24 @@ class FileWatcher(QWidget):
         self.check_timer = QTimer(self)
         self.update_timer.timeout.connect(self.check_table)
 
+        # 重新激活文件监控目录时打开定时器
+
+    def start_timer(self):
+        try:
+            self.update_timer.start()
+            self.check_timer.start()
+            print("start file watch")
+        except:
+            return
+
+    def stop_timer(self):
+        try:
+            self.update_timer.stop()
+            self.check_timer.stop()
+            print("stop file watch")
+        except:
+            return
+
     def getfileindir(self, root, file_name):
         file_path = os.path.join(root, file_name)
         # 如果是一个文件夹，则查看文件夹内的文件是否有病理图像文件
@@ -120,13 +138,17 @@ class FileWatcher(QWidget):
                 self.add_table_item(os.path.basename(file_path), file_path, extension, row)
                 self.files.append(file_path)
                 row += 1
-        self.update_timer.start(10000)
+        self.update_table()
+        self.check_table()
+        self.update_timer.start(4000)
         self.check_timer.start(10000)
 
     # 查看当前的目录是否比之前的多，如果是，则添加到表单中
     def update_table(self):
         # 获取当前文件夹下左右的病理图像地址
         new_files = set([])
+        if not os.path.exists(self.path):
+            return
         file_names = sorted(os.listdir(self.path))
         for file_name in file_names:
             file_path, extension = self.getfileindir(self.path, file_name)
