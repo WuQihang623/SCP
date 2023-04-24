@@ -22,6 +22,7 @@ class UI_PDL1(QFrame):
         self.wsi_path_label.setStyleSheet("font-weight: bold;")
         self.wsi_path_label.setAlignment(Qt.AlignCenter)
         self.wsi_path_text = QLabel("")
+        self.wsi_path_text.setWordWrap(True)
         self.param_btn = QPushButton("参数设置")
         self.pdl1_btn = QPushButton("PD-L1评分")
         self.loadpdl1_btn = QPushButton("载入PD-L1分析结果")

@@ -17,10 +17,13 @@ from window.slide_window.BasicSlideViewer import BasicSlideViewer
 from window.slide_window.Tools import ToolManager
 from window.slide_window.TileLoader.RegionContourLoader import RegionContourLoader
 from window.slide_window.TileLoader.NucleiContourLoader import NucleiContourLoader
+from window.slide_window.utils.ChangeAnnotationDialog import ChangeAnnotationDiaglog
 
 class SlideViewer(BasicSlideViewer):
     # 发送激活标注的索引信号
     reactivateItemSignal = pyqtSignal(int, float)
+    # 发送给标注窗口，将显示细胞核按钮反转
+    reverseBtnSignal = pyqtSignal()
 
     # 发送给微环境分析面板，细胞个数的信号
     sendNucleiNumMicroenvSignal = pyqtSignal(list)
@@ -92,6 +95,11 @@ class SlideViewer(BasicSlideViewer):
         self.cell_centers_pdl1 = None
         self.cell_contour_pdl1 = None
 
+        # 在标注模式下载入细胞核分割结果
+        self.cell_type_ann = None
+        self.cell_centers_ann = None
+        self.cell_contour_ann = None
+
         # 要显示的组织轮廓类型
         self.show_region_types_microenv = []
         self.show_region_types_pdl1 = []
@@ -105,6 +113,7 @@ class SlideViewer(BasicSlideViewer):
         # 显示细胞轮廓标志
         self.show_microenv_nuclei_flag = False
         self.show_pdl1_nuclei_flag = False
+        self.show_ann_nuclei_flag = False
         # 显示细胞核的颜色
         self.nuclei_type_dict = {0: [166, 84, 2], 1: [255, 0, 0], 2: [0, 255, 0], 3: [228, 252, 4], 4: [0, 0, 255]}
 
@@ -147,13 +156,19 @@ class SlideViewer(BasicSlideViewer):
                 self.move_flag = True
                 self.start_mouse_pos_x = event.pos().x()
                 self.start_mouse_pos_y = event.pos().y()
-
                 # 标注的绘制
                 self.ToolManager.mousePressEvent(event, downsample)
+
             elif event.type() == QEvent.MouseButtonRelease:
                 self.move_flag = False
                 # 标注的绘制
                 self.ToolManager.mouseReleaseEvent(event, downsample)
+
+            elif event.type() == QEvent.MouseButtonDblClick:
+                print("鼠标双击了")
+                if hasattr(self, 'ToolManager') and self.show_ann_nuclei_flag:
+                    if self.ToolManager.TOOL_FLAG == 1:
+                        self.modify_nuclei(event.pos())
 
         elif event.type() == QEvent.MouseMove:
             # 更新状态栏鼠标位置
@@ -170,45 +185,14 @@ class SlideViewer(BasicSlideViewer):
     # 鼠标拖动页面
     def responseMouseMove(self, event):
         super().responseMouseMove(event)
-
         # 绘制细胞核分割结果
-        if self.SHOW_FLAG == 2:
-            self.show_or_close_nuclei(current_rect=self.get_current_view_scene_rect(),
-                                      contours=self.cell_contour_microenv,
-                                      centers=self.cell_centers_microenv,
-                                      types=self.cell_type_microenv,
-                                      color_dict=self.nuclei_type_dict,
-                                      show_types=self.show_nuclei_types_microenv)
-
-        # 绘制PDL1分割结果
-        elif self.SHOW_FLAG == 3:
-            self.show_or_close_nuclei(current_rect=self.get_current_view_scene_rect(),
-                                      contours=self.cell_contour_pdl1,
-                                      centers=self.cell_centers_pdl1,
-                                      types=self.cell_type_pdl1,
-                                      color_dict=self.nuclei_type_dict,
-                                      show_types=self.show_nuclei_types_pdl1,
-                                      Microenv=False)
+        self.show_nuclei()
 
     # 鼠标滚轮操作
     def responseWheelEvent(self, mousePos: QPoint, zoom):
         super().responseWheelEvent(mousePos, zoom)
-        if self.SHOW_FLAG == 2:
-            self.show_or_close_nuclei(current_rect=self.get_current_view_scene_rect(),
-                                      contours=self.cell_contour_microenv,
-                                      centers=self.cell_centers_microenv,
-                                      types=self.cell_type_microenv,
-                                      color_dict=self.nuclei_type_dict,
-                                      show_types=self.show_nuclei_types_microenv)
-
-        elif self.SHOW_FLAG == 3:
-            self.show_or_close_nuclei(current_rect=self.get_current_view_scene_rect(),
-                                      contours=self.cell_contour_pdl1,
-                                      centers=self.cell_centers_pdl1,
-                                      types=self.cell_type_pdl1,
-                                      color_dict=self.nuclei_type_dict,
-                                      show_types=self.show_nuclei_types_pdl1,
-                                      Microenv=False)
+        # 显示细胞核轮廓
+        self.show_nuclei()
 
     def update_scale_view(self, level, scene_view_rect, clear_scene_flag, mouse_pos):
         # 更新图像视图
@@ -268,40 +252,13 @@ class SlideViewer(BasicSlideViewer):
         # 发送信号，通知ToolManager可以删除上一个激活的item并重画，再重画当前激活的item
         self.reactivateItemSignal.emit(choosed_idx, downsample)
 
-        if self.SHOW_FLAG == 2:
-            self.show_or_close_nuclei(current_rect=self.get_current_view_scene_rect(),
-                                      contours=self.cell_contour_microenv,
-                                      centers=self.cell_centers_microenv,
-                                      types=self.cell_type_microenv,
-                                      color_dict=self.nuclei_type_dict,
-                                      show_types=self.show_nuclei_types_microenv)
-        elif self.SHOW_FLAG == 3:
-            self.show_or_close_nuclei(current_rect=self.get_current_view_scene_rect(),
-                                      contours=self.cell_contour_pdl1,
-                                      centers=self.cell_centers_pdl1,
-                                      types=self.cell_type_pdl1,
-                                      color_dict=self.nuclei_type_dict,
-                                      show_types=self.show_nuclei_types_pdl1,
-                                      Microenv=False)
+        self.show_nuclei()
 
-
+    # 点击缩略图，跳转到对应区域
     def showImageAtThumbnailArea(self, pos, thumbnail_dimension):
         super(SlideViewer, self).showImageAtThumbnailArea(pos, thumbnail_dimension)
-        if self.SHOW_FLAG == 2:
-            self.show_or_close_nuclei(current_rect=self.get_current_view_scene_rect(),
-                                      contours=self.cell_contour_microenv,
-                                      centers=self.cell_centers_microenv,
-                                      types=self.cell_type_microenv,
-                                      color_dict=self.nuclei_type_dict,
-                                      show_types=self.show_nuclei_types_microenv)
-        elif self.SHOW_FLAG == 3:
-            self.show_or_close_nuclei(current_rect=self.get_current_view_scene_rect(),
-                                      contours=self.cell_contour_pdl1,
-                                      centers=self.cell_centers_pdl1,
-                                      types=self.cell_type_pdl1,
-                                      color_dict=self.nuclei_type_dict,
-                                      show_types=self.show_nuclei_types_pdl1,
-                                      Microenv=False)
+        self.show_nuclei()
+
 
     # TODO：加载诊断模式的结果
     def load_diagnose(self, overview_path):
@@ -531,6 +488,39 @@ class SlideViewer(BasicSlideViewer):
         if 2 in sendShowPDL1:
             self.sendNucleiShowTypePDL1Signal.emit([0, 1, 2, 3, 4])
 
+    # TODO: 在标注模式下导入细胞核分割结果
+    def loadNuclei(self, path):
+        try:
+            with open(path, 'rb') as f:
+                nuclei_info = pickle.load(f)
+                f.close()
+        except:
+            QMessageBox.warning(self, '警告', '细胞核结果有误')
+            return
+
+        # 加载细胞核分割结果
+        try:
+            self.cell_centers_ann = nuclei_info['center']
+            self.cell_type_ann = nuclei_info['type']
+            self.cell_contour_ann = nuclei_info['contour']
+            self.reverse_nulei()
+        except:
+            QMessageBox.warning(self, '警告', '该文件中没有细胞核分割结果！')
+
+    # 显示或关闭标注模式下的细胞核分割结果
+    def reverse_nulei(self):
+        if self.cell_contour_ann is not None and self.cell_type_ann is not None and self.cell_centers_ann is not None:
+            self.show_ann_nuclei_flag = ~self.show_ann_nuclei_flag
+            self.show_or_close_nuclei(current_rect=self.get_current_view_scene_rect(),
+                                      contours=self.cell_contour_ann,
+                                      centers=self.cell_centers_ann,
+                                      types=self.cell_type_ann,
+                                      color_dict=self.nuclei_type_dict,
+                                      show_types=[0, 1, 2, 3, 4],
+                                      mode=0)
+            # 反转Annotation面板中显示细胞核的按钮
+            self.reverseBtnSignal.emit()
+
     # 细胞类型计数
     def count_cells(self, cell_type):
         num1 = (cell_type == 1).sum()
@@ -643,14 +633,18 @@ class SlideViewer(BasicSlideViewer):
                                   types=self.cell_type_pdl1,
                                   color_dict=self.nuclei_type_dict,
                                   show_types=self.show_nuclei_types_pdl1,
-                                  remove_types=remove_types, Microenv=False)
+                                  remove_types=remove_types, mode=3)
 
     # TODO: 加载或关闭肿瘤微环境或PDL1细胞核轮廓
-    def show_or_close_nuclei(self, current_rect, contours, centers, types, color_dict, show_types, remove_types=None, Microenv=True):
-        if Microenv:
+    def show_or_close_nuclei(self, current_rect, contours, centers, types, color_dict, show_types, remove_types=None, mode=2):
+        if mode == 2:
             flag = self.show_microenv_nuclei_flag
-        else:
+        elif mode == 3:
             flag = self.show_pdl1_nuclei_flag
+        elif mode == 0:
+            flag = self.show_ann_nuclei_flag
+        else:
+            return
         if flag:
             self.NucleiContourLoader.load_contour(current_rect=current_rect,
                                                   current_level=self.current_level,
@@ -675,6 +669,87 @@ class SlideViewer(BasicSlideViewer):
                                                       color_dict=color_dict,
                                                       show_types=show_types,
                                                       remove_types=[0, 1, 2, 3, 4])
+
+    def show_nuclei(self):
+        if self.SHOW_FLAG == 2:
+            self.show_or_close_nuclei(current_rect=self.get_current_view_scene_rect(),
+                                      contours=self.cell_contour_microenv,
+                                      centers=self.cell_centers_microenv,
+                                      types=self.cell_type_microenv,
+                                      color_dict=self.nuclei_type_dict,
+                                      show_types=self.show_nuclei_types_microenv)
+        elif self.SHOW_FLAG == 3:
+            self.show_or_close_nuclei(current_rect=self.get_current_view_scene_rect(),
+                                      contours=self.cell_contour_pdl1,
+                                      centers=self.cell_centers_pdl1,
+                                      types=self.cell_type_pdl1,
+                                      color_dict=self.nuclei_type_dict,
+                                      show_types=self.show_nuclei_types_pdl1,
+                                      mode=3)
+        elif self.SHOW_FLAG == 0:
+            self.show_or_close_nuclei(current_rect=self.get_current_view_scene_rect(),
+                                      contours=self.cell_contour_ann,
+                                      centers=self.cell_centers_ann,
+                                      types=self.cell_type_ann,
+                                      color_dict=self.nuclei_type_dict,
+                                      show_types=[0, 1, 2, 3, 4],
+                                      mode=0)
+
+    # 修改细胞核的类型
+    def modify_nuclei(self, event_point):
+        point = self.view.mapToScene(event_point)
+        downsample = self.slide_helper.get_downsample_for_level(self.current_level)
+        print(point.x() * downsample, point.y() * downsample)
+        if self.cell_contour_ann is not None and self.current_level < 1:
+            distance = np.square(np.array([point.x()]) - self.cell_centers_ann[:, 0]) +\
+                np.square(np.array([point.y()]) - self.cell_centers_ann[:, 1])
+            nearest_idx = np.where(distance == distance.min())
+            this_type = self.cell_type_ann[nearest_idx][0]
+            this_contour = self.cell_contour_ann[nearest_idx][0]
+            # 如果这个细胞之前被修改过则不可再修改
+            if this_type not in [0, 1, 2, 3, 4]:
+                return
+            # 判断点是否在细胞核轮廓内部
+            if cv2.pointPolygonTest(this_contour, (int(point.x()), int(point.y())), False) > 0:
+                type_dict = {"背景类别": [166, 84, 2], "表皮细胞": [255, 0, 0], "淋巴细胞": [0, 255, 0],
+                             "基质细胞": [228, 252, 4], "中性粒细胞": [0, 0, 255]}
+                # 弹出对话框选择修改类型
+                dialog = ChangeAnnotationDiaglog(type_dict, "表皮细胞")
+                # 点击确定，修改类别
+                if dialog.exec_() == QDialog.Accepted:
+                    item = self.view.itemAt(event_point)
+                    type_name = dialog.get_text()
+                    new_type = dialog.get_idx()
+                    this_contour = this_contour.tolist()
+                    # 更改细胞核结果文件
+                    self.cell_type_ann[nearest_idx] = -new_type
+                    # 绘制标注
+                    annotation_item, control_point_items, text_item = \
+                        self.ToolManager.draw_polygon.draw(this_contour, QColor(*type_dict[type_name]),
+                                                       4, downsample, True)
+                    annotation = {"location": this_contour,
+                                  "color": type_dict[type_name],
+                                  'tool': "多边形",
+                                  "type": type_name,
+                                  "annotation_item": annotation_item,
+                                  'control_point_items': control_point_items,
+                                  'text_item': text_item}
+                    self.ToolManager.addAnnotation(annotation, downsample)
+                    # 删除绘制的细胞核
+                    if hasattr(item, 'category') and hasattr(item, 'is_region'):
+                        if item.category == this_type and item.is_region == False:
+                            self.scene.removeItem(item)
+
+    # 保存修改后的细胞核pkl结果
+    def saveNucleiAnn(self, path):
+        if self.cell_contour_ann is not None and self.cell_type_ann is not None and self.cell_centers_ann is not None:
+            with open(path, 'wb') as f:
+                results = {}
+                results['type'] = self.cell_type_ann
+                results['center'] = self.cell_centers_ann
+                results['contour'] = self.cell_contour_ann
+                pickle.dump(results, f)
+                f.close()
 
     # 设置加载肿瘤微环境分析显示
     def update_microenv_show(self, show_list):
@@ -755,7 +830,7 @@ class SlideViewer(BasicSlideViewer):
                                           types=self.cell_type_pdl1,
                                           color_dict=self.nuclei_type_dict,
                                           show_types=self.show_nuclei_types_pdl1,
-                                          Microenv=False)
+                                          mode=3)
 
         else:
             if self.cell_contour_pdl1 is not None:
@@ -766,7 +841,7 @@ class SlideViewer(BasicSlideViewer):
                                           types=self.cell_type_pdl1,
                                           color_dict=self.nuclei_type_dict,
                                           show_types=self.show_nuclei_types_pdl1,
-                                          Microenv=False)
+                                          mode=3)
 
 
 if __name__ == '__main__':

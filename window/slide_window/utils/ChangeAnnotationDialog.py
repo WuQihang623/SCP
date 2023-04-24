@@ -14,7 +14,7 @@ class ChangeAnnotationDiaglog(QDialog):
         self.init_layout()
 
     def init_layout(self):
-        self.text = QLabel("细胞类别：")
+        self.text = QLabel("标注类别：")
         self.combobox = QComboBox(self)
         for i, (name, color) in enumerate(self.AnnotationTypes.items()):
             self.combobox.addItem(name)
@@ -38,3 +38,6 @@ class ChangeAnnotationDiaglog(QDialog):
 
     def get_text(self):
         return self.combobox.currentText()
+
+    def get_idx(self):
+        return self.combobox.currentIndex()

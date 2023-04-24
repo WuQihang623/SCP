@@ -1,6 +1,5 @@
 import os
 import json
-import sip
 import math
 from numbers import Number
 from PyQt5.QtWidgets import QGraphicsScene, QGraphicsView, QGraphicsLineItem, QGraphicsPathItem

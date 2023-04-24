@@ -43,6 +43,10 @@ class AnnotationWidget(UI_Annotation):
     syncAnnotationSignal = pyqtSignal(dict, int, int)
     # 将导入的标注显示出来
     showAnnotationSignal = pyqtSignal(bool)
+    # 导入细胞核分割结果，传输路径
+    loadNucleiAnnSignal = pyqtSignal(str)
+    # 保存修改的细胞核pkl结果
+    saveNucleiAnnSignal = pyqtSignal(str)
     def __init__(self):
         super(AnnotationWidget, self).__init__()
         # 初始化
@@ -87,6 +91,8 @@ class AnnotationWidget(UI_Annotation):
         self.save_btn.clicked.connect(self.saveAnnotations)
         # 删除所有标注
         self.clearAnnotation_btn.clicked.connect(self.clearAnnotations)
+        # 导入细胞核标注
+        self.loadNucleiAnn_btn.clicked.connect(self.load_nuclei)
 
     def init_AnnotationTypeTree(self):
         for key, rgb in self.AnnotationTypes.items():
@@ -345,6 +351,25 @@ class AnnotationWidget(UI_Annotation):
         # 将导入的标注显示出来
         self.showAnnotationSignal.emit(True)
 
+    # 在标注模式下载入细胞核分割结果
+    def load_nuclei(self):
+        options = QFileDialog.Options()
+        path, _ = QFileDialog.getOpenFileName(self, "选择标注文件", self.annotation_file_dir,
+                                              "标注 (*.pkl)", options=options)
+        slide_name, _ = os.path.splitext(os.path.basename(self.slide_path))
+        if os.path.exists(path):
+            if slide_name in path:
+                self.loadNucleiAnnSignal.emit(path)
+            else:
+                QMessageBox.warning(self, '警告', '导入文件与当前图片不符')
+
+    # 反转细胞核显示按钮
+    def reverse_btn(self):
+        if self.showNucleiAnn_btn.text() == "显示细胞核":
+            self.showNucleiAnn_btn.setText("不显示细胞核")
+        else:
+            self.showNucleiAnn_btn.setText("显示细胞核")
+
     # 保存标注
     def saveAnnotations(self):
         if self.Annotations:
@@ -362,6 +387,8 @@ class AnnotationWidget(UI_Annotation):
                 with open(path, 'w') as f:
                     f.write(json.dumps(annotation, indent=2))
                     f.close()
+                # 发送细胞核pkl结果要保存的路径
+                self.saveNucleiAnnSignal.emit(path.replace('json', 'pkl'))
         else:
             QMessageBox.warning(self, '警告', '当前没有标注')
 

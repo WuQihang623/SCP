@@ -128,6 +128,12 @@ class SlideWindow(QFrame):
         # 人为选择要显示表皮细胞，淋巴细胞
         self.pdl1.showNucleiType_Combox.selectionChangedSignal.connect(self.slide_viewer.update_show_nuclei_types_pdl1)
 
+        """标注模式下导入细胞核分割"""
+        self.annotation.loadNucleiAnnSignal.connect(self.slide_viewer.loadNuclei)
+        self.annotation.saveNucleiAnnSignal.connect(self.slide_viewer.saveNucleiAnn)
+        self.annotation.showNucleiAnn_btn.clicked.connect(self.slide_viewer.reverse_nulei)
+        self.slide_viewer.reverseBtnSignal.connect(self.annotation.reverse_btn)
+
         """快捷键"""
         self.saveAnnShortcut.activated.connect(self.saveAnnotations)
         self.stopDrawShortcut.activated.connect(self.stopDraw)

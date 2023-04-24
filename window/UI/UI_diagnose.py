@@ -21,6 +21,7 @@ class UI_Diagnose(QWidget):
         self.wsi_path_label.setStyleSheet("font-weight: bold;")
         self.wsi_path_label.setAlignment(Qt.AlignCenter)
         self.wsi_path_text = QLabel()
+        self.wsi_path_text.setWordWrap(True)
         # self.folderselector = FolderSelector()
         self.diagnose_btn = QPushButton("诊断")
         self.loadDiagnoseResults_btn = QPushButton("载入诊断结果")

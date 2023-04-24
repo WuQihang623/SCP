@@ -31,11 +31,16 @@ class UI_Annotation(QFrame):
         self.save_btn = QPushButton('保存标注')
         self.loadAnnotation_btn = QPushButton('导入标注')
         self.clearAnnotation_btn = QPushButton('清空标注')
+        self.loadNucleiAnn_btn = QPushButton("导入细胞核分割结果")
+        self.showNucleiAnn_btn = QPushButton("显示细胞核")
         self.annotaion_layout = QGridLayout()
         self.annotaion_layout.addWidget(self.annotationTree, 0, 0, 1, 3)
         self.annotaion_layout.addWidget(self.save_btn, 1, 1, 1, 1)
         self.annotaion_layout.addWidget(self.loadAnnotation_btn, 1, 0, 1, 1)
         self.annotaion_layout.addWidget(self.clearAnnotation_btn, 1, 2, 1, 1)
+        self.annotaion_layout.addWidget(self.loadNucleiAnn_btn, 2, 0, 1, 2)
+        self.annotaion_layout.addWidget(self.showNucleiAnn_btn, 2, 2, 1, 1)
+
 
         self.type_widget = QWidget()
         self.type_widget.setLayout(self.type_layout)

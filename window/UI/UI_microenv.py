@@ -23,6 +23,7 @@ class UI_Microenv(QFrame):
         self.wsi_path_label.setStyleSheet("font-weight: bold;")
         self.wsi_path_label.setAlignment(Qt.AlignCenter)
         self.wsi_path_text = QLabel("")
+        self.wsi_path_text.setWordWrap(True)
         self.param_btn = QPushButton("参数设置")
         self.microenv_btn = QPushButton("微环境分析")
         self.loadMicroenv_btn = QPushButton("载入微环境分析结果")
