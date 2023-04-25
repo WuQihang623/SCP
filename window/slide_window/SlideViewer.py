@@ -443,8 +443,9 @@ class SlideViewer(BasicSlideViewer):
             sendShowMicroenv.append(2)
 
             # 细胞计数
-            num_list = self.count_cells(self.cell_type_microenv)
-            self.sendNucleiNumMicroenvSignal.emit(num_list)
+            if self.paired is False:
+                num_list = self.count_cells(self.cell_type_microenv)
+                self.sendNucleiNumMicroenvSignal.emit(num_list)
         except:
             QMessageBox.warning(self, '警告', '该文件中没有细胞核分割结果！')
 
@@ -466,6 +467,9 @@ class SlideViewer(BasicSlideViewer):
 
         # 发送要显示组织区域与细胞核轮廓的变量
         sendShowPDL1 = []
+        self.sendShowPDL1Signal.emit(sendShowPDL1)
+        self.sendRegionShowTypePDL1Signal.emit([])
+        self.sendNucleiShowTypePDL1Signal.emit([])
 
         # 加载肿瘤区域结果
         if pdl1_info.get('mask') is None:
@@ -500,8 +504,9 @@ class SlideViewer(BasicSlideViewer):
             sendShowPDL1.append(2)
 
             # 细胞计数
-            num_list = self.count_cells(self.cell_type_pdl1)
-            self.sendNucleiNumPDL1Signal.emit(num_list)
+            if self.paired is False:
+                num_list = self.count_cells(self.cell_type_pdl1)
+                self.sendNucleiNumPDL1Signal.emit(num_list)
         except:
             QMessageBox.warning(self, '警告', '该文件中没有细胞核分割结果！')
 

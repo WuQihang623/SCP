@@ -11,7 +11,7 @@ class MicroenvWidget(UI_Microenv):
     # 如在微环境对比结果
     loadMicroenvComparisonSignal = pyqtSignal(str)
     # 打开同步窗口信号
-    loadPairedWidowSignal = pyqtSignal(str)
+    loadPairedWindowSignal = pyqtSignal(str)
     def __init__(self):
         super(MicroenvWidget, self).__init__()
         self.file_dir = './'
@@ -57,7 +57,7 @@ class MicroenvWidget(UI_Microenv):
         slide_name, _ = os.path.splitext(os.path.basename(self.slide_path))
         # 打开对比窗口
         if os.path.exists(self.slide_path):
-            self.loadPairedWidowSignal.emit(self.slide_path)
+            self.loadPairedWindowSignal.emit(self.slide_path)
         else:
             return
         # 选取对比结果，并传给slide_viewer_pair

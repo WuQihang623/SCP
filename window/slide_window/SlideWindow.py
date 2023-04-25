@@ -22,7 +22,7 @@ class SlideWindow(QFrame):
     def init_UI(self):
         main_layout = QVBoxLayout(self)
         self.slide_viewer = SlideViewer()
-        self.slide_viewer_pair = SlideViewer()
+        self.slide_viewer_pair = SlideViewer(paired=True)
         self.annotation = AnnotationWidget()
         self.diagnose = DiagnoseWidget()
         self.microenv = MicroenvWidget()
@@ -137,8 +137,10 @@ class SlideWindow(QFrame):
         """加载对比结果"""
         # 同步功能开启时，设置为移动模式
         self.slide_viewer.setMoveModeSignal.connect(self.annotation.set_move_mode)
-        self.microenv.loadPairedWidowSignal.connect(self.load_slide_pair)
+        self.microenv.loadPairedWindowSignal.connect(self.load_slide_pair)
         self.microenv.loadMicroenvComparisonSignal.connect(self.slide_viewer_pair.loadMicroenv)
+        self.pdl1.loadPairedWidowSignal.connect(self.load_slide_pair)
+        self.pdl1.loadPDL1ComparisonSignal.connect(self.slide_viewer_pair.loadPDL1)
 
         """快捷键"""
         self.saveAnnShortcut.activated.connect(self.saveAnnotations)
@@ -155,31 +157,54 @@ class SlideWindow(QFrame):
         self.pdl1.set_slide_path(slide_path)
 
     # 将WSI加载到slide_viewer中
-    def load_slide_pair(self, slide_path):
+    def load_slide_pair(self, slide_path, mode=1):
+        """
+        :param slide_path:
+        :param mode: mode为1，则为微环境，mode为2，则为pdl1
+        :return:
+        """
         if not hasattr(self.slide_viewer_pair, 'slide_helper'):
             self.slide_viewer_pair.load_slide(slide_path)
             self.splitter_viewer.widget(1).show()
         else:
             self.splitter_viewer.widget(1).show()
 
+        # 连接同步信号
         self.slide_viewer.synchronousSignal.connect(self.slide_viewer_pair.eventFilter_from_another_window)
         self.slide_viewer_pair.synchronousSignal.connect(self.slide_viewer.eventFilter_from_another_window)
-        # 载入结果后，初始化设置要显示的组织轮廓类型
-        self.slide_viewer_pair.sendRegionShowTypeMicroenvSignal.connect(
-            self.microenv.showRegionType_Combox.setChecked)
-        # 人为选择要显示的组织轮廓类型
-        self.microenv.showRegionType_Combox.selectionChangedSignal.connect(
-            self.slide_viewer_pair.update_show_region_types_microenv)
-        # 载入结果后，初始化设置要不要显示热图，组织区域，细胞核分割
-        self.slide_viewer_pair.sendShowMicroenvSignal.connect(self.microenv.showCombox.setChecked)
-        # 人为选择要显示热图，组织轮廓，细胞核分割轮廓
-        self.microenv.showCombox.selectionChangedSignal.connect(self.slide_viewer_pair.update_microenv_show)
-        # 载入结果后，初始化设置要不要显示表皮细胞，淋巴细胞
-        self.slide_viewer_pair.sendNucleiShowTypeMicroenvSignal.connect(
-            self.microenv.showNucleiType_Combox.setChecked)
-        # 人为选择要显示表皮细胞，淋巴细胞
-        self.microenv.showNucleiType_Combox.selectionChangedSignal.connect(
-            self.slide_viewer_pair.update_show_nuclei_types_microenv)
+
+        if mode == 1:
+            # 载入结果后，初始化设置要显示的组织轮廓类型
+            self.slide_viewer_pair.sendRegionShowTypeMicroenvSignal.connect(
+                self.microenv.showRegionType_Combox.setChecked)
+            # 人为选择要显示的组织轮廓类型
+            self.microenv.showRegionType_Combox.selectionChangedSignal.connect(
+                self.slide_viewer_pair.update_show_region_types_microenv)
+            # 载入结果后，初始化设置要不要显示热图，组织区域，细胞核分割
+            self.slide_viewer_pair.sendShowMicroenvSignal.connect(self.microenv.showCombox.setChecked)
+            # 人为选择要显示热图，组织轮廓，细胞核分割轮廓
+            self.microenv.showCombox.selectionChangedSignal.connect(self.slide_viewer_pair.update_microenv_show)
+            # 载入结果后，初始化设置要不要显示表皮细胞，淋巴细胞
+            self.slide_viewer_pair.sendNucleiShowTypeMicroenvSignal.connect(
+                self.microenv.showNucleiType_Combox.setChecked)
+            # 人为选择要显示表皮细胞，淋巴细胞
+            self.microenv.showNucleiType_Combox.selectionChangedSignal.connect(
+                self.slide_viewer_pair.update_show_nuclei_types_microenv)
+        elif mode == 2:
+            # 载入结果后，初始化设置要显示的组织轮廓类型
+            self.slide_viewer_pair.sendRegionShowTypePDL1Signal.connect(self.pdl1.showRegionType_Combox.setChecked)
+            # 人为选择要显示的组织轮廓类型
+            self.pdl1.showRegionType_Combox.selectionChangedSignal.connect(
+                self.slide_viewer_pair.update_show_region_types_pdl1)
+            # 载入结果后，初始化设置要不要显示热图，组织区域，细胞核分割
+            self.slide_viewer_pair.sendShowPDL1Signal.connect(self.pdl1.showCombox.setChecked)
+            # 人为选择要显示热图，组织轮廓，细胞核分割轮廓
+            self.pdl1.showCombox.selectionChangedSignal.connect(self.slide_viewer_pair.update_pdl1_show)
+            # 载入结果后，初始化设置要不要显示表皮细胞，淋巴细胞
+            self.slide_viewer_pair.sendNucleiShowTypePDL1Signal.connect(self.pdl1.showNucleiType_Combox.setChecked)
+            # 人为选择要显示表皮细胞，淋巴细胞
+            self.pdl1.showNucleiType_Combox.selectionChangedSignal.connect(
+                self.slide_viewer_pair.update_show_nuclei_types_pdl1)
 
     # 快捷键保存标注
     def saveAnnotations(self):
