@@ -265,7 +265,9 @@ class BasicSlideViewer(QFrame):
         elif slider_value > 40:
             slider_value = 40
         self.slider_value = slider_value
+        self.slider.slider.blockSignals(True)
         self.slider.slider.setValue(self.slider_value)
+        self.slider.slider.blockSignals(False)
 
     def reset_view_transform(self):
         self.view.resetTransform()
@@ -305,6 +307,7 @@ class BasicSlideViewer(QFrame):
             pos = QPoint(self.size().width() / 2, self.size().height() / 2)
             self.responseWheelEvent(pos, zoom)
             self.slider_value = value
+
 
     # 计算放大倍数
     def get_magnification(self):

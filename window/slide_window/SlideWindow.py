@@ -3,7 +3,6 @@ import os
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import QKeySequence
 from window.slide_window import *
-from window.slide_window.SlideViewer_pair import SlideviewerPair
 from PyQt5.QtCore import Qt
 from window.slide_window.utils.AffirmDialog import CloseDialog
 
@@ -29,8 +28,12 @@ class SlideWindow(QFrame):
         self.pdl1 = PDL1Widget()
 
         self.splitter_viewer = QSplitter(Qt.Horizontal)
+
         self.splitter_viewer.addWidget(self.slide_viewer)
         self.splitter_viewer.addWidget(self.slide_viewer_pair)
+        self.splitter_viewer.setHandleWidth(0)
+        handle = self.splitter_viewer.handle(1)
+        handle.setEnabled(False)
 
         self.splitter = QSplitter(Qt.Horizontal)
         self.splitter.addWidget(self.annotation)
@@ -166,12 +169,35 @@ class SlideWindow(QFrame):
         if not hasattr(self.slide_viewer_pair, 'slide_helper'):
             self.slide_viewer_pair.load_slide(slide_path)
             self.splitter_viewer.widget(1).show()
+            self.slide_viewer.synchronousSignal.connect(self.slide_viewer_pair.eventFilter_from_another_window)
+            self.slide_viewer_pair.synchronousSignal.connect(self.slide_viewer.eventFilter_from_another_window)
+            self.slide_viewer.slider.slider.valueChanged.connect(
+                self.slide_viewer_pair.responseSlider_from_another_window)
+            self.slide_viewer_pair.slider.slider.valueChanged.connect(
+                self.slide_viewer.responseSlider_from_another_window)
+            self.slide_viewer.synchronousThumSignal.connect(
+                self.slide_viewer_pair.showImageAtThumArea_from_annother_window)
+            self.slide_viewer_pair.synchronousThumSignal.connect(
+                self.slide_viewer.showImageAtThumArea_from_annother_window)
         else:
+            if self.slide_viewer_pair.slide_helper.slide_path != slide_path:
+                self.slide_viewer_pair.load_slide(slide_path)
+                self.splitter_viewer.widget(1).show()
+                self.slide_viewer.synchronousSignal.connect(self.slide_viewer_pair.eventFilter_from_another_window)
+                self.slide_viewer_pair.synchronousSignal.connect(self.slide_viewer.eventFilter_from_another_window)
+                self.slide_viewer.slider.slider.valueChanged.connect(
+                    self.slide_viewer_pair.responseSlider_from_another_window)
+                self.slide_viewer_pair.slider.slider.valueChanged.connect(
+                    self.slide_viewer.responseSlider_from_another_window)
+                self.slide_viewer.synchronousThumSignal.connect(
+                    self.slide_viewer_pair.showImageAtThumArea_from_annother_window)
+                self.slide_viewer_pair.synchronousThumSignal.connect(
+                    self.slide_viewer.showImageAtThumArea_from_annother_window)
             self.splitter_viewer.widget(1).show()
 
         # 连接同步信号
-        self.slide_viewer.synchronousSignal.connect(self.slide_viewer_pair.eventFilter_from_another_window)
-        self.slide_viewer_pair.synchronousSignal.connect(self.slide_viewer.eventFilter_from_another_window)
+        self.slide_viewer.init_position()
+        self.slide_viewer_pair.init_position()
 
         if mode == 1:
             # 载入结果后，初始化设置要显示的组织轮廓类型

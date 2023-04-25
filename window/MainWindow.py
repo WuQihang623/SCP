@@ -104,6 +104,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # 当切换子窗口时，要设置工具栏
         self.mdiArea.subWindowActivated.connect(self.set_window_status)
 
+        # 关闭
+        self.quit.triggered.connect(self.close)
+
     # 初始化变量
     def init_attr(self):
         self.slide_file_dir = './'
@@ -112,7 +115,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def setEnable(self):
         # self.paired_slide_menu.setEnabled(False)
         self.fill_screen_action.setEnabled(False)
-        self.quit.setEnabled(False)
+        # self.quit.setEnabled(False)
         self.recall_action.setEnabled(False)
         self.convert_color_space_action.setEnabled(False)
         # self.microenv_action.setEnabled(False)

@@ -47,6 +47,10 @@ class SlideViewer(BasicSlideViewer):
     setMoveModeSignal = pyqtSignal()
     # 图像同步信号
     synchronousSignal = pyqtSignal(object, object)
+    # 同步slider信号
+    synchronousSliderSignal = pyqtSignal(int)
+    # 同步缩略图点击信号
+    synchronousThumSignal = pyqtSignal(QPointF, list)
 
     def __init__(self, paired=False):
         super(SlideViewer, self).__init__()
@@ -277,7 +281,36 @@ class SlideViewer(BasicSlideViewer):
     def showImageAtThumbnailArea(self, pos, thumbnail_dimension):
         super(SlideViewer, self).showImageAtThumbnailArea(pos, thumbnail_dimension)
         self.show_nuclei()
+        self.synchronousThumSignal.emit(pos, thumbnail_dimension)
 
+    # 同步缩略图跳转功能
+    def showImageAtThumArea_from_annother_window(self, pos, thumbnail_dimension):
+        super(SlideViewer, self).showImageAtThumbnailArea(pos, thumbnail_dimension)
+        self.show_nuclei()
+
+    # 响应slider动作
+    def responseSlider(self, value):
+        super(SlideViewer, self).responseSlider(value)
+        self.synchronousSliderSignal.emit(value)
+
+    # 同步图像响应slider的调整
+    def responseSlider_from_another_window(self, value):
+        self.slider.slider.blockSignals(True)
+        # 判断当前slider value 是否与改变过的相同
+        if self.slider_value != value:
+            # 计算当前的缩放倍数
+            current_value = self.get_magnification()
+            zoom = value / current_value
+            pos = QPoint(self.size().width() / 2, self.size().height() / 2)
+            self.responseWheelEvent(pos, zoom)
+            self.slider_value = value
+            # self.slider.slider.setValue(value)
+        self.slider.slider.blockSignals(False)
+
+    # 初始化视图位置
+    def init_position(self):
+        self.responseSlider(1)
+        self.showImageAtThumbnailArea(QPointF(0, 0), [self.thumbnail.width(), self.thumbnail.height()])
 
     # TODO：加载诊断模式的结果
     def load_diagnose(self, overview_path):
