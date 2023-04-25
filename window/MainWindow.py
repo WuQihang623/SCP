@@ -208,6 +208,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 if hasattr(slide_viewer_pair, 'TileLoader'):
                     splitter_viewer = sub_active.widget().splitter_viewer
                     splitter_viewer.widget(1).show()
+                    sub_active.widget().slide_viewer.init_position()
+                    sub_active.widget().slide_viewer_pair.init_position()
                 else:
                     QMessageBox.warning(self, '警告', "没有载入同步图像")
         except:

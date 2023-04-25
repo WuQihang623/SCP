@@ -296,7 +296,10 @@ class FileWatcher(QWidget):
     def set_style(self):
         self.setStyleSheet("QLabel{font-family:微软雅黑; font: bold 16px;}")
 
-    def __del__(self):
+    def closeEvent(self, event):
         if hasattr(self, 't'):
             if self.t.isRunning():
+                QMessageBox.warning(self, '提示', '批处理未停止，请先等待批处理结束')
+                event.ignore()
                 return
+        return super(FileWatcher, self).close(event)

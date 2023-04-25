@@ -52,12 +52,10 @@ class NucleiContourLoader():
         self.color_dict = color_dict if color_dict is not None else self.color_dict
 
         # 如果点击了移除某个类型，则进行删除
-        start = time.time()
         if remove_types is not None and remove_types is not set([]):
             match_items = find_matching_objects(self.scene.items(), 'category', 'is_region', remove_types)
             for item in match_items:
                 self.scene.removeItem(item)
-        print(time.time() - start)
         self.run()
 
     def run(self):
