@@ -134,6 +134,12 @@ class SlideWindow(QFrame):
         self.annotation.showNucleiAnn_btn.clicked.connect(self.slide_viewer.reverse_nulei)
         self.slide_viewer.reverseBtnSignal.connect(self.annotation.reverse_btn)
 
+        """加载对比结果"""
+        # 同步功能开启时，设置为移动模式
+        self.slide_viewer.setMoveModeSignal.connect(self.annotation.set_move_mode)
+        self.microenv.loadPairedWidowSignal.connect(self.load_slide_pair)
+        self.microenv.loadMicroenvComparisonSignal.connect(self.slide_viewer_pair.loadMicroenv)
+
         """快捷键"""
         self.saveAnnShortcut.activated.connect(self.saveAnnotations)
         self.stopDrawShortcut.activated.connect(self.stopDraw)
@@ -150,9 +156,30 @@ class SlideWindow(QFrame):
 
     # 将WSI加载到slide_viewer中
     def load_slide_pair(self, slide_path):
-        self.slide_viewer_pair.load_slide(slide_path)
-        self.splitter_viewer.widget(1).show()
-        self.slide_viewer.synchronousSignal.connect(self.slide_viewer_pair.eventFilter1)
+        if not hasattr(self.slide_viewer_pair, 'slide_helper'):
+            self.slide_viewer_pair.load_slide(slide_path)
+            self.splitter_viewer.widget(1).show()
+        else:
+            self.splitter_viewer.widget(1).show()
+
+        self.slide_viewer.synchronousSignal.connect(self.slide_viewer_pair.eventFilter_from_another_window)
+        self.slide_viewer_pair.synchronousSignal.connect(self.slide_viewer.eventFilter_from_another_window)
+        # 载入结果后，初始化设置要显示的组织轮廓类型
+        self.slide_viewer_pair.sendRegionShowTypeMicroenvSignal.connect(
+            self.microenv.showRegionType_Combox.setChecked)
+        # 人为选择要显示的组织轮廓类型
+        self.microenv.showRegionType_Combox.selectionChangedSignal.connect(
+            self.slide_viewer_pair.update_show_region_types_microenv)
+        # 载入结果后，初始化设置要不要显示热图，组织区域，细胞核分割
+        self.slide_viewer_pair.sendShowMicroenvSignal.connect(self.microenv.showCombox.setChecked)
+        # 人为选择要显示热图，组织轮廓，细胞核分割轮廓
+        self.microenv.showCombox.selectionChangedSignal.connect(self.slide_viewer_pair.update_microenv_show)
+        # 载入结果后，初始化设置要不要显示表皮细胞，淋巴细胞
+        self.slide_viewer_pair.sendNucleiShowTypeMicroenvSignal.connect(
+            self.microenv.showNucleiType_Combox.setChecked)
+        # 人为选择要显示表皮细胞，淋巴细胞
+        self.microenv.showNucleiType_Combox.selectionChangedSignal.connect(
+            self.slide_viewer_pair.update_show_nuclei_types_microenv)
 
     # 快捷键保存标注
     def saveAnnotations(self):

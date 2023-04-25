@@ -43,14 +43,17 @@ class SlideViewer(BasicSlideViewer):
     # 发送给PDL1分析面板，设置显示是否要显示表皮细胞，淋巴细胞
     sendNucleiShowTypePDL1Signal = pyqtSignal(list)
 
+    # 当同步功能开启时，将标注工具置为移动
+    setMoveModeSignal = pyqtSignal()
     # 图像同步信号
     synchronousSignal = pyqtSignal(object, object)
+
     def __init__(self, paired=False):
         super(SlideViewer, self).__init__()
 
         # 初始化标注工具,同步窗口并不需要标注工具
-        if paired is False:
-            self.init_ToolManager()
+        self.paired = paired
+        self.init_ToolManager()
 
         # 组织区域轮廓加载器
         self.RegionContourLoader = RegionContourLoader(scene=self.scene)
@@ -61,7 +64,6 @@ class SlideViewer(BasicSlideViewer):
         self.NucleiContourLoader = NucleiContourLoader(scene=self.scene)
         # self.NucleiContourLoader.addContourItemSignal.connect(self.addContourItem)
         # self.NucleiContourLoader.removeItemSignal.connect(self.removeContourItem)
-
 
     def init_variable(self):
         super(SlideViewer, self).init_variable()
@@ -137,11 +139,29 @@ class SlideViewer(BasicSlideViewer):
         # 鼠标事件
         if isinstance(event, QMouseEvent):
             event_porcessed = self.processMouseEvent(event)
-            self.synchronousSignal.emit(qobj, event)
+            if self.ToolManager.TOOL_FLAG == 1:
+                self.synchronousSignal.emit(qobj, event)
         elif isinstance(event, QWheelEvent):
             event_porcessed = self.processWheelEvent(event)
             self.synchronousSignal.emit(qobj, event)
         return event_porcessed
+
+    # 接受来自对比窗口的操作
+    def eventFilter_from_another_window(self, qobj: 'QObject', event: 'QEvent'):
+        # 如果不是鼠标事件或者滚轮事件，则不进行事件的传递
+        event_porcessed = False
+        # 鼠标事件
+        if isinstance(event, QMouseEvent):
+            # 如果当前不为移动模式，则切换为移动模式
+            if self.ToolManager.TOOL_FLAG != 1:
+                self.ToolManager.TOOL_FLAG = 1
+                self.set_Move_Allow(True)
+                self.setCursor(Qt.ArrowCursor)
+                self.setMoveModeSignal.emit()
+            event_porcessed = self.processMouseEvent(event)
+        elif isinstance(event, QWheelEvent):
+            event_porcessed = self.processWheelEvent(event)
+        return True
 
     # 鼠标事件
     def processMouseEvent(self, event: QMouseEvent):
@@ -173,9 +193,8 @@ class SlideViewer(BasicSlideViewer):
         elif event.type() == QEvent.MouseMove:
             # 更新状态栏鼠标位置
             self.mousePosSignal.emit(self.view.mapToScene(event.pos()))
-
             # 视图移动
-            if self.move_flag and self.move_allow_flag:
+            if (self.move_flag and self.move_allow_flag):
                 self.responseMouseMove(event)
             else:
                 self.ToolManager.mouseMoveEvent(event, downsample)
@@ -382,9 +401,13 @@ class SlideViewer(BasicSlideViewer):
         except:
             QMessageBox.warning(self, '警告', '微环境分析结果有误')
             return
-
         # 发送要显示组织区域与细胞核轮廓的变量
         sendShowMicroenv = []
+
+        # 初始化checkbox
+        self.sendShowMicroenvSignal.emit(sendShowMicroenv)
+        self.sendRegionShowTypeMicroenvSignal.emit([])
+        self.sendNucleiShowTypeMicroenvSignal.emit([])
 
         # 加载肿瘤区域结果
         if microenv_info.get('mask') is None:

@@ -195,8 +195,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             return
         else:
             QMessageBox.warning(self, '警告', "没有打开图像子窗口")
-        # except:
-        #     QMessageBox.warning(self, '警告', "没有打开图像子窗口")
 
     # 打开同步图片
     def show_paired_slide_window(self):
@@ -286,6 +284,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     self.tools_toggle(1)
                     # 重新绘制当前窗口
                     sub_active.widget().slide_viewer.reshowView()
+                    sub_active.widget().slide_viewer_pair.reshowView()
 
                     # 将诊断模式显示的热图关闭，诊断框删去
                     if current_mode == 1:
@@ -293,24 +292,31 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                         sub_active.widget().slide_viewer.removeDiagnoseRect()
                     elif current_mode >= 2:
                         sub_active.widget().slide_viewer.show_or_close_heatmap(None, None, False)
+                        sub_active.widget().slide_viewer_pair.show_or_close_heatmap(None, None, False)
 
                     # TODO：设置显示标志位
                     if mode2switch == 0:
                         sub_active.widget().slide_viewer.SHOW_FLAG = 0
+                        sub_active.widget().slide_viewer_pair.SHOW_FLAG = 0
                         # 重新绘制标注
                         sub_active.widget().slide_viewer.loadAllAnnotation()
                     elif mode2switch == 1:
                         sub_active.widget().slide_viewer.SHOW_FLAG = 1
+                        sub_active.widget().slide_viewer_pair.SHOW_FLAG = 1
                         # 重新绘制诊断框
                         sub_active.widget().slide_viewer.redrawDiagnoseRect()
                     elif mode2switch == 2:
                         sub_active.widget().slide_viewer.SHOW_FLAG = 2
+                        sub_active.widget().slide_viewer_pair.SHOW_FLAG = 2
                         # 重新绘制微环境分析
                         sub_active.widget().slide_viewer.update_microenv_show(sub_active.widget().slide_viewer.show_list_microenv)
+                        sub_active.widget().slide_viewer_pair.update_microenv_show(sub_active.widget().slide_viewer_pair.show_list_microenv)
                     elif mode2switch == 3:
                         sub_active.widget().slide_viewer.SHOW_FLAG = 3
+                        sub_active.widget().slide_viewer_pair.SHOW_FLAG = 3
                         # 重新绘PDL1
                         sub_active.widget().slide_viewer.update_pdl1_show(sub_active.widget().slide_viewer.show_list_pdl1)
+                        sub_active.widget().slide_viewer_pair.update_pdl1_show(sub_active.widget().slide_viewer_pair.show_list_pdl1)
                     if mode2switch != 0:
                         sub_active.widget().slide_viewer.setCursor(Qt.ArrowCursor)
         except:

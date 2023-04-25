@@ -33,7 +33,7 @@ class DiagnoseWidget(UI_Diagnose):
 
     def btn_connect(self):
         self.loadDiagnoseResults_btn.clicked.connect(self.load_result)
-        self.diagnose_btn.clicked.connect(self.load_result)
+        self.diagnose_btn.clicked.connect(self.diagnose)
         self.show_report_btn.clicked.connect(self.show_report)
 
     # 加载诊断结论
@@ -138,14 +138,19 @@ class DiagnoseWidget(UI_Diagnose):
                 self.sendDiagnoseRectIdxSignal.emit(item.key)
 
     def diagnose(self):
-        kwargs = {"slidepath": self.slide_helper.slide_path,
-                  'signal': self.bar_signal_diagnose}
-        self.diagnose_thread = Thread_Diagnose(kwargs, self.slide_helper.get_level_dimension(-1))
-        self.diagnose_dialog = progress_dialog("乳腺癌淋巴结转移诊断", '正在进行诊断……')
-        self.bar_signal_diagnose.connect(self.diagnose_dialog.call_back)
-        self.diagnose_thread.complete_signal.connect(self.load_result)
-        self.diagnose_thread.start()
-        self.diagnose_dialog.start()
+        slide_name, _ = os.path.splitext(os.path.basename(self.slide_path))
+        path = os.path.join('results', 'Diagnose', slide_name, f"{slide_name}_result.jpg")
+        if os.path.exists(path):
+            self.load_result(path)
+        else:
+            kwargs = {"slidepath": self.slide_helper.slide_path,
+                      'signal': self.bar_signal_diagnose}
+            self.diagnose_thread = Thread_Diagnose(kwargs, self.slide_helper.get_level_dimension(-1))
+            self.diagnose_dialog = progress_dialog("乳腺癌淋巴结转移诊断", '正在进行诊断……')
+            self.bar_signal_diagnose.connect(self.diagnose_dialog.call_back)
+            self.diagnose_thread.complete_signal.connect(self.load_result)
+            self.diagnose_thread.start()
+            self.diagnose_dialog.start()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

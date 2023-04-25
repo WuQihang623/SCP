@@ -198,6 +198,10 @@ class AnnotationWidget(UI_Annotation):
         # 发送模式切换信号
         self.toolChangeSignal.emit(mode)
 
+    def set_move_mode(self):
+        self.mode = 1
+        self.toolChangeSignal.emit(1)
+
     # 设置工具栏中的图块颜色
     def set_activate_color_action(self):
         self.AnnotationTypeChangeSignal.emit(self.AnnotationTypes)

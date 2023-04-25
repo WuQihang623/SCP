@@ -6,7 +6,12 @@ from window.slide_window.utils.SlideHelper import SlideHelper
 from PyQt5.QtCore import Qt, pyqtSignal, QEvent
 
 class MicroenvWidget(UI_Microenv):
+    # 载入微环境分析结果信号
     loadMicroenvSignal = pyqtSignal(str)
+    # 如在微环境对比结果
+    loadMicroenvComparisonSignal = pyqtSignal(str)
+    # 打开同步窗口信号
+    loadPairedWidowSignal = pyqtSignal(str)
     def __init__(self):
         super(MicroenvWidget, self).__init__()
         self.file_dir = './'
@@ -17,6 +22,7 @@ class MicroenvWidget(UI_Microenv):
     def setConnect(self):
         self.microenv_btn.clicked.connect(self.load_result)
         self.loadMicroenv_btn.clicked.connect(self.load_result)
+        self.loadComparison_btn.clicked.connect(self.load_comparison_result)
 
     # 设置按键使能
     def setEnable(self):
@@ -45,6 +51,25 @@ class MicroenvWidget(UI_Microenv):
         self.file_dir = os.path.dirname(path)
 
         self.loadMicroenvSignal.emit(path)
+
+    # 载入对比结果
+    def load_comparison_result(self):
+        slide_name, _ = os.path.splitext(os.path.basename(self.slide_path))
+        # 打开对比窗口
+        if os.path.exists(self.slide_path):
+            self.loadPairedWidowSignal.emit(self.slide_path)
+        else:
+            return
+        # 选取对比结果，并传给slide_viewer_pair
+        options = QFileDialog.Options()
+        path, _ = QFileDialog.getOpenFileName(self, "选择微环境分析结果存放的路径", self.file_dir,
+                                              "结果(*.pkl)", options=options)
+        if slide_name not in path:
+            QMessageBox.warning(self, '警告', '结果文件与图片不匹配！')
+            return
+        self.file_dir = os.path.dirname(path)
+
+        self.loadMicroenvComparisonSignal.emit(path)
 
     # 显示细胞核个数信息
     def setNucleiText(self, num_list):

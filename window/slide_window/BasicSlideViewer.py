@@ -69,9 +69,9 @@ class BasicSlideViewer(QFrame):
         self.TileLoader = TileManager(self.scene, self.slide_helper)
         self.TileLoader.addTileItemSignal.connect(self.addTileItem)
         level = self.slide_helper.get_max_level()
-        rect = self.slide_helper.get_rect_for_level(level)
-        self.scene.setSceneRect(rect)
-        self.scene.addRect(rect, pen=Qt.white, brush=Qt.white)
+        scene_rect = self.slide_helper.get_rect_for_level(level)
+        self.scene.setSceneRect(scene_rect)
+        self.scene.addRect(scene_rect, pen=Qt.white, brush=Qt.white)
         rect = self.get_current_view_scene_rect()
         self.TileLoader.load_tiles_in_view(level, rect, self.heatmap, self.heatmap_downsample)
         self.current_level = level
@@ -319,15 +319,16 @@ class BasicSlideViewer(QFrame):
 
     # 重新绘制视图
     def reshowView(self, heatmap=None, heatmap_downsample=None):
-        new_rect = self.slide_helper.get_rect_for_level(self.current_level)
-        scene_view_rect = self.get_current_view_scene_rect()
-        self.scene.clear()
-        self.scene.setSceneRect(new_rect)
-        self.scene.addRect(new_rect, pen=Qt.white, brush=Qt.white)
-        # 清除缓存
-        self.TileLoader.restart_load_set()
-        # 绘制当前rect的图片
-        self.TileLoader.load_tiles_in_view(self.current_level, scene_view_rect, heatmap, heatmap_downsample)
+        if hasattr(self, 'slide_helper'):
+            new_rect = self.slide_helper.get_rect_for_level(self.current_level)
+            scene_view_rect = self.get_current_view_scene_rect()
+            self.scene.clear()
+            self.scene.setSceneRect(new_rect)
+            self.scene.addRect(new_rect, pen=Qt.white, brush=Qt.white)
+            # 清除缓存
+            self.TileLoader.restart_load_set()
+            # 绘制当前rect的图片
+            self.TileLoader.load_tiles_in_view(self.current_level, scene_view_rect, heatmap, heatmap_downsample)
 
 
 if __name__ == '__main__':
