@@ -211,9 +211,6 @@ class FileWatcher(QWidget):
             except:
                 self.table_widget.setItem(row, 4, QTableWidgetItem('正在传输'))
 
-    def set_style(self):
-        self.setStyleSheet("QHeaderView::section{font-family:微软雅黑; font: bold 15px;font-weight:400}"
-                           "QLineEdit{font-family:微软雅黑;font: bold 14px;font-weight:100}")
 
     # 重新设置文件监控的目录
     def set_path(self, path):
@@ -226,9 +223,6 @@ class FileWatcher(QWidget):
             self.path = path
             self.init_table()
 
-    def closeEvent(self, event):
-        super().closeEvent(event)
-        self.closeSignal.emit(True)
 
     # 点击打开文件窗口,如果批处理完成，则直接打开处理后的结果
     def set_open(self, row, col):
@@ -302,4 +296,5 @@ class FileWatcher(QWidget):
                 QMessageBox.warning(self, '提示', '批处理未停止，请先等待批处理结束')
                 event.ignore()
                 return
-        return super(FileWatcher, self).close(event)
+        self.closeSignal.emit(True)
+        return super(FileWatcher, self).closeEvent(event)
