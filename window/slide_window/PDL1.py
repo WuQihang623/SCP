@@ -11,7 +11,7 @@ class PDL1Widget(UI_PDL1):
     loadPDL1ComparisonSignal = pyqtSignal(str)
     def __init__(self):
         super(PDL1Widget, self).__init__()
-        self.file_dir = './'
+        self.file_dir = self.folderselector.FileDir()
         self.setEnable()
         self.setConnect()
 
@@ -25,22 +25,34 @@ class PDL1Widget(UI_PDL1):
         self.loadpdl1_btn.clicked.connect(self.load_result)
         self.pdl1_btn.clicked.connect(self.load_result)
         self.loadComparison_btn.clicked.connect(self.load_comparison_result)
+        self.folderselector.changeFileDirSignal.connect(self.set_file_dir)
 
     # 载入当前的文件信息，用于设置保存路径
     def set_slide_path(self, slide_path):
         self.slide_path = slide_path
         self.slide_helper = SlideHelper(slide_path)
-        self.wsi_path_text.setText(f"  {slide_path}")
+        # self.wsi_path_text.setText(f"  {slide_path}")
 
     # 载入PDL1分析结果
     def load_result(self, path):
         slide_name, _ = os.path.splitext(os.path.basename(self.slide_path))
         if not os.path.exists(path) or not isinstance(path, str):
-            path = os.path.join('results', 'PD-L1', slide_name, f"{slide_name}.pkl")
+            file_dir = os.path.join(self.file_dir, "PD-L1", slide_name)
+            if not os.path.exists(file_dir):
+                file_dir = os.path.join(self.file_dir)
+            options = QFileDialog.Options()
+            path, _ = QFileDialog.getOpenFileName(self, "选择为PDL1分析结果存放的路径", file_dir,
+                                                  "结果(*.pkl)", options=options)
+            # path = os.path.join('results', 'PD-L1', slide_name, f"{slide_name}.pkl")
+            if path == '':
+                return
+            if not os.path.exists(path):
+                QMessageBox.warning(self, '警告', '路径不存在！')
+                return
             if slide_name not in path:
                 QMessageBox.warning(self, '警告', '结果文件与图片不匹配！')
                 return
-            self.file_dir = os.path.dirname(path)
+            # self.file_dir = os.path.dirname(path)
             self.loadPDL1Signal.emit(path)
 
     # 载入PDL1对比结果
@@ -70,6 +82,9 @@ class PDL1Widget(UI_PDL1):
         self.immuNegNum_label.setText(f"PD-L1阴性免疫细胞数量: {num_list[3]}")
         self.tps_label.setText(f"TPS:       {num_list[0] / (num_list[0] + num_list[1]) * 100:.2f}%")
         self.cps_label.setText(f"CPS:       {(num_list[2] + num_list[0]) / (num_list[0]+num_list[1]) * 100:.2f}")
+
+    def set_file_dir(self):
+        self.file_dir = self.folderselector.FileDir()
 
 
 if __name__ == '__main__':

@@ -2,11 +2,12 @@ import json
 import sys
 from PyQt5.QtGui import QIcon, QFont
 from PyQt5.QtWidgets import QApplication, QWidget, QFileDialog, QLineEdit, QPushButton, QHBoxLayout, QVBoxLayout
-from PyQt5.QtCore import QSize
+from PyQt5.QtCore import QSize, pyqtSignal
 from function import saveResultFileDir, setResultFileDir
 
 
 class FolderSelector(QWidget):
+    changeFileDirSignal = pyqtSignal()
     def __init__(self, parent=None):
         super().__init__(parent)
 
@@ -45,6 +46,7 @@ class FolderSelector(QWidget):
             # If a folder was selected, display its path in the text box
             self.text_box.setText(folder_path)
             saveResultFileDir(folder_path)
+            self.changeFileDirSignal.emit()
 
     def set_text(self):
         self.text_box.setText(setResultFileDir())

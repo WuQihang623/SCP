@@ -27,14 +27,15 @@ class DiagnoseWidget(UI_Diagnose):
     bar_signal_diagnose = pyqtSignal(int, int, str)
     def __init__(self):
         super(DiagnoseWidget, self).__init__()
-        self.file_dir = './'
+        self.file_dir = self.folderselector.FileDir()
 
         self.btn_connect()
 
     def btn_connect(self):
         self.loadDiagnoseResults_btn.clicked.connect(self.load_result)
-        self.diagnose_btn.clicked.connect(self.diagnose)
+        self.diagnose_btn.clicked.connect(self.load_result)
         self.show_report_btn.clicked.connect(self.show_report)
+        self.folderselector.changeFileDirSignal.connect(self.set_file_dir)
 
     # 加载诊断结论
     def setText(self, preds):
@@ -55,17 +56,22 @@ class DiagnoseWidget(UI_Diagnose):
         self.slide_name = slide_name
         # 如果不存在，就根据当前文本框的路径加上文件名设置默认的载入路径
         if not os.path.exists(path) or not isinstance(path, str):
-            # options = QFileDialog.Options()
-            # path, _ = QFileDialog.getOpenFileName(self, "选择诊断结果存放的路径", self.file_dir,
-            #                                       "热图(*.jpg)", options=options)
-            path = os.path.join('results', 'Diagnose', slide_name, f"{slide_name}_result.jpg")
+            options = QFileDialog.Options()
+            file_dir = os.path.join(self.file_dir, "Diagnose", self.slide_name)
+            if not os.path.exists(file_dir):
+                file_dir = os.path.join(self.file_dir)
+            path, _ = QFileDialog.getOpenFileName(self, "选择诊断结果存放的路径", file_dir,
+                                                  "热图(*.jpg)", options=options)
+            # path = os.path.join('results', 'Diagnose', slide_name, f"{slide_name}_result.jpg")
+        if path == '':
+            return
         if not os.path.exists(path):
             QMessageBox.warning(self, '警告', '路径不存在！')
             return
         if slide_name not in path:
             QMessageBox.warning(self, '警告', '结果文件与图片不匹配！')
             return
-        self.file_dir = os.path.dirname(path)
+        # self.file_dir = os.path.dirname(path)
         self.loadDiagnoseSignal.emit(path)
         self.showHeatmap_btn.setChecked(True)
 
@@ -127,7 +133,7 @@ class DiagnoseWidget(UI_Diagnose):
     def set_slide_path(self, slide_path):
         self.slide_path = slide_path
         self.slide_helper = SlideHelper(slide_path)
-        self.wsi_path_text.setText(f"   {slide_path}")
+        # self.wsi_path_text.setText(f"   {slide_path}")
 
     # 点击某个矩形，则将画面跳转到那个视图下
     def mousePressEvent(self, event):
@@ -139,7 +145,7 @@ class DiagnoseWidget(UI_Diagnose):
 
     def diagnose(self):
         slide_name, _ = os.path.splitext(os.path.basename(self.slide_path))
-        path = os.path.join('results', 'Diagnose', slide_name, f"{slide_name}_result.jpg")
+        path = os.path.join(self.file_dir, 'Diagnose', slide_name, f"{slide_name}_result.jpg")
         if os.path.exists(path):
             self.load_result(path)
         else:
@@ -151,6 +157,9 @@ class DiagnoseWidget(UI_Diagnose):
             self.diagnose_thread.complete_signal.connect(self.load_result)
             self.diagnose_thread.start()
             self.diagnose_dialog.start()
+
+    def set_file_dir(self):
+        self.file_dir = self.folderselector.FileDir()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
