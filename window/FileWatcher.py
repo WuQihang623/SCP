@@ -297,4 +297,5 @@ class FileWatcher(QWidget):
                 event.ignore()
                 return
         self.closeSignal.emit(True)
+        print("关闭文件监控")
         return super(FileWatcher, self).closeEvent(event)
