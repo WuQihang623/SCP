@@ -7,10 +7,46 @@ import openslide
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import QIcon, QPixmap
-from PyQt5.QtCore import pyqtSignal, Qt, QTimer
+from PyQt5.QtCore import pyqtSignal, Qt, QTimer, QThread
 
 from Inference.batch_process import BatchProcessThread
 from function.utils import setFileWatcherDir, is_file_copy_finished
+
+# 获取再文件夹中的病理图像文件
+def getfileindir(root, file_name):
+    whole_slide_formats = [
+        "svs",
+        "vms",
+        "vmu",
+        "ndpi",
+        "scn",
+        "mrx",
+        "tiff",
+        "svslide",
+        "tif",
+        "bif",
+        "mrxs",
+        "bif",
+        "dmetrix",
+        "qptiff"]
+    file_path = os.path.join(root, file_name)
+    # 如果是一个文件夹，则查看文件夹内的文件是否有病理图像文件
+    if os.path.isdir(file_path):
+        sub_files = os.listdir(file_path)
+        for sub_file in sub_files:
+            # 判断文件后缀是否为病理图像
+            _, extension = os.path.splitext(sub_file)
+            extension = extension.replace('.', '')
+            if extension in whole_slide_formats:
+                file_path = os.path.join(file_path, sub_file)
+                return file_path, extension
+    # 如果是一个文件，则判断是否为病理图像文件
+    else:
+        _, extension = os.path.splitext(file_path)
+        extension = extension.replace('.', '')
+        if extension in whole_slide_formats:
+            return file_path, extension
+    return None, None
 
 class MyLineEdit(QLineEdit):
     ClickSignal = pyqtSignal(bool)
@@ -24,6 +60,68 @@ class MyLineEdit(QLineEdit):
     def mouseDoubleClickEvent(self, event):
         if self.emit_flag:
             self.ClickSignal.emit(True)
+
+class UpdateTableThread(QThread):
+    add_table_signal = pyqtSignal(int, str)
+    check_table_signal = pyqtSignal(int, str, int, str)
+    timer_sinal = pyqtSignal()
+
+    def __init__(self, dir_path):
+        super(UpdateTableThread, self).__init__()
+        self.dir_path = dir_path
+        self.file_info = []
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.update)
+        self.timer.start(10000)
+        self.start(QThread.LowestPriority)
+
+    def update(self):
+        if self.isRunning():
+            self.wait()
+        self.start(QThread.LowestPriority)
+
+    def run(self):
+        """检查文件夹中是否有新的文件进来"""
+        new_files = set([])
+        # 如果该路径不存在，则退出线程
+        if not os.path.exists(self.dir_path):
+            return
+        file_names = sorted(os.listdir(self.dir_path))
+        for file_name in file_names:
+            file_path, extension = getfileindir(self.dir_path, file_name)
+            if file_path is not None:
+                new_files.add(file_path)
+
+        # 将新的文件发送给filewatcher
+        new_files = new_files - set(self.file_info.copy())
+        new_files = sorted(new_files)
+        for file_path in new_files:
+            self.add_table_signal.emit(len(self.file_info), file_path)
+            self.file_info.append(file_path)
+
+        """检查文件传输状态"""
+        for row, file_path in enumerate(self.file_info):
+            # 如果该路劲存在，则计算文件的大小
+            # 如果文件不存在，则将文件状态设置为文件丢失
+            if os.path.exists(file_path):
+                file_size = os.path.getsize(file_path)
+                try:
+                    if is_file_copy_finished(file_path):
+                        file_status = "传输完成"
+                    else:
+                        file_status = "正在传输"
+                except:
+                    file_status = "正在传输"
+                self.check_table_signal.emit(row, file_path, file_size, file_status)
+            else:
+                file_size = 0
+                file_status = "文件丢失"
+                self.check_table_signal.emit(row, file_path, file_size, file_status)
+
+    def restart(self, dir_path):
+        self.dir_path = dir_path
+        self.file_info = []
+        self.start(QThread.LowestPriority)
 
 class FileWatcher(QWidget):
     openslideSignal = pyqtSignal(str, str)
@@ -47,6 +145,8 @@ class FileWatcher(QWidget):
                                     "bif",
                                     "dmetrix",
                                     "qptiff"]
+
+        # 批处理状态
         if os.path.exists('cache/batch_process.json'):
             with open('cache/batch_process.json', 'r') as f:
                 self.processed_list = json.load(f)
@@ -54,9 +154,12 @@ class FileWatcher(QWidget):
         else:
             self.processed_list = []
 
-
         self.init_UI()
-        self.init_timer()
+
+        self.update_table = UpdateTableThread(self.path)
+        self.update_table.add_table_signal.connect(self.add_table_item)
+        self.update_table.check_table_signal.connect(self.modify_tabel_item)
+
         # 初始化
         self.set_path(setFileWatcherDir())
 
@@ -75,102 +178,22 @@ class FileWatcher(QWidget):
         self.table_widget.setHorizontalHeaderItem(4, QTableWidgetItem('传输状态'))
         self.table_widget.setHorizontalHeaderItem(5, QTableWidgetItem("分析状态"))
         self.table_widget.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+
         self.table_widget.cellClicked.connect(self.set_open)
         self.main_layout = QHBoxLayout(self)
         self.main_layout.addWidget(self.table_widget)
         self.set_style()
 
-    # 初始化，增加path和检查slide能够打开的定时器
-    def init_timer(self):
-        self.update_timer = QTimer(self)
-        self.update_timer.timeout.connect(self.update_table)
-        self.check_timer = QTimer(self)
-        self.update_timer.timeout.connect(self.check_table)
-
-        # 重新激活文件监控目录时打开定时器
-
-    def start_timer(self):
-        try:
-            self.update_timer.start()
-            self.check_timer.start()
-            print("start file watch")
-        except:
-            return
-
-    def stop_timer(self):
-        try:
-            self.update_timer.stop()
-            self.check_timer.stop()
-            print("stop file watch")
-        except:
-            return
-
-    def getfileindir(self, root, file_name):
-        file_path = os.path.join(root, file_name)
-        # 如果是一个文件夹，则查看文件夹内的文件是否有病理图像文件
-        if os.path.isdir(file_path):
-            sub_files = os.listdir(file_path)
-            for sub_file in sub_files:
-                # 判断文件后缀是否为病理图像
-                _, extension = os.path.splitext(sub_file)
-                extension = extension.replace('.', '')
-                if extension in self.whole_slide_formats:
-                    file_path = os.path.join(file_path, sub_file)
-                    return file_path, extension
-        # 如果是一个文件，则判断是否为病理图像文件
-        else:
-            _, extension = os.path.splitext(file_path)
-            extension = extension.replace('.', '')
-            if extension in self.whole_slide_formats:
-                return file_path, extension
-        return None, None
-
-    # 每次更改文件夹就会执行，初始化整个表单
-    def init_table(self):
-        self.files= []
-        self.table_widget.clearContents()
-        self.table_widget.setRowCount(0)
-        file_names = sorted(os.listdir(self.path))
-        row = 0
-        for file_name in file_names:
-            file_path, extension = self.getfileindir(self.path, file_name)
-            if file_path is not None:
-                self.add_table_item(os.path.basename(file_path), file_path, extension, row)
-                self.files.append(file_path)
-                row += 1
-        self.update_table()
-        self.check_table()
-        self.update_timer.start(4000)
-        self.check_timer.start(10000)
-
-    # 查看当前的目录是否比之前的多，如果是，则添加到表单中
-    def update_table(self):
-        # 获取当前文件夹下左右的病理图像地址
-        new_files = set([])
-        if not os.path.exists(self.path):
-            return
-        file_names = sorted(os.listdir(self.path))
-        for file_name in file_names:
-            file_path, extension = self.getfileindir(self.path, file_name)
-            if file_path is not None:
-                new_files.add(file_path)
-        # 将新的路径添加到表格中
-        new_files = new_files - set(self.files.copy())
-        for file_path in new_files:
-            row = self.table_widget.rowCount()
-            _, extension = os.path.splitext(file_path)
-            extension = extension.replace('.', '')
-            self.add_table_item(os.path.basename(file_path), file_path, extension, row)
-            self.files.append(file_path)
-
-    # 将item信息显示
-    def add_table_item(self, file_name, file_path, extension, row):
-        print(file_path)
+    def add_table_item(self, row, file_path):
+        self.files.append(file_path)
+        _, extension = os.path.splitext(file_path)
+        extension = extension.replace('.', '')
+        file_name = os.path.basename(file_path)
         file_size = os.path.getsize(file_path)
         file_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(os.path.getmtime(file_path)))
         self.table_widget.insertRow(row)
         self.table_widget.setItem(row, 0, QTableWidgetItem(file_name))
-        self.table_widget.setItem(row, 1, QTableWidgetItem("{:.2f}MB".format(float(file_size/(1024*1024)))))
+        self.table_widget.setItem(row, 1, QTableWidgetItem("{:.2f}MB".format(float(file_size / (1024 * 1024))).replace('-', '')))
         self.table_widget.setItem(row, 2, QTableWidgetItem(extension))
         self.table_widget.setItem(row, 3, QTableWidgetItem(file_time))
         # 设置传输状态和分析状态
@@ -181,47 +204,47 @@ class FileWatcher(QWidget):
         else:
             self.table_widget.setItem(row, 5, QTableWidgetItem('等待分析'))
 
-    # 检查文件是否传输完成
-    def check_table(self):
-        row_count = self.table_widget.rowCount()
-        file_list = self.files
-        if len(file_list) != row_count:
-            return
-        for row in range(row_count):
-            file_path = file_list[row]
-            if os.path.exists(file_path):
-                file_size = os.path.getsize(file_path)
-                self.table_widget.setItem(row, 1, QTableWidgetItem("{:.2f}MB".format(float(file_size / (1024 * 1024)))))
-            else:
-                self.table_widget.setItem(row, 1, QTableWidgetItem("{:.2f}MB".format(float(0))))
-                self.table_widget.setItem(row, 4, QTableWidgetItem('文件丢失'))
-                continue
-            if self.table_widget.item(row, 4).text() == "传输完成":
-                if not os.path.exists(file_path):
-                    self.table_widget.setItem(row, 1, QTableWidgetItem("{:.2f}MB".format(float(0))))
-                    self.table_widget.setItem(row, 4, QTableWidgetItem('文件丢失'))
-                elif is_file_copy_finished(file_path) is False:
-                    self.table_widget.setItem(row, 4, QTableWidgetItem('正在传输'))
-                continue
-            try:
-                if is_file_copy_finished(file_path):
-                    self.table_widget.setItem(row, 4, QTableWidgetItem('传输完成'))
-                else:
-                    self.table_widget.setItem(row, 4, QTableWidgetItem('正在传输'))
-            except:
-                self.table_widget.setItem(row, 4, QTableWidgetItem('正在传输'))
+    def modify_tabel_item(self, row, file_path, file_size, file_status):
+        item = self.table_widget.item(row, 0)
+        if item is not None:
+            file_name = item.text()
+            # 确认该行的文件是传输过来的那个
+            if file_name == os.path.basename(file_path):
+                self.table_widget.setItem(row, 1, QTableWidgetItem("{:.2f}MB".format(float(file_size / (1024 * 1024))).replace('-', '')))
+                self.table_widget.setItem(row, 4, QTableWidgetItem(file_status))
+                self.table_widget.update()
 
+
+    # 重置tablewidget
+    def reset(self):
+        self.table_widget.clearContents()
+        self.table_widget.setRowCount(0)
 
     # 重新设置文件监控的目录
     def set_path(self, path):
         if path is not None:
             try:
-                self.update_timer.stop()
-                self.check_timer.stop()
+                if self.update_table.isRunning():
+                    self.update_table.wait()
             except:
                 pass
             self.path = path
-            self.init_table()
+            self.reset()
+            self.update_table.restart(path)
+
+    def start_timer(self):
+        try:
+            self.update_table.timer.start()
+            print("start file watch")
+        except:
+            return
+
+    def stop_timer(self):
+        try:
+            self.update_table.timer.stop()
+            print("stop file watch")
+        except:
+            return
 
 
     # 点击打开文件窗口,如果批处理完成，则直接打开处理后的结果

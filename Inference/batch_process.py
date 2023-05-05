@@ -4,6 +4,7 @@ import argparse
 import time
 
 import cv2
+import openslide
 from PyQt5.QtCore import QThread, pyqtSignal, QMutex, QWaitCondition, QRectF
 from PyQt5.QtWidgets import *
 
@@ -12,7 +13,7 @@ from function.utils import NpEncoder
 from Inference.diagnose.diagnose import diagnosis
 from Inference.Microenvironment.PDL1 import main as PDL1
 from Inference.Microenvironment.Microenviroment import main as microenv
-
+from function.utils import is_file_copy_finished
 
 class BatchProcessThread(QThread):
     diagnose_signal = pyqtSignal(int, int, str)
@@ -145,6 +146,12 @@ class BatchProcessThread(QThread):
                     self.row = row
                     slide_path = self.file_watcher.files[row]
                     if not os.path.exists(slide_path):
+                        continue
+                    try:
+                        if is_file_copy_finished(slide_path) is False:
+                            continue
+                        slide = openslide.open_slide(slide_path)
+                    except:
                         continue
                     if self.mode == '诊断':
                         self.kwargs = self.param_diagnose(slide_path)

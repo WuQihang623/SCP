@@ -238,11 +238,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.file_watcher = FileWatcher('')
         self.file_watcher.setWindowTitle('文件监控窗口')
         self.mdiArea.addSubWindow(self.file_watcher)
-        self.file_watcher.show()
         self.file_watcher.closeSignal.connect(self.del_fileWatcher)
         self.file_watcher.openslideSignal.connect(self.openslide)
         self.batch_process_action.triggered.connect(self.file_watcher.batch_process)
         self.stop_batch_process_action.triggered.connect(self.file_watcher.stop_batch_process)
+        self.file_watcher.show()
 
     # 更改文件监控目录
     def change_file_watcher_dir(self):    # 链接change_file_manager_action
