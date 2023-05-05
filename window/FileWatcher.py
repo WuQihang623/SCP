@@ -219,6 +219,7 @@ class FileWatcher(QWidget):
     def reset(self):
         self.table_widget.clearContents()
         self.table_widget.setRowCount(0)
+        self.files = []
 
     # 重新设置文件监控的目录
     def set_path(self, path):
