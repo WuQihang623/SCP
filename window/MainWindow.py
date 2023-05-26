@@ -103,7 +103,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         # 当切换子窗口时，要设置工具栏
         self.mdiArea.subWindowActivated.connect(self.set_window_status)
-
+        # 设置ROI尺寸
+        self.rect_resiz_action.triggered.connect(self.setRoiSize)
         # 关闭
         self.quit.triggered.connect(self.close)
 
@@ -465,6 +466,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def set_style(self):
         self.setStyleSheet("""* {font-size: 16px;}""")
 
+    def setRoiSize(self):
+        from window.slide_window.utils.SizeInputDialog import SizeInputDialog
+        dialog = SizeInputDialog()
+        if dialog.exec_() == QDialog.Accepted:
+            width, height = dialog.get_size()
+            if isinstance(width, int) and isinstance(height, int):
+                with open('cache/FixedRectSize.json', 'w') as f:
+                    f.write(json.dumps({"width": width,
+                                        "height": height}))
+                    f.close()
+            else:
+                QMessageBox.warning(self, '警告', '输入的数字不是整数')
 
     # 关闭窗口的时候保存标注
     def closeEvent(self, event):
