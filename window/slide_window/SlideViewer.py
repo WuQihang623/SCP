@@ -772,8 +772,13 @@ class SlideViewer(BasicSlideViewer):
                 return
             # 判断点是否在细胞核轮廓内部
             if cv2.pointPolygonTest(this_contour, (int(point.x()), int(point.y())), False) > 0:
-                type_dict = {"背景类别": [166, 84, 2], "表皮细胞": [255, 0, 0], "淋巴细胞": [0, 255, 0],
-                             "基质细胞": [228, 252, 4], "中性粒细胞": [0, 0, 255]}
+                try:
+                    with open('cache/AnnotationTypes.json', 'r') as f:
+                        type_dict = json.load(f)
+                        f.close()
+                except:
+                    type_dict = {"背景类别": [166, 84, 2], "表皮细胞": [255, 0, 0], "淋巴细胞": [0, 255, 0],
+                                 "基质细胞": [228, 252, 4], "中性粒细胞": [0, 0, 255]}
                 # 弹出对话框选择修改类型
                 dialog = ChangeAnnotationDiaglog(type_dict, "表皮细胞")
                 # 点击确定，修改类别
@@ -783,7 +788,7 @@ class SlideViewer(BasicSlideViewer):
                     new_type = dialog.get_idx()
                     this_contour = this_contour.tolist()
                     # 更改细胞核结果文件
-                    self.cell_type_ann[nearest_idx] = -new_type
+                    self.cell_type_ann[nearest_idx] = -1
                     # 绘制标注
                     annotation_item, control_point_items, text_item = \
                         self.ToolManager.draw_polygon.draw(this_contour, QColor(*type_dict[type_name]),
