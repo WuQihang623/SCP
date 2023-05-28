@@ -354,6 +354,8 @@ class AnnotationWidget(UI_Annotation):
             self.addAnnotation(annotation, idx, choose=False, show=True)
         # 将导入的标注显示出来
         self.showAnnotationSignal.emit(True)
+        # 将类别json保存
+        self.saveAnnotationTypeTree()
 
     # 在标注模式下载入细胞核分割结果
     def load_nuclei(self):
