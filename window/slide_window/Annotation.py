@@ -12,6 +12,7 @@ from PyQt5.QtCore import QPoint, Qt, QEvent, QRectF, pyqtSignal
 from window.slide_window.utils.ColorChooseDialog import ColorChooseDialog
 from window.slide_window.utils.ChangeTypeDialog import ChangeTypeDialog
 from window.slide_window.utils.ChangeAnnotationDialog import ChangeAnnotationDiaglog
+from window.slide_window.utils.DescriptionDialog import DescriptionDialog
 from window.slide_window.utils.AffirmDialog import AffirmDialog
 from window.UI.UI_annotation import UI_Annotation
 from function.delDictItem import delDictItem
@@ -85,6 +86,9 @@ class AnnotationWidget(UI_Annotation):
         self.modify_annotation_action.triggered.connect(self.changeAnnotation)
         # 删除标注
         self.delete_annotation_action.triggered.connect(self.deleteAnnotation)
+        # 描述标注
+        self.set_description_action.triggered.connect(self.set_description)
+
         # 导入标注
         self.loadAnnotation_btn.clicked.connect(self.loadAnnotation)
         # 保存标注
@@ -224,11 +228,15 @@ class AnnotationWidget(UI_Annotation):
         color = QColor(*annotation['color'])
         pixmap.fill(color)
         item.setIcon(3, QIcon(pixmap))
+        description = annotation.get('description')
+        if description is not None:
+            item.setText(4, description)
         # 让表自适应内容长度
         self.annotationTree.resizeColumnToContents(0)
         self.annotationTree.resizeColumnToContents(1)
         self.annotationTree.resizeColumnToContents(2)
         self.annotationTree.resizeColumnToContents(3)
+        self.annotationTree.resizeColumnToContents(4)
         # 设置选中状态
         if choose:
             self.annotationTree.setCurrentItem(item)
@@ -296,6 +304,22 @@ class AnnotationWidget(UI_Annotation):
         else:
             QMessageBox.warning(self, '警告', '请先选择要删除的标注')
 
+    def set_description(self):
+        current_item = self.annotationTree.currentItem()
+        if current_item:
+            # 获取当前标注的索引
+            row_idx = self.annotationTree.indexOfTopLevelItem(current_item)
+            # 弹出
+            dialog = DescriptionDialog()
+            if dialog.exec_() == QDialog.Accepted:
+                description = dialog.get_text()
+                if description != '':
+                    self.Annotations[f'标注{row_idx}']['description'] = description
+                    current_item.setText(4, description)
+        else:
+            QMessageBox.warning(self, '警告', '请先选择要删除的标注')
+
+
     # 删除所有的标注
     def clearAnnotations(self):
         if self.Annotations:
@@ -350,7 +374,7 @@ class AnnotationWidget(UI_Annotation):
         self.init_AnnotationTypeTree()
         self.Annotations = OrderedDict(file['annotation'])
         # 同步更新ToolManager
-        for idx, (name,annotation) in enumerate(self.Annotations.items()):
+        for idx, (name, annotation) in enumerate(self.Annotations.items()):
             self.addAnnotation(annotation, idx, choose=False, show=True)
         # 将导入的标注显示出来
         self.showAnnotationSignal.emit(True)

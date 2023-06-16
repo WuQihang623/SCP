@@ -23,3 +23,12 @@ class ChangeTypeDialog(QDialog):
 
     def get_text(self):
         return self.edit.text()
+
+if __name__ == '__main__':
+    from PyQt5.QtWidgets import QApplication
+    app = QApplication([])
+    dialog = ChangeTypeDialog()
+    if dialog.exec_() == QDialog.Accepted:
+        text = dialog.get_text()
+        print(text)
+    app.exit()

@@ -22,6 +22,7 @@ class BasicSlideViewer(QFrame):
 
     def init_UI(self):
         self.scene = QGraphicsScene()
+        self.scene.clear_flag = False
         self.view = QGraphicsView()
         self.view.setScene(self.scene)
         self.thumbnail = Thumbnail()
@@ -247,6 +248,7 @@ class BasicSlideViewer(QFrame):
         new_rect = self.slide_helper.get_rect_for_level(level)
         if clear_scene_flag:
             self.scene.clear()
+            self.scene.clear_flag = True
             self.scene.setSceneRect(new_rect)
             self.scene.addRect(new_rect, pen=Qt.white, brush=Qt.white)
             # 清除缓存
@@ -326,6 +328,7 @@ class BasicSlideViewer(QFrame):
             new_rect = self.slide_helper.get_rect_for_level(self.current_level)
             scene_view_rect = self.get_current_view_scene_rect()
             self.scene.clear()
+            self.scene.clear_flag = True
             self.scene.setSceneRect(new_rect)
             self.scene.addRect(new_rect, pen=Qt.white, brush=Qt.white)
             # 清除缓存

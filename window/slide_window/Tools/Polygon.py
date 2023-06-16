@@ -89,7 +89,12 @@ class DrawPolygon(BaseTool):
 
                 # 删除闭合提示点
                 if hasattr(self, 'close_cycle'):
-                    self.scene.removeItem(self.close_cycle)
+                    if self.scene.clear_flag is False:
+                        self.scene.removeItem(self.close_cycle)
+                    else:
+                        self.scene.clear_flag = False
+                    del self.close_cycle
+
 
                 # 发送该标注信号
                 color = list(self.COLOR.getRgb())
@@ -141,11 +146,25 @@ class DrawPolygon(BaseTool):
                         self.close_cycle.setPen(QPen(color))
                         self.close_cycle.setBrush(QBrush(color))
                         self.close_cycle.setZValue(35)
+                    # 如果scene被clear了，那么终点位置还是要重画
+                    elif self.scene.clear_flag:
+                        self.close_cycle = self.scene.addEllipse(0, 0, 10, 10)
+                        self.close_cycle.setPos(QPoint(start_pos[0] - 5, start_pos[1] - 5))
+                        color = QColor(*self.CLOSE_CYCLE_COLOR)
+                        self.close_cycle.setPen(QPen(color))
+                        self.close_cycle.setBrush(QBrush(color))
+                        self.close_cycle.setZValue(35)
+                        self.scene.clear_flag = False
                 # 如果距离大于5，则把之前绘制的close_cycle删除了
                 else:
                     self.CLOSE_FLAG = False
                     if hasattr(self, 'close_cycle'):
-                        self.scene.removeItem(self.close_cycle)
+                        print('delete1')
+                        if self.scene.clear_flag is False:
+                            print('delete2')
+                            self.scene.removeItem(self.close_cycle)
+                        else:
+                            self.scene.clear_flag = False
                         del self.close_cycle
 
     # 释放鼠标时就不能连续绘制
