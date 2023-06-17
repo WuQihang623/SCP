@@ -316,6 +316,9 @@ class AnnotationWidget(UI_Annotation):
         if isinstance(editor, QLineEdit):
             editor.selectAll()
             editor.returnPressed.connect(lambda: self.closeEditor(item, column))
+            # 捕获焦点丢失事件
+            editor.editingFinished.connect(lambda: self.closeEditor(item, column))
+            # editor.focus().connect(lambda: self.closeEditor(item, column))
 
     def closeEditor(self, item, column):
         editor = self.annotationTree.itemWidget(item, column)
