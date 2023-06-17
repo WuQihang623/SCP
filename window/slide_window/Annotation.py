@@ -81,13 +81,15 @@ class AnnotationWidget(UI_Annotation):
         # 当点击标注时，进行标注的激活
         self.annotationTree.itemClicked.connect(self.onClickedAnnotationTree)
         self.annotationTypeTree.itemClicked.connect(self.onClickedTreeItemRow)
+        # 双击标注时，进行标注描述的修改
+        self.annotationTree.itemDoubleClicked.connect(self.set_description)
 
         # 修改标注
         self.modify_annotation_action.triggered.connect(self.changeAnnotation)
         # 删除标注
         self.delete_annotation_action.triggered.connect(self.deleteAnnotation)
         # 描述标注
-        self.set_description_action.triggered.connect(self.set_description)
+        # self.set_description_action.triggered.connect(self.set_description)
 
         # 导入标注
         self.loadAnnotation_btn.clicked.connect(self.loadAnnotation)
@@ -304,21 +306,26 @@ class AnnotationWidget(UI_Annotation):
         else:
             QMessageBox.warning(self, '警告', '请先选择要删除的标注')
 
-    def set_description(self):
-        current_item = self.annotationTree.currentItem()
-        if current_item:
-            # 获取当前标注的索引
-            row_idx = self.annotationTree.indexOfTopLevelItem(current_item)
-            # 弹出
-            dialog = DescriptionDialog()
-            if dialog.exec_() == QDialog.Accepted:
-                description = dialog.get_text()
-                if description != '':
-                    self.Annotations[f'标注{row_idx}']['description'] = description
-                    current_item.setText(4, description)
-        else:
-            QMessageBox.warning(self, '警告', '请先选择要删除的标注')
+    def set_description(self, item, column):
+        if column == 4:
+            self.editItem(item, column)
 
+    def editItem(self, item, column):
+        self.annotationTree.openPersistentEditor(item, column)
+        editor = self.annotationTree.itemWidget(item, column)
+        if isinstance(editor, QLineEdit):
+            editor.selectAll()
+            editor.returnPressed.connect(lambda: self.closeEditor(item, column))
+
+    def closeEditor(self, item, column):
+        editor = self.annotationTree.itemWidget(item, column)
+        self.annotationTree.closePersistentEditor(item, column)
+        if isinstance(editor, QLineEdit):
+            item.setText(column, editor.text())
+        description = item.text(column)
+        if description != '':
+            row_idx = self.annotationTree.indexOfTopLevelItem(item)
+            self.Annotations[f'标注{row_idx}']['description'] = description
 
     # 删除所有的标注
     def clearAnnotations(self):

@@ -74,11 +74,11 @@ class UI_Annotation(QFrame):
         # 设置修改按钮与删除按钮
         self.modify_annotation_action = QAction("修改标注")
         self.delete_annotation_action = QAction("删除标注")
-        self.set_description_action = QAction("设置描述")
+        # self.set_description_action = QAction("设置描述")
         self.annotationTree_menu = QMenu()
         self.annotationTree_menu.addAction(self.modify_annotation_action)
         self.annotationTree_menu.addAction(self.delete_annotation_action)
-        self.annotationTree_menu.addAction(self.set_description_action)
+        # self.annotationTree_menu.addAction(self.set_description_action)
 
         self.annotationTree.setContextMenuPolicy(Qt.CustomContextMenu)
         self.annotationTree.customContextMenuRequested.connect(self.show_annotationTree_menu)
