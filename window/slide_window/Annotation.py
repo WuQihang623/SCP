@@ -56,7 +56,7 @@ class AnnotationWidget(UI_Annotation):
         # 设置被选中的item
         self.choosed_idx = None
         # 初始化导入文件的路径
-        self.annotation_file_dir = './'
+        self.annotation_file_dir = self.set_annotation_file_dir()
 
         # 标注工具的模式切换标志
         self.mode = AnnotationMode.MOVE
@@ -351,6 +351,9 @@ class AnnotationWidget(UI_Annotation):
     # 设置当前slide的路径
     def set_slide_path(self, slide_path):
         self.slide_path = slide_path
+
+    def set_annotation_file_dir(self):
+        self.annotation_file_dir = self.folderselector.FileDir()
 
     def loadAnnotation(self):
         options = QFileDialog.Options()

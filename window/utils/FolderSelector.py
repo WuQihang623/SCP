@@ -8,9 +8,9 @@ from function import saveResultFileDir, setResultFileDir
 
 class FolderSelector(QWidget):
     changeFileDirSignal = pyqtSignal()
-    def __init__(self, parent=None):
-        super().__init__(parent)
-
+    def __init__(self, annotation=False):
+        super().__init__()
+        self.annotation_flag = annotation
         # Create text box to display folder path
         font = QFont()
         font.setBold(True)
@@ -45,11 +45,20 @@ class FolderSelector(QWidget):
         if folder_path:
             # If a folder was selected, display its path in the text box
             self.text_box.setText(folder_path)
-            saveResultFileDir(folder_path)
+            saveResultFileDir(folder_path, self.annotation_flag)
+            self.changeFileDirSignal.emit()
+
+    def select_annotation_folder(self):
+        # Open a file dialog to select a folder
+        folder_path = QFileDialog.getExistingDirectory(self, "选择文件夹")
+        if folder_path:
+            # If a folder was selected, display its path in the text box
+            self.text_box.setText(folder_path)
+            saveResultFileDir(folder_path, self.annotation_flag)
             self.changeFileDirSignal.emit()
 
     def set_text(self):
-        self.text_box.setText(setResultFileDir())
+        self.text_box.setText(setResultFileDir(self.annotation_flag))
 
     def FileDir(self):
         return self.text_box.text()

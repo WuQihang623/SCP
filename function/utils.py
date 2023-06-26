@@ -98,19 +98,29 @@ class NpEncoder(json.JSONEncoder):
             return super(NpEncoder, self).default(obj)
 
 # 读取缓存文件，即存放结果的路径
-def setResultFileDir():
-    if os.path.exists('cache/results_dir.json'):
-        with open('cache/results_dir.json', 'r') as f:
+def setResultFileDir(annotation=False):
+    if annotation is False:
+        load_path = 'cache/results_dir.json'
+    else:
+        load_path = 'cache/annotation_dir.json'
+    if os.path.exists(load_path):
+        with open(load_path, 'r') as f:
             path = json.load(f)
             f.close()
         return path
     else:
         return './'
 
+
 # 写缓存文件，即存放结果的路径
-def saveResultFileDir(path):
+def saveResultFileDir(path, annotation=False):
     os.makedirs('cache', exist_ok=True)
-    with open('cache/results_dir.json', 'w') as f:
+    if annotation is False:
+        save_path = 'cache/results_dir.json'
+    else:
+        save_path = 'cache/annotation_dir.json'
+    os.makedirs('cache', exist_ok=True)
+    with open(save_path, 'w') as f:
         f.write(json.dumps(path))
         f.close()
 
