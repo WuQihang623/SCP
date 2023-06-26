@@ -448,13 +448,13 @@ class SlideViewer(BasicSlideViewer):
         else:
             # 用于保存肿瘤微环境分析的热图
             self.heatmap_microenv = microenv_info['mask'].copy()
-            self.heatmap_microenv[self.heatmap_microenv!=4] = 0
-            self.heatmap_microenv = np.uint8(self.heatmap_microenv / 4)
+            self.heatmap_microenv[self.heatmap_microenv!=2] = 0
+            self.heatmap_microenv = np.uint8(self.heatmap_microenv / 2)
             self.heatmap_downsample_microenv = int(microenv_info['heatmap_downsample'])
             self.TileLoader.update_heatmap_background(get_heatmap_background(self.slide_helper, self.heatmap_microenv))
             if microenv_info.get('region_contours') is None or microenv_info.get('region_colors') is None or\
                     microenv_info.get('region_types') is None:
-                color_list = [[0, 0, 0], [255, 0, 0], [255, 255, 78], [0, 255, 0], [0, 0, 255]]
+                color_list = [[0, 0, 0], [255, 0, 0], [0, 0, 255], [255, 255, 78], [0, 255, 0]]
                 self.tissue_contours_microenv, self.tissue_colors_microenv, self.tissue_class_microenv = \
                     extract_contour(microenv_info['mask'],
                                     self.heatmap_downsample_microenv,
@@ -525,7 +525,7 @@ class SlideViewer(BasicSlideViewer):
                 self.tissue_colors_pdl1 = pdl1_info.get('region_colors')
                 self.tissue_class_pdl1 = pdl1_info.get('region_types')
 
-            # TODO: 发送信号，给Combox，设置显示组织轮廓，（肿瘤，软骨，腺体）
+            # TODO: 发送信号，给Combox，设置显示组织轮廓，（肿瘤，基质）
             sendShowPDL1.append(1)
 
         # 加载细胞核分割结果
@@ -604,7 +604,7 @@ class SlideViewer(BasicSlideViewer):
 
     # 更新要显示的肿瘤微环境组织区域类型,连接showRegionType_Combox
     def update_show_region_types_microenv(self, type_list):
-        type_dict = {"肿瘤区域": 4, "基质区域": 1, "腺体区域": 2, "软骨区域": 3}
+        type_dict = {"肿瘤区域": 2, "基质区域": 1, "坏死区域": 3, "无关区域": 4}
         new_show_types = []
         for type in type_list:
             if type_dict.get(type) is not None:
