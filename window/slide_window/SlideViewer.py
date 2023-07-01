@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import QPoint, Qt, QEvent, QRectF, pyqtSignal, pyqtSlot, QPointF
 from PyQt5.QtGui import QWheelEvent, QMouseEvent, QTransform,  QPixmap, QBrush, QFont, QColor, QPen
 from function.extract_contour import extract_contour
-from function.heatmap_background import get_heatmap_background
+from function.heatmap_background import get_colormap_background, get_heatmap_background
 
 
 from window.slide_window.BasicSlideViewer import BasicSlideViewer
@@ -84,6 +84,7 @@ class SlideViewer(BasicSlideViewer):
         # 肿瘤微环境分析变量
         self.heatmap_microenv = None
         self.heatmap_downsample_microenv = None
+        self.micrienv_colormap = None
         self.tissue_contours_microenv = None
         self.tissue_colors_microenv = None
         self.tissue_class_microenv = None
@@ -126,6 +127,10 @@ class SlideViewer(BasicSlideViewer):
         # 当前要显示的内容
         self.show_list_microenv = []
         self.show_list_pdl1 = []
+
+        # 显示heatmap map还是hierarchy mask
+        self.show_micrienv_colormap_flag = False
+        self.show_hierarchy_checkbox_state = False
 
     # 初始化标注工具
     def init_ToolManager(self):
@@ -445,27 +450,55 @@ class SlideViewer(BasicSlideViewer):
         # 加载肿瘤区域结果
         if microenv_info.get('mask') is None:
             QMessageBox.warning(self, '提示', '该文件中没有肿瘤区域分割结果！')
-        else:
-            # 用于保存肿瘤微环境分析的热图
-            self.heatmap_microenv = microenv_info['mask'].copy()
-            self.heatmap_microenv[self.heatmap_microenv!=2] = 0
-            self.heatmap_microenv = np.uint8(self.heatmap_microenv / 2)
-            self.heatmap_downsample_microenv = int(microenv_info['heatmap_downsample'])
-            self.TileLoader.update_heatmap_background(get_heatmap_background(self.slide_helper, self.heatmap_microenv))
+        elif isinstance(microenv_info['mask'], np.ndarray):
             if microenv_info.get('region_contours') is None or microenv_info.get('region_colors') is None or\
                     microenv_info.get('region_types') is None:
-                color_list = [[0, 0, 0], [255, 0, 0], [0, 0, 255], [255, 255, 78], [0, 255, 0]]
-                self.tissue_contours_microenv, self.tissue_colors_microenv, self.tissue_class_microenv = \
-                    extract_contour(microenv_info['mask'],
-                                    self.heatmap_downsample_microenv,
-                                    color_list, 4)
+                # color_list = [[0, 0, 0], [0, 0, 255], [255, 0, 0], [0, 255, 0], [255, 255, 255]]
+                # self.tissue_contours_microenv, self.tissue_colors_microenv, self.tissue_class_microenv = \
+                #     extract_contour(microenv_info['mask'],
+                #                     self.heatmap_downsample_microenv,
+                #                     color_list, 4)
+                pass
             else:
                 self.tissue_contours_microenv = microenv_info.get('region_contours')
                 self.tissue_colors_microenv = microenv_info.get('region_colors')
                 self.tissue_class_microenv = microenv_info.get('region_types')
+                # TODO: 发送信号，给Combox，设置显示组织轮廓，（肿瘤，软骨，腺体）
+                # sendShowMicroenv.append(1)
 
-            # TODO: 发送信号，给Combox，设置显示组织轮廓，（肿瘤，软骨，腺体）
-            sendShowMicroenv.append(1)
+            try:
+                # 用于保存肿瘤微环境分析的热图
+                if len(microenv_info['mask'].shape) == 2:
+                    self.heatmap_microenv = np.zeros((*microenv_info['mask'].shape, 3), dtype=np.uint8)
+                    color_list = [[0, 0, 0], [0, 0, 255], [255, 0, 0], [0, 255, 0], [255, 255, 255]]
+                    for i in range(1, 5):
+                        self.heatmap_microenv[microenv_info['mask']==i, :] = color_list[i]
+                elif len(microenv_info['mask'].shape) == 3:
+                    self.heatmap_microenv = microenv_info['mask']
+                else:
+                    QMessageBox.warning(self, "提示", "语义分割结果的格式错误！")
+                self.heatmap_downsample_microenv = int(microenv_info['heatmap_downsample'])
+                if self.show_hierarchy_checkbox_state is False:
+                    self.show_micrienv_colormap_flag = False
+                    self.TileLoader.update_heatmap_background(
+                        get_colormap_background(self.slide_helper, self.heatmap_microenv))
+                    sendShowMicroenv.append(0)
+            except:
+                QMessageBox.warning(self, "提示", "colormap加载出错！")
+        else:
+            QMessageBox.warning(self, "提示", "语义分割结果的格式错误！")
+
+        # 加载层级结果
+        if microenv_info.get('hierarchy_mask') is not None:
+            if len(microenv_info['hierarchy_mask'].shape) == 3:
+                self.micrienv_colormap = microenv_info['hierarchy_mask']
+                if self.show_hierarchy_checkbox_state is True:
+                    self.show_micrienv_colormap_flag = True
+                    self.TileLoader.update_heatmap_background(
+                        get_colormap_background(self.slide_helper, self.micrienv_colormap))
+                    sendShowMicroenv.append(0)
+            else:
+                QMessageBox.warning(self, "提示", "层级区域的格式错误！")
 
         # 加载细胞核分割结果
         try:
@@ -508,25 +541,39 @@ class SlideViewer(BasicSlideViewer):
         if pdl1_info.get('mask') is None:
             QMessageBox.warning(self, '提示', '该文件中没有肿瘤区域分割结果！')
         else:
-            # 用于保存PDL1分析的热图
-            self.heatmap_pdl1 = np.uint8(pdl1_info['mask'].copy())
-            self.heatmap_downsample_pdl1 = int(pdl1_info['heatmap_downsample'])
-            self.TileLoader.update_heatmap_background(
-                get_heatmap_background(self.slide_helper, self.heatmap_pdl1))
             if pdl1_info.get('region_contours') is None or pdl1_info.get('region_colors') is None or \
                     pdl1_info.get('region_types') is None:
-                color_list = [[0, 0, 0], [0, 0, 255]]
-                self.tissue_contours_pdl1, self.tissue_colors_pdl1, self.tissue_class_pdl1 = \
-                    extract_contour(pdl1_info['mask'],
-                                    self.heatmap_downsample_pdl1,
-                                    color_list, 1)
+                # color_list = [[0, 0, 0], [0, 0, 255]]
+                # self.tissue_contours_pdl1, self.tissue_colors_pdl1, self.tissue_class_pdl1 = \
+                #     extract_contour(pdl1_info['mask'],
+                #                     self.heatmap_downsample_pdl1,
+                #                     color_list, 1)
+                pass
             else:
                 self.tissue_contours_pdl1 = pdl1_info.get('region_contours')
                 self.tissue_colors_pdl1 = pdl1_info.get('region_colors')
                 self.tissue_class_pdl1 = pdl1_info.get('region_types')
+                # TODO: 发送信号，给Combox，设置显示组织轮廓，（肿瘤，基质）
+                # sendShowPDL1.append(1)
 
-            # TODO: 发送信号，给Combox，设置显示组织轮廓，（肿瘤，基质）
-            sendShowPDL1.append(1)
+
+            try:
+                # 用于保存PDL1分析的colormap
+                if len(pdl1_info['mask'].shape) == 2:
+                    self.heatmap_pdl1 = np.zeros((*pdl1_info['mask'].shape, 3), dtype=np.uint8)
+                    color_list = [[0, 0, 0], [255, 0, 0]]
+                    for i in range(1, 2):
+                        self.heatmap_pdl1[pdl1_info['mask']==i, :] = color_list[i]
+                elif len(pdl1_info['mask'].shape) == 3:
+                    self.heatmap_pdl1 = pdl1_info['mask']
+                else:
+                    QMessageBox.warning(self, "提示", "语义分割结果的格式错误！")
+                self.heatmap_downsample_pdl1 = int(pdl1_info['heatmap_downsample'])
+                self.TileLoader.update_heatmap_background(
+                    get_colormap_background(self.slide_helper, self.heatmap_pdl1))
+                sendShowPDL1.append(0)
+            except:
+                QMessageBox.warning(self, "提示", "colormap加载出错！")
 
         # 加载细胞核分割结果
         try:
@@ -589,6 +636,35 @@ class SlideViewer(BasicSlideViewer):
         num3 = (cell_type == 3).sum()
         num4 = (cell_type == 4).sum()
         return [num1, num2, num3, num4]
+
+    # TODO：切换层级结构图与region map
+    def change_hierarchy_mask_and_region_mask(self, to_hierarchy_mask):
+        if to_hierarchy_mask == 2:
+            self.show_hierarchy_checkbox_state = True
+        else:
+            self.show_hierarchy_checkbox_state = False
+        if self.micrienv_colormap is not None and self.heatmap_microenv is not None and \
+            self.heatmap_downsample is not None and self.heatmap is not None:
+            downsample = self.heatmap_downsample
+            self.show_or_close_heatmap(None, None, False)
+            self.TileLoader.loaded_heatmapItem = []
+            if to_hierarchy_mask == 2:
+                self.show_micrienv_colormap_flag = True
+                self.TileLoader.update_heatmap_background(
+                    get_colormap_background(self.slide_helper, self.micrienv_colormap))
+                self.show_or_close_heatmap(self.micrienv_colormap, downsample, True)
+            else:
+                self.show_micrienv_colormap_flag = False
+                self.TileLoader.update_heatmap_background(
+                    get_colormap_background(self.slide_helper, self.heatmap_microenv))
+                self.show_or_close_heatmap(self.heatmap_microenv, downsample, True)
+            self.NucleiContourLoader.last_level = -1
+            self.show_or_close_nuclei(current_rect=self.get_current_view_scene_rect(),
+                                      contours=self.cell_contour_microenv,
+                                      centers=self.cell_centers_microenv,
+                                      types=self.cell_type_microenv,
+                                      color_dict=self.nuclei_type_dict,
+                                      show_types=self.show_nuclei_types_microenv)
 
     # TODO: 加载肿瘤微环境或者PDL1热图
     def show_or_close_heatmap(self, heatmap, heatmap_downsample, flag):
@@ -810,11 +886,9 @@ class SlideViewer(BasicSlideViewer):
     def saveNucleiAnn(self, path):
         if self.cell_contour_ann is not None and self.cell_type_ann is not None and self.cell_centers_ann is not None:
             with open(path, 'wb') as f:
-                results = {}
-                results['type'] = self.cell_type_ann
-                results['center'] = self.cell_centers_ann
-                results['contour'] = self.cell_contour_ann
-                pickle.dump(results, f)
+                pickle.dump({"type": self.cell_type_ann,
+                             "center": self.cell_centers_ann,
+                             "contour": self.cell_contour_ann}, f)
                 f.close()
 
     # 设置加载肿瘤微环境分析显示
@@ -823,7 +897,10 @@ class SlideViewer(BasicSlideViewer):
         # 如果当前没有载入结果，则将显示热图，轮廓置为False
         if "显示热图" in show_list:
             if self.heatmap_microenv is not None:
-                self.show_or_close_heatmap(self.heatmap_microenv, self.heatmap_downsample_microenv, True)
+                if self.show_micrienv_colormap_flag:
+                    self.show_or_close_heatmap(self.micrienv_colormap, self.heatmap_downsample_microenv, True)
+                else:
+                    self.show_or_close_heatmap(self.heatmap_microenv, self.heatmap_downsample_microenv, True)
         else:
             self.show_or_close_heatmap(None, None, False)
         self.NucleiContourLoader.last_nuclei = None

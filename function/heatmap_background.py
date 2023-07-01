@@ -64,3 +64,15 @@ def get_heatmap_background(slide_helper: SlideHelper, heatmap):
     heatmap = show_cam_on_image(slide, heatmap, True)
     heatmap = numpy_to_pixmap(heatmap)
     return heatmap
+
+def get_colormap_background(slide_helper: SlideHelper, colormap, alph=0.3):
+    level = slide_helper.get_max_level()
+    dimension = slide_helper.get_level_dimension(-1)
+    if colormap.dtype != 'uint8':
+        colormap = np.uint8(colormap)
+    colormap = cv2.resize(colormap, dimension, cv2.INTER_LINEAR)
+    slide = slide_helper.get_overview(level, dimension).convert('RGB')
+    slide = np.array(slide, dtype=np.uint8)
+    colormap = np.uint8(alph * colormap + alph * slide)
+    colormap = numpy_to_pixmap(colormap)
+    return colormap

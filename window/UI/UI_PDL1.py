@@ -39,7 +39,7 @@ class UI_PDL1(QFrame):
         self.showNucleiType_Combox = ComboCheckBox(['背景类别' ,'PD-L1阳性肿瘤细胞', 'PD-L1阴性肿瘤细胞', 'PD-L1阳性免疫细胞', 'PD-L1阴性免疫细胞'],
                                                    [[166, 84, 2], [255, 0, 0], [0, 255, 0], [228, 252, 4], [0, 0, 255]])
         self.showRegionType_Combox = ComboCheckBox(['肿瘤区域'],
-                                                   [[0, 0, 255]])
+                                                   [[255, 0, 0]])
 
         line2 = QFrame()
         line2.setFrameShape(QFrame.HLine)

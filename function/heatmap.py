@@ -82,4 +82,28 @@ def viz_tile_heatmap(slide, mask: np.ndarray,
     heatmap = show_cam_on_image(tile, tile_mask, use_rgb=True)
     return heatmap
 
+def viz_tile_colormap(slide, mask: np.ndarray,
+                     window_box: list, level: int, mask_downsample: int, alph=0.3):
+    assert level >= 0
+    if isinstance(slide, str):
+        slide = openslide.open_slide(slide)
+    downsample = slide.level_downsamples[level]
 
+    # Corresponding to the coordinate under level0
+    slide_0_x_y = (int(window_box[0] * downsample), int(window_box[1] * downsample))
+    wh = (window_box[2], window_box[3])
+    tile = slide.read_region(slide_0_x_y, level, wh).convert('RGB')
+    tile = np.array(tile, dtype=np.uint8)
+
+    # Corresponding to x, y, w, h on the heapmap
+    mask_x = int(window_box[1] * downsample / mask_downsample)
+    mask_y = int(window_box[0] * downsample / mask_downsample)
+    mask_x_w = int(window_box[3] * downsample / mask_downsample)
+    mask_y_h = int(window_box[2] * downsample / mask_downsample)
+
+    tile_mask = mask[mask_x: mask_x + mask_x_w, mask_y: mask_y + mask_y_h, :]
+    tile_mask = cv2.resize(tile_mask, wh)
+
+    colormap = np.uint8(alph * tile_mask + (1 - alph) * tile)
+
+    return colormap

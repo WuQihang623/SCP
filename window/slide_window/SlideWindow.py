@@ -113,6 +113,8 @@ class SlideWindow(QFrame):
         self.slide_viewer.sendNucleiShowTypeMicroenvSignal.connect(self.microenv.showNucleiType_Combox.setChecked)
         # 人为选择要显示表皮细胞，淋巴细胞
         self.microenv.showNucleiType_Combox.selectionChangedSignal.connect(self.slide_viewer.update_show_nuclei_types_microenv)
+        # 要显示层级结构还是区域mask
+        self.microenv.show_hierarchy_mask_checkbox.stateChanged.connect(self.slide_viewer.change_hierarchy_mask_and_region_mask)
 
         """PD-L1信号"""
         self.pdl1.loadPDL1Signal.connect(self.slide_viewer.loadPDL1)

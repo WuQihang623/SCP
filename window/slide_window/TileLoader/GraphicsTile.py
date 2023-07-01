@@ -7,7 +7,7 @@ from PyQt5.QtGui import QPixmapCache
 from PyQt5.QtCore import QRectF, QRect, Qt, QByteArray, QBuffer, QIODevice
 from PyQt5.QtWidgets import QGraphicsItem, QWidget, QStyleOptionGraphicsItem
 
-from function.heatmap import viz_tile_heatmap
+from function.heatmap import viz_tile_heatmap, viz_tile_colormap
 
 
 class GraphicsTile(QGraphicsItem):
@@ -39,8 +39,12 @@ class GraphicsTile(QGraphicsItem):
         self.pixmap = QPixmapCache.find(self.cache_key)
         if not self.pixmap:
             if self.heatmap is not None:
-                tile_image = viz_tile_heatmap(slide, self.heatmap, window_box=x_y_w_h, level=level,
-                                              mask_downsample=self.heatmap_downsample)
+                if len(self.heatmap.shape) == 3:
+                    tile_image = viz_tile_colormap(slide, self.heatmap, window_box=x_y_w_h, level=level,
+                                                  mask_downsample=self.heatmap_downsample)
+                elif len(self.heatmap.shape) == 2:
+                    tile_image = viz_tile_heatmap(slide, self.heatmap, window_box=x_y_w_h, level=level,
+                                                   mask_downsample=self.heatmap_downsample)
                 height, width, channel = tile_image.shape
                 bytes_per_line = channel * width
                 qimage = QtGui.QImage(tile_image.data, width, height, bytes_per_line, QtGui.QImage.Format_RGB888)
