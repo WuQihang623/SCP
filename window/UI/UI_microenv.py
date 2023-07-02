@@ -40,7 +40,7 @@ class UI_Microenv(QFrame):
         self.showNucleiType_Combox = ComboCheckBox(['背景类别', '表皮细胞', '淋巴细胞', '中性粒细胞', '基质细胞'],
                                                     [[166, 84, 2], [255, 0, 0], [0, 255, 0], [0, 0, 255], [228, 252, 4]])
         self.showRegionType_Combox = ComboCheckBox(['肿瘤区域', '基质区域', '坏死区域', '无关区域'],
-                                                   [[255, 0, 255], [0, 0, 255], [0, 255, 0], [255, 255, 255]])
+                                                   [[255, 0, 0], [0, 0, 255], [0, 255, 0], [255, 255, 255]])
         self.show_hierarchy_mask_checkbox = QCheckBox("显示层级区域")
         self.show_hierarchy_mask_checkbox.setChecked(False)
 
