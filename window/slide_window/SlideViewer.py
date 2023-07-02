@@ -864,7 +864,7 @@ class SlideViewer(BasicSlideViewer):
                     new_type = dialog.get_idx()
                     this_contour = this_contour.tolist()
                     # 更改细胞核结果文件
-                    self.cell_type_ann[nearest_idx] = -1
+                    self.cell_type_ann[nearest_idx] = int(-this_type)
                     # 绘制标注
                     annotation_item, control_point_items, text_item = \
                         self.ToolManager.draw_polygon.draw(this_contour, QColor(*type_dict[type_name]),
