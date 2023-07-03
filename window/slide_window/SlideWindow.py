@@ -146,6 +146,7 @@ class SlideWindow(QFrame):
         self.microenv.loadMicroenvComparisonSignal.connect(self.slide_viewer_pair.loadMicroenv)
         self.pdl1.loadPairedWidowSignal.connect(self.load_slide_pair)
         self.pdl1.loadPDL1ComparisonSignal.connect(self.slide_viewer_pair.loadPDL1)
+        self.microenv.show_hierarchy_mask_checkbox.stateChanged.connect(self.slide_viewer_pair.change_hierarchy_mask_and_region_mask)
 
         """快捷键"""
         self.saveAnnShortcut.activated.connect(self.saveAnnotations)
