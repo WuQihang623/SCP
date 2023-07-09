@@ -235,6 +235,9 @@ class SlideWindow(QFrame):
             self.pdl1.showNucleiType_Combox.selectionChangedSignal.connect(
                 self.slide_viewer_pair.update_show_nuclei_types_pdl1)
 
+        # 将slide_viewer_pair的colorspace与主窗口对齐
+        self.slide_viewer_pair.TileLoader.change_colorspace(self.slide_viewer.TileLoader.colorspace)
+
     # 快捷键保存标注
     def saveAnnotations(self):
         if hasattr(self, 'annotation'):

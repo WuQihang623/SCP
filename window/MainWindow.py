@@ -12,6 +12,7 @@ from window.FileWatcher import FileWatcher
 from window.slide_window import SlideWindow
 from window.UI.UI_mainwindow import Ui_MainWindow
 from window import StatusBar
+from window.slide_window.utils.colorspace_choose_Dialog import ColorSpaceDialog
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
@@ -82,6 +83,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.polygon_action.triggered.connect(lambda: self.tools_toggle(4))
         self.measure_tool_action.triggered.connect(lambda: self.tools_toggle(5))
         self.modify_action.triggered.connect(lambda: self.tools_toggle(6))
+        self.convert_color_space_action.triggered.connect(self.colorspace_transform)
 
 
         # 创建一个 QAction 组
@@ -118,9 +120,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.fill_screen_action.setEnabled(False)
         # self.quit.setEnabled(False)
         self.recall_action.setEnabled(False)
-        self.convert_color_space_action.setEnabled(False)
-        # self.microenv_action.setEnabled(False)
-        # self.pdl1_action.setEnabled(False)
+        # self.convert_color_space_action.setEnabled(False)
         self.shot_screen_action.setEnabled(False)
 
 
@@ -327,6 +327,19 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                         sub_active.widget().slide_viewer.setCursor(Qt.ArrowCursor)
         except:
             QMessageBox.warning(self, '警告', "没有打开图像子窗口")
+
+    def colorspace_transform(self):
+        sub_active = self.mdiArea.activeSubWindow()
+        if hasattr(sub_active.widget(), 'slide_viewer'):
+            slide_viewer = sub_active.widget().slide_viewer
+            colorspace_dialog = ColorSpaceDialog(slide_viewer.TileLoader.colorspace)
+            if colorspace_dialog.exec_() == QDialog.Accepted:
+                selected_option = colorspace_dialog.get_selected_option()
+                print("选择的颜色空间:", selected_option)
+                slide_viewer.TileLoader.change_colorspace(selected_option)
+                slide_viewer_pair = sub_active.widget().slide_viewer_pair
+                if hasattr(slide_viewer_pair, "TileLoader"):
+                    sub_active.widget().slide_viewer_pair.TileLoader.change_colorspace(selected_option)
 
     # 标注工具切换
     def tools_toggle(self, mode2switch):

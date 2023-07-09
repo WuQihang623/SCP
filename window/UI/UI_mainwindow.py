@@ -166,7 +166,7 @@ class Ui_MainWindow(object):
         self.menu.addAction(self.quit)
         # self.edit_menu.addAction(self.recall_action)
         self.edit_menu.addAction(self.rect_resiz_action)
-        # self.edit_menu.addAction(self.convert_color_space_action)
+        self.edit_menu.addAction(self.convert_color_space_action)
         self.tool_menu.addAction(self.fixed_rect_action)
         self.tool_menu.addAction(self.rect_action)
         self.tool_menu.addAction(self.polygon_action)
@@ -200,7 +200,7 @@ class Ui_MainWindow(object):
         self.toolBar.addAction(self.activate_color_action3)
         self.toolBar.addAction(self.activate_color_action4)
         self.toolBar.addSeparator()
-        # self.toolBar.addAction(self.convert_color_space_action)
+        self.toolBar.addAction(self.convert_color_space_action)
 
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)

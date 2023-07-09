@@ -1,17 +1,21 @@
 import cv2
 import typing
+
+import numpy as np
 from PIL import Image
 from PIL.ImageQt import ImageQt
 from PyQt5 import QtGui
 from PyQt5.QtGui import QPixmapCache
 from PyQt5.QtCore import QRectF, QRect, Qt, QByteArray, QBuffer, QIODevice
 from PyQt5.QtWidgets import QGraphicsItem, QWidget, QStyleOptionGraphicsItem
+from skimage.color import rgb2hed, hed2rgb
 
 from function.heatmap import viz_tile_heatmap, viz_tile_colormap
+from function.colorspace_transform import colordeconvolution, ndarray_to_pixmap
 
 
 class GraphicsTile(QGraphicsItem):
-    def __init__(self, slide, x_y_w_h, slide_path, level, downsample, heatmap=None, heatmap_downsample=None):
+    def __init__(self, slide, x_y_w_h, slide_path, level, downsample, heatmap=None, heatmap_downsample=None, colorspace=0):
         super(GraphicsTile, self).__init__()
         """
         :param slide: 要显示的WSI
@@ -21,6 +25,7 @@ class GraphicsTile(QGraphicsItem):
         :param downsample: 要显示图片的下采样倍率
         :param heatmap: 肿瘤区域，诊断模式下的热力图
         :param heatmap_downsample: 热力图的下采样倍率
+        :param colorspace: 显示的颜色空间，0为RGB，1为Hematoxylin，2为DAB
         """
         self.x_y_w_h = x_y_w_h
         # 在level=0下的x,y,w,h
@@ -45,16 +50,19 @@ class GraphicsTile(QGraphicsItem):
                 elif len(self.heatmap.shape) == 2:
                     tile_image = viz_tile_heatmap(slide, self.heatmap, window_box=x_y_w_h, level=level,
                                                    mask_downsample=self.heatmap_downsample)
-                height, width, channel = tile_image.shape
-                bytes_per_line = channel * width
-                qimage = QtGui.QImage(tile_image.data, width, height, bytes_per_line, QtGui.QImage.Format_RGB888)
-                # 将QImage对象转换为QPixmap对象
-                self.pixmap = QtGui.QPixmap.fromImage(qimage)
+                self.pixmap = ndarray_to_pixmap(tile_image)
 
             else:
                 tile_pilimage = slide.read_region((self.slide_rect_0.x(), self.slide_rect_0.y()),
                                                   self.level, (self.slide_rect_0.width(), self.slide_rect_0.height()))
-                self.pixmap = self.pilimage_to_pixmap(tile_pilimage)
+                if colorspace == 1:
+                    tile_ndarray = colordeconvolution(tile_pilimage, 1)
+                    self.pixmap = ndarray_to_pixmap(tile_ndarray)
+                elif colorspace == 2:
+                    tile_ndarray = colordeconvolution(tile_pilimage, 2)
+                    self.pixmap = ndarray_to_pixmap(tile_ndarray)
+                else:
+                    self.pixmap = self.pilimage_to_pixmap(tile_pilimage)
 
             QPixmapCache.insert(self.cache_key, self.pixmap)
 

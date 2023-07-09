@@ -10,6 +10,7 @@ from PyQt5.QtCore import QThread, pyqtSignal, QMutex, QWaitCondition, QRectF
 
 from window.slide_window.TileLoader.GraphicsTile import GraphicsTile
 from window.slide_window.utils.SlideHelper import SlideHelper
+from function.colorspace_transform import colordeconvolution, ndarray_to_pixmap
 
 class TileManager(QThread):
     addTileItemSignal = pyqtSignal(GraphicsTile)
@@ -31,7 +32,6 @@ class TileManager(QThread):
         self.loaded_tileItem = []
         # 已经加载的当前level的heatmap（GraphicsTile）
         self.loaded_heatmapItem = []
-
         # 加载每个level的tile的坐标（x,y,w,h)
         self.tile_rects = self.slice_rect()
 
@@ -45,17 +45,22 @@ class TileManager(QThread):
         self.heatmap = None
         self.heatmap_downsample = None
 
+        # 图像颜色空间
+        self.colorspace = 0
+
         # 加载背景图像，背景图像用于等待显示，当该区域的tile没加载出来时显示这个背景图像
         expected_bg_area = 2048 * 1080
         max_slide_area = self.slide_helper.level_dimensions[0][0] * self.slide_helper.level_dimensions[0][1]
         downsample = int(math.sqrt(max_slide_area / expected_bg_area))
         self.backgroud_level = self.slide_helper.get_best_level_for_downsample(downsample)
         self.background_dimension = self.slide_helper.get_level_dimension(self.backgroud_level)
-        self.background_image = self.slide_helper.get_overview(self.backgroud_level, self.background_dimension)
-        self.background_image = ImageQt(self.background_image)
+        self.background_image_pil = self.slide_helper.get_overview(self.backgroud_level, self.background_dimension)
+        self.background_image = ImageQt(self.background_image_pil)
         self.background_image = QPixmap.fromImage(self.background_image)
         self.background_image_downsample = self.slide_helper.get_downsample_for_level(self.backgroud_level)
         self.heatmap_background_image = None
+        self.background_image_h = None
+        self.background_image_d = None
 
         """
         当self.background_flag==True时表示background_image还未载入到Scene中
@@ -82,6 +87,7 @@ class TileManager(QThread):
             downsample = self.downsample
             heatmap_downsample = self.heatmap_downsample
             heatmap = self.heatmap
+            colorspace = self.colorspace
             self.mutex.unlock()
             for tile_rect in tile_rects[level]:
                 if self.restart:
@@ -100,7 +106,7 @@ class TileManager(QThread):
                 """
                 if x >= top_left_x and y >= top_left_y:
                     if x <= bottom_right_x and y <= bottom_right_y:
-                        self.addTileItem(tile_rect, level, downsample, heatmap, heatmap_downsample)
+                        self.addTileItem(tile_rect, level, downsample, heatmap, heatmap_downsample, colorspace)
 
             # 等待其他线程对self.restart的修改，等待重新载入tile
             self.mutex.lock()
@@ -110,9 +116,9 @@ class TileManager(QThread):
             self.mutex.unlock()
 
     # 将item读出来并添加到视图中,并且加到缓存池中
-    def addTileItem(self, tile_rect, level, downsample, heatmap, heatmap_downsample):
+    def addTileItem(self, tile_rect, level, downsample, heatmap, heatmap_downsample, colorspace):
         item = GraphicsTile(self.slide_helper.slide, tile_rect, self.slide_helper.get_slide_path(),
-                            level, downsample, heatmap, heatmap_downsample)
+                            level, downsample, heatmap, heatmap_downsample, colorspace)
         if heatmap is None:
             self.loaded_tileItem.append([item.level, item.x_y_w_h, item.pixmap])
             # 缓存池中一共有150个图像块
@@ -129,13 +135,17 @@ class TileManager(QThread):
             # TODO: 将tile添加到scene中
             self.addTileItemSignal.emit(item)
 
+    # 每次缩放场景都会添加这个背景
     def addBackgroundItem(self):
         if self.heatmap is None:
-            background = QGraphicsPixmapItem(self.background_image)
+            if self.colorspace == 0:
+                background = QGraphicsPixmapItem(self.background_image)
+            elif self.colorspace == 1:
+                background = QGraphicsPixmapItem(self.background_image_h)
+            else:
+                background = QGraphicsPixmapItem(self.background_image_d)
             scale = self.background_image_downsample / self.slide_helper.get_downsample_for_level(self.level)
         else:
-            # background = QGraphicsPixmapItem(self.heatmap_background_image) if self.heatmap_background_image is not None \
-            #     else QGraphicsPixmapItem(self.background_image)
             background = QGraphicsPixmapItem(self.heatmap_background_image)
             scale = self.heatmap_background_downsample / self.slide_helper.get_downsample_for_level(self.level)
         background.setScale(scale)
@@ -219,6 +229,38 @@ class TileManager(QThread):
                     h = self.tile_size if y + self.tile_size < tile_dimension[1] else tile_dimension[1] - y
                     tile_rects[level].append((x, y, w, h))
         return tile_rects
+
+    def color_transform(self, colorspace):
+        if colorspace == 1:
+            if self.background_image_h is None or not isinstance(self.background_image_h, QPixmap):
+                self.background_image_h = colordeconvolution(self.background_image_pil, colorspace)
+                self.background_image_h = ndarray_to_pixmap(self.background_image_h)
+        if colorspace == 2:
+            if self.background_image_d is None or not isinstance(self.background_image_d, QPixmap):
+                self.background_image_d = colordeconvolution(self.background_image_pil, colorspace)
+                self.background_image_d = ndarray_to_pixmap(self.background_image_d)
+
+    # 该操作只有在非热图显示下才会进行
+    def change_colorspace(self, colorspace):
+        if colorspace != self.colorspace:
+            self.colorspace = colorspace
+            # H颜色空间
+            self.color_transform(colorspace)
+            # TODO:重新加载tile
+            # 若上一个线程还在执行，则停止，重开
+            if self.isRunning():
+                self.restart = True
+            self.restart_load_set()
+            self.loaded_tileItem = []
+            # 重新加载背景图片
+            self.addBackgroundItem()
+            if not self.isRunning():
+                # 开启线程
+                self.start(QThread.NormalPriority)
+            else:
+                # 重新加载缓存图片，让暂停的线程恢复工作并上面已经设置好新的view
+                self.restart = True
+                self.condition.wakeOne()
 
     def __del__(self):
         print('tileloader is del')

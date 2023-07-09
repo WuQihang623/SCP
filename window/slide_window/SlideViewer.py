@@ -61,7 +61,7 @@ class SlideViewer(BasicSlideViewer):
 
         # 组织区域轮廓加载器
         self.RegionContourLoader = RegionContourLoader(scene=self.scene)
-        self.RegionContourLoader.addContourItemSignal.connect(self.addContourItem1)
+        self.RegionContourLoader.addContourItemSignal.connect(self.addContourItem)
         self.RegionContourLoader.removeItemSignal.connect(self.removeContourItem)
 
         # 细胞核轮廓加载器
@@ -420,11 +420,6 @@ class SlideViewer(BasicSlideViewer):
             return
         self.scene.addItem(item)
 
-    # 向场景中添加组织轮廓
-    def addContourItem1(self, item):
-        if item.level != self.current_level:
-            return
-        self.scene.addItem(item)
 
     # 将场景中的某个组织轮廓删除
     def removeContourItem(self, item):
@@ -453,11 +448,6 @@ class SlideViewer(BasicSlideViewer):
         elif isinstance(microenv_info['mask'], np.ndarray):
             if microenv_info.get('region_contours') is None or microenv_info.get('region_colors') is None or\
                     microenv_info.get('region_types') is None:
-                # color_list = [[0, 0, 0], [0, 0, 255], [255, 0, 0], [0, 255, 0], [255, 255, 255]]
-                # self.tissue_contours_microenv, self.tissue_colors_microenv, self.tissue_class_microenv = \
-                #     extract_contour(microenv_info['mask'],
-                #                     self.heatmap_downsample_microenv,
-                #                     color_list, 4)
                 pass
             else:
                 self.tissue_contours_microenv = microenv_info.get('region_contours')
@@ -543,11 +533,6 @@ class SlideViewer(BasicSlideViewer):
         else:
             if pdl1_info.get('region_contours') is None or pdl1_info.get('region_colors') is None or \
                     pdl1_info.get('region_types') is None:
-                # color_list = [[0, 0, 0], [0, 0, 255]]
-                # self.tissue_contours_pdl1, self.tissue_colors_pdl1, self.tissue_class_pdl1 = \
-                #     extract_contour(pdl1_info['mask'],
-                #                     self.heatmap_downsample_pdl1,
-                #                     color_list, 1)
                 pass
             else:
                 self.tissue_contours_pdl1 = pdl1_info.get('region_contours')
