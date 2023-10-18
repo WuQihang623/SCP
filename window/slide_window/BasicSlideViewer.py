@@ -3,8 +3,8 @@ import time
 import openslide
 import numpy as np
 from PyQt5.QtWidgets import *
-from PyQt5.QtCore import QPoint, Qt, QEvent, QRectF, pyqtSignal, pyqtSlot, QPointF, QObject
-from PyQt5.QtGui import QWheelEvent, QMouseEvent, QTransform,  QPixmap, QBrush, QFont
+from PyQt5.QtCore import QPoint, Qt, QEvent, QRectF, pyqtSignal, QPointF, QObject
+from PyQt5.QtGui import QWheelEvent, QMouseEvent, QTransform
 from window.slide_window.utils.thumbnail import Thumbnail
 from window.slide_window.slider import ZoomSlider
 

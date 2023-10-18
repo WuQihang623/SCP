@@ -1,16 +1,12 @@
-import os
 import sys
 import cv2
-import time
 import json
 import pickle
-import openslide
 import numpy as np
 from PyQt5.QtWidgets import *
-from PyQt5.QtCore import QPoint, Qt, QEvent, QRectF, pyqtSignal, pyqtSlot, QPointF
-from PyQt5.QtGui import QWheelEvent, QMouseEvent, QTransform,  QPixmap, QBrush, QFont, QColor, QPen
-from function.extract_contour import extract_contour
-from function.heatmap_background import get_colormap_background, get_heatmap_background
+from PyQt5.QtCore import QPoint, Qt, QEvent, pyqtSignal, QPointF
+from PyQt5.QtGui import QWheelEvent, QMouseEvent,  QPixmap, QColor, QPen
+from function.heatmap_background import get_colormap_background
 
 
 from window.slide_window.BasicSlideViewer import BasicSlideViewer
@@ -972,10 +968,9 @@ class SlideViewer(BasicSlideViewer):
                                           mode=3)
 
     def closeEvent(self, *args, **kwargs):
-        if hasattr(self, "TileLoader"):
-            super().closeEvent()
-            self.RegionContourLoader.__del__()
-            self.NucleiContourLoader.__del__()
+        super().closeEvent()
+        # self.RegionContourLoader.__del__()
+        self.NucleiContourLoader.__del__()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

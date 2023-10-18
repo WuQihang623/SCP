@@ -5,7 +5,7 @@ import sys
 import cv2
 import numpy as np
 from PyQt5.QtWidgets import *
-from PyQt5.QtCore import Qt, pyqtSignal, QEvent
+from PyQt5.QtCore import pyqtSignal, QEvent
 from window.UI.UI_diagnose import UI_Diagnose
 from PIL.ImageQt import ImageQt
 from PyQt5.QtGui import QPixmap

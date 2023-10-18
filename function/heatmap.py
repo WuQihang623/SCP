@@ -2,9 +2,6 @@ import cv2
 import numpy as np
 import openslide
 import matplotlib.pyplot as plt
-from PyQt5.QtGui import QPixmap, QImage
-from window.slide_window.utils.SlideHelper import SlideHelper
-
 def get_mpl_colormap(cmap_name):
     cmap = plt.get_cmap(cmap_name)
     # Initialize the matplotlib color map

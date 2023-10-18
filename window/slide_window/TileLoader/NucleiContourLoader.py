@@ -1,14 +1,6 @@
-import math
-import time
-
-import openslide
 import numpy as np
-from PyQt5.QtGui import QPixmap, QPainterPath, QPen, QColor, QBrush
-from PIL.ImageQt import ImageQt
-from PyQt5.QtWidgets import QGraphicsScene, QGraphicsPixmapItem
-from PyQt5.QtCore import QThread, pyqtSignal, QMutex, QWaitCondition, QRectF
-
-from window.slide_window.utils.SlideHelper import SlideHelper
+from PyQt5.QtGui import QPainterPath, QPen, QColor, QBrush
+from PyQt5.QtWidgets import QGraphicsScene
 from window.utils.ContourItem import ContourPathItem, EllipseItem
 
 class NucleiContourLoader():
@@ -147,6 +139,7 @@ class NucleiContourLoader():
         self.scene.addItem(cycle)
 
     def __del__(self):
+        print("nucleiContourloader is del")
         if hasattr(self, "contours"):
             del self.contours
         if hasattr(self, "centers"):

@@ -1,5 +1,4 @@
 import numpy as np
-from PIL import Image
 from PyQt5 import QtGui
 from skimage.color import rgb2hed, hed2rgb
 

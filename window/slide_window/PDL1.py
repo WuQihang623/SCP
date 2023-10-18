@@ -1,7 +1,7 @@
 import os
 import sys
 from PyQt5.QtWidgets import *
-from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtCore import pyqtSignal
 from window.UI.UI_PDL1 import UI_PDL1
 from window.slide_window.utils.SlideHelper import SlideHelper
 

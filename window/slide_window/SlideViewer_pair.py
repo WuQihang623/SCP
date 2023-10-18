@@ -1,7 +1,3 @@
-import openslide
-from PyQt5.QtCore import Qt, pyqtSlot
-from window.slide_window.utils.SlideHelper import SlideHelper
-from window.slide_window.TileLoader.TileLoader import TileManager
 from window.slide_window.SlideViewer import SlideViewer
 from PyQt5.QtGui import QWheelEvent, QMouseEvent
 

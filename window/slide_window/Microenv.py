@@ -3,7 +3,7 @@ import sys
 from PyQt5.QtWidgets import *
 from window.UI.UI_microenv import UI_Microenv
 from window.slide_window.utils.SlideHelper import SlideHelper
-from PyQt5.QtCore import Qt, pyqtSignal, QEvent
+from PyQt5.QtCore import pyqtSignal
 
 class MicroenvWidget(UI_Microenv):
     # 载入微环境分析结果信号

@@ -7,12 +7,11 @@ import json
 import numpy as np
 from collections import OrderedDict
 
-from PyQt5.QtCore import QPoint, Qt, pyqtSignal, QPointF, QObject
-from PyQt5.QtGui import QPainterPath, QPen, QBrush, QColor, QFont
-from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsLineItem, QGraphicsRectItem, QGraphicsPathItem, QGraphicsEllipseItem
+from PyQt5.QtCore import Qt, pyqtSignal, QPointF, QObject
+from PyQt5.QtGui import QPainterPath, QColor
+from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsEllipseItem
 
 from window.slide_window.Tools import DrawFixedRect, DrawRect, DrawPolygon, MeasureTool
-from window.slide_window.utils.SlideHelper import SlideHelper
 from function.delDictItem import delDictItem
 
 class ToolManager(QObject):

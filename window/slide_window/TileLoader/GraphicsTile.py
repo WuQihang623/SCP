@@ -1,14 +1,10 @@
-import cv2
 import typing
 
-import numpy as np
-from PIL import Image
 from PIL.ImageQt import ImageQt
 from PyQt5 import QtGui
 from PyQt5.QtGui import QPixmapCache
-from PyQt5.QtCore import QRectF, QRect, Qt, QByteArray, QBuffer, QIODevice
+from PyQt5.QtCore import QRectF, QRect, Qt
 from PyQt5.QtWidgets import QGraphicsItem, QWidget, QStyleOptionGraphicsItem
-from skimage.color import rgb2hed, hed2rgb
 
 from function.heatmap import viz_tile_heatmap, viz_tile_colormap
 from function.colorspace_transform import colordeconvolution, ndarray_to_pixmap

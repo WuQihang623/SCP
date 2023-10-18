@@ -1,14 +1,7 @@
-import math
-import time
+from PyQt5.QtGui import QPainterPath, QPen, QColor
+from PyQt5.QtWidgets import QGraphicsScene
+from PyQt5.QtCore import QThread, pyqtSignal, QMutex, QWaitCondition
 
-import openslide
-import numpy as np
-from PyQt5.QtGui import QPixmap, QPainterPath, QPen, QColor
-from PIL.ImageQt import ImageQt
-from PyQt5.QtWidgets import QGraphicsScene, QGraphicsPixmapItem
-from PyQt5.QtCore import QThread, pyqtSignal, QMutex, QWaitCondition, QRectF
-
-from window.slide_window.utils.SlideHelper import SlideHelper
 from window.utils.ContourItem import ContourPathItem
 
 

@@ -1,7 +1,7 @@
 import sys
 from PyQt5.QtWidgets import *
-from PyQt5.QtCore import Qt, QSize
-from PyQt5.QtGui import QPixmap, QIcon, QColor, QFont
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QPixmap, QIcon, QColor
 
 from function import *
 from window.FileWatcher import FileWatcher

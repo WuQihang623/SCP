@@ -1,18 +1,13 @@
-import os
 import re
 import sys
-import json
 from enum import Enum
-from collections import OrderedDict
 from PyQt5.QtWidgets import *
-from PyQt5.QtCore import Qt
 from function import *
 from PyQt5.QtGui import QColor, QPixmap, QIcon
-from PyQt5.QtCore import QPoint, Qt, QEvent, QRectF, pyqtSignal
+from PyQt5.QtCore import pyqtSignal
 from window.slide_window.utils.ColorChooseDialog import ColorChooseDialog
 from window.slide_window.utils.ChangeTypeDialog import ChangeTypeDialog
 from window.slide_window.utils.ChangeAnnotationDialog import ChangeAnnotationDiaglog
-from window.slide_window.utils.DescriptionDialog import DescriptionDialog
 from window.slide_window.utils.AffirmDialog import AffirmDialog
 from window.UI.UI_annotation import UI_Annotation
 from function.delDictItem import delDictItem

@@ -2,8 +2,7 @@ from PyQt5.QtWidgets import (QApplication, QFrame, QVBoxLayout, QLabel, QTextEdi
                 QSpacerItem, QSizePolicy, QHBoxLayout, QWidget, QCheckBox, QGridLayout, QScrollArea, QMessageBox)
 from PyQt5.QtGui import QPixmap, QPainter, QPageSize, QRegion, QPdfWriter, QPagedPaintDevice
 import os
-from PyQt5.QtPrintSupport import QPrinter
-from PyQt5.QtCore import QSizeF, pyqtSignal, QRectF, QPointF, QPoint, Qt
+from PyQt5.QtCore import pyqtSignal, Qt
 import glob
 import time
 from window.utils.PDF import PDF

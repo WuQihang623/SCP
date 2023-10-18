@@ -1,12 +1,6 @@
-from PyQt5.QtWidgets import (QApplication, QFrame, QVBoxLayout, QLabel, QTextEdit, QComboBox, QLineEdit, QPushButton,
-                QSpacerItem, QSizePolicy, QHBoxLayout, QWidget, QCheckBox, QGridLayout, QScrollArea, QMessageBox)
-from PyQt5.QtGui import QPixmap, QPainter, QPageSize, QRegion, QPdfWriter, QPagedPaintDevice
-import os
-from PyQt5.QtPrintSupport import QPrinter
-from PyQt5.QtCore import QSizeF, pyqtSignal, QRectF, QPointF, QPoint, Qt
-import glob
-import time
-
+from PyQt5.QtWidgets import (QFrame, QVBoxLayout, QLabel, QSpacerItem, QSizePolicy, QHBoxLayout, QGridLayout)
+from PyQt5.QtGui import QPixmap
+from PyQt5.QtCore import  Qt
 
 
 class PDF(QFrame):
