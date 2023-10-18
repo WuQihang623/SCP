@@ -37,13 +37,13 @@ class PDL1Widget(UI_PDL1):
     def load_result(self, path):
         slide_name, _ = os.path.splitext(os.path.basename(self.slide_path))
         if not os.path.exists(path) or not isinstance(path, str):
-            file_dir = os.path.join(self.file_dir, "PD-L1", slide_name)
-            if not os.path.exists(file_dir):
-                file_dir = os.path.join(self.file_dir)
-            options = QFileDialog.Options()
-            path, _ = QFileDialog.getOpenFileName(self, "选择为PDL1分析结果存放的路径", file_dir,
-                                                  "结果(*.pkl)", options=options)
-            # path = os.path.join('results', 'PD-L1', slide_name, f"{slide_name}.pkl")
+            path = os.path.join(self.file_dir, slide_name+'.pkl')
+            if not os.path.exists(path):
+                path = os.path.join(self.file_dir, slide_name, slide_name+'.pkl')
+            if not os.path.exists(path) or self.pathchooseBox.isChecked() is False:
+                options = QFileDialog.Options()
+                path, _ = QFileDialog.getOpenFileName(self, "选择为PDL1分析结果存放的路径", self.file_dir,
+                                                      "结果(*.pkl)", options=options)
             if path == '':
                 return
             if not os.path.exists(path):
@@ -52,7 +52,6 @@ class PDL1Widget(UI_PDL1):
             if slide_name not in path:
                 QMessageBox.warning(self, '警告', '结果文件与图片不匹配！')
                 return
-            # self.file_dir = os.path.dirname(path)
             self.loadPDL1Signal.emit(path)
 
     # 载入PDL1对比结果
@@ -70,7 +69,6 @@ class PDL1Widget(UI_PDL1):
         if slide_name not in path:
             QMessageBox.warning(self, '警告', '结果文件与图片不匹配！')
             return
-        self.file_dir = os.path.dirname(path)
 
         self.loadPDL1ComparisonSignal.emit(path)
 
