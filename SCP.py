@@ -4,7 +4,6 @@ import warnings
 
 from PyQt5 import QtCore
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QGuiApplication, QFont
 from PyQt5.QtWidgets import QApplication
 from window.MainWindow import MainWindow
 
