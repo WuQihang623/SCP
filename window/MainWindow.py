@@ -1,11 +1,7 @@
-import json
-import os
 import sys
-import qdarkstyle
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import Qt, QSize
-from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtGui import QPixmap, QIcon, QColor
+from PyQt5.QtGui import QPixmap, QIcon, QColor, QFont
 
 from function import *
 from window.FileWatcher import FileWatcher
@@ -30,7 +26,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def init_UI(self):
         self.setupUi(self)
         self.setStyleSheet("QMenuBar{font-family:微软雅黑; font: bold 14px;font-weight:400}")
-        self.setWindowTitle('智能病理辅助诊断平台（Computational Pathology Platform）')
+        self.setWindowTitle('智能病理辅助诊断平台(Computational Pathology Platform)')
+
         icon = QIcon('logo/logo.png')
         self.setWindowIcon(icon)
         self.setCentralWidget(self.mdiArea)
@@ -46,8 +43,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # 初始化状态栏
         self.statusbar = StatusBar(self.mdiArea)
         self.setStatusBar(self.statusbar)
-
-        # TODO：初始化Action的使能
 
         # 全屏显示
         self.showMaximized()

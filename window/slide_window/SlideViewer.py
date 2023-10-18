@@ -971,6 +971,11 @@ class SlideViewer(BasicSlideViewer):
                                           show_types=self.show_nuclei_types_pdl1,
                                           mode=3)
 
+    def closeEvent(self, *args, **kwargs):
+        if hasattr(self, "TileLoader"):
+            super().closeEvent()
+            self.RegionContourLoader.__del__()
+            self.NucleiContourLoader.__del__()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

@@ -336,6 +336,11 @@ class BasicSlideViewer(QFrame):
             # 绘制当前rect的图片
             self.TileLoader.load_tiles_in_view(self.current_level, scene_view_rect, heatmap, heatmap_downsample)
 
+    def closeEvent(self):
+        if hasattr(self, "TileLoader"):
+            self.scene.clear()
+            self.TileLoader.__del__()
+            print("closeEvent")
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

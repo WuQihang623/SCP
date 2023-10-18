@@ -269,3 +269,7 @@ class TileManager(QThread):
         self.condition.wakeOne()
         self.mutex.unlock()
         self.wait()
+        if hasattr(self, "loaded_tile_rect"):
+            del self.loaded_tile_rect
+            del self.loaded_tileItem
+            del self.loaded_heatmapItem

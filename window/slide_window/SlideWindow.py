@@ -275,7 +275,10 @@ class SlideWindow(QFrame):
                         event.accept()
                 else:
                     event.ignore()
+        self.slide_viewer.closeEvent()
+        self.slide_viewer_pair.closeEvent()
         return
+
 
 if __name__ == '__main__':
     import sys

@@ -145,3 +145,11 @@ class NucleiContourLoader():
         cycle.setBrush(QBrush(color))
         cycle.setZValue(15)
         self.scene.addItem(cycle)
+
+    def __del__(self):
+        if hasattr(self, "contours"):
+            del self.contours
+        if hasattr(self, "centers"):
+            del self.centers
+        if hasattr(self, "types"):
+            del self.types

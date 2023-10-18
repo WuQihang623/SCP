@@ -127,3 +127,7 @@ class RegionContourLoader(QThread):
         self.condition.wakeOne()
         self.mutex.unlock()
         self.wait()
+        if hasattr(self, "contours"):
+            del self.contours
+            del self.types
+            del self.colors
