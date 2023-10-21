@@ -88,7 +88,7 @@ class UI_Microenv(QFrame):
         box_layout.addWidget(self.show_hierarchy_mask_checkbox, 15, 0, 1, 1)
 
         box_layout.addItem(null, 16, 0, 1, 2)
-        box_layout.setVerticalSpacing(25)
+        box_layout.setVerticalSpacing(15)
 
         microenvBox.setLayout(box_layout)
         main_layout.addWidget(microenvBox)

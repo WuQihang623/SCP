@@ -472,7 +472,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.recent_file = []
 
     def set_style(self):
-        self.setStyleSheet("""* {font-size: 16px;}""")
+        self.setStyleSheet("""* {font-size: 14px;}""")
 
     def setRoiSize(self):
         from window.slide_window.utils.SizeInputDialog import SizeInputDialog

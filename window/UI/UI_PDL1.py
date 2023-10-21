@@ -93,7 +93,7 @@ class UI_PDL1(QFrame):
         box_layout.addWidget(self.showRegionType_Combox, 16, 1, 1, 1)
 
         box_layout.addItem(null, 17, 0, 1, 2)
-        box_layout.setVerticalSpacing(20)
+        box_layout.setVerticalSpacing(15)
 
         pdl1Box.setLayout(box_layout)
         main_layout.addWidget(pdl1Box)
