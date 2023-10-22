@@ -62,7 +62,12 @@ class AnnotationWidget(UI_Annotation):
             with open(self.AnnotationTypesPath, 'r') as f:
                 self.AnnotationTypes = json.load(f)
                 f.close()
-            self.init_AnnotationTypeTree()
+        # 如果不存在这个路径，那么初始化一个
+        else:
+            self.AnnotationTypes = {"肿瘤区域": [255, 0, 0, 255],
+                                    "基质区域": [0, 0, 255, 255],
+                                    "其他区域": [142, 255, 111, 255]}
+        self.init_AnnotationTypeTree()
 
         # 设置标注工具
         self.annotation_type = None
