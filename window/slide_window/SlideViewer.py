@@ -1,7 +1,9 @@
+import os
 import sys
 import cv2
 import json
 import pickle
+import constants
 import numpy as np
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import QPoint, Qt, QEvent, pyqtSignal, QPointF
@@ -537,7 +539,6 @@ class SlideViewer(BasicSlideViewer):
                 # TODO: 发送信号，给Combox，设置显示组织轮廓，（肿瘤，基质）
                 # sendShowPDL1.append(1)
 
-
             try:
                 # 用于保存PDL1分析的colormap
                 if len(pdl1_info['mask'].shape) == 2:
@@ -829,13 +830,14 @@ class SlideViewer(BasicSlideViewer):
                 return
             # 判断点是否在细胞核轮廓内部
             if cv2.pointPolygonTest(this_contour, (int(point.x()), int(point.y())), False) > 0:
-                try:
-                    with open('cache/AnnotationTypes.json', 'r') as f:
+                if os.path.exists(os.path.join(constants.cache_path, "AnnotationTypes.json")):
+                    with open(os.path.join(constants.cache_path, "AnnotationTypes.json"), 'r') as f:
                         type_dict = json.load(f)
                         f.close()
-                except:
+                else:
                     type_dict = {"背景类别": [166, 84, 2], "表皮细胞": [255, 0, 0], "淋巴细胞": [0, 255, 0],
                                  "基质细胞": [228, 252, 4], "中性粒细胞": [0, 0, 255]}
+
                 # 弹出对话框选择修改类型
                 dialog = ChangeAnnotationDiaglog(type_dict, "表皮细胞")
                 # 点击确定，修改类别
@@ -969,7 +971,6 @@ class SlideViewer(BasicSlideViewer):
 
     def closeEvent(self, *args, **kwargs):
         super().closeEvent()
-        # self.RegionContourLoader.__del__()
         self.NucleiContourLoader.__del__()
 
 if __name__ == '__main__':

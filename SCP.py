@@ -1,7 +1,10 @@
+import os
+
 import qdarkstyle
 from qdarkstyle.light.palette import LightPalette
 import warnings
 
+import constants
 from PyQt5 import QtCore
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication
@@ -15,6 +18,7 @@ def toggle_theme(theme):
 
 if __name__ == "__main__":
     warnings.filterwarnings('ignore')
+    os.makedirs(constants.cache_path, exist_ok=True)
     # 解决不同电脑不同缩放比例问题
     QtCore.QCoreApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
     # QGuiApplication.setAttribute(Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)

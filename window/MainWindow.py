@@ -1,8 +1,10 @@
+import os
 import sys
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap, QIcon, QColor
 
+import constants
 from function import *
 from window.FileWatcher import FileWatcher
 from window.slide_window import SlideWindow
@@ -12,6 +14,8 @@ from window.slide_window.utils.colorspace_choose_Dialog import ColorSpaceDialog
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
+    RecentFilePath = os.path.join(constants.cache_path, "recent_file.json")
+    FixedRectSizePath = os.path.join(constants.cache_path, "FixedRectSize.json")
     def __init__(self, parent=None):
         super(MainWindow, self).__init__(parent)
         self.init_UI()
@@ -165,8 +169,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.open_recent_slide_menu.clear()
             self.open_recent_slide_menu.addActions(self.recentFileActions)
 
-        os.makedirs('./cache', exist_ok=True)
-        with open('./cache/recent_file.json', 'w') as f:
+        with open(self.RecentFilePath, 'w') as f:
             f.write(json.dumps(self.recent_file, indent=2))
             f.close()
 
@@ -460,8 +463,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     # 初始化最近文件
     def set_recent_file(self):
         self.recentFileActions = []
-        if os.path.exists('./cache/recent_file.json'):
-            with open('./cache/recent_file.json', 'r') as f:
+        if os.path.exists(self.RecentFilePath):
+            with open(self.RecentFilePath, 'r') as f:
                 self.recent_file = json.load(f)[:20]
                 f.close()
             for path in self.recent_file:
@@ -480,7 +483,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if dialog.exec_() == QDialog.Accepted:
             width, height = dialog.get_size()
             if isinstance(width, int) and isinstance(height, int):
-                with open('cache/FixedRectSize.json', 'w') as f:
+                with open(self.FixedRectSizePath, 'w') as f:
                     f.write(json.dumps({"width": width,
                                         "height": height}))
                     f.close()

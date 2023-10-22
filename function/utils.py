@@ -1,5 +1,6 @@
 import os
 import json
+import constants
 import numpy as np
 import openslide
 from ctypes import windll
@@ -100,9 +101,9 @@ class NpEncoder(json.JSONEncoder):
 # 读取缓存文件，即存放结果的路径
 def setResultFileDir(annotation=False):
     if annotation is False:
-        load_path = 'cache/results_dir.json'
+        load_path = f'{constants.cache_path}/results_dir.json'
     else:
-        load_path = 'cache/annotation_dir.json'
+        load_path = f'{constants.cache_path}/annotation_dir.json'
     if os.path.exists(load_path):
         with open(load_path, 'r') as f:
             path = json.load(f)
@@ -114,19 +115,17 @@ def setResultFileDir(annotation=False):
 
 # 写缓存文件，即存放结果的路径
 def saveResultFileDir(path, annotation=False):
-    os.makedirs('cache', exist_ok=True)
     if annotation is False:
-        save_path = 'cache/results_dir.json'
+        save_path = f'{constants.cache_path}/results_dir.json'
     else:
-        save_path = 'cache/annotation_dir.json'
-    os.makedirs('cache', exist_ok=True)
+        save_path = f'{constants.cache_path}/annotation_dir.json'
     with open(save_path, 'w') as f:
         f.write(json.dumps(path))
         f.close()
 
 def setFileWatcherDir():
-    if os.path.exists('cache/filewatcher_dir.json'):
-        with open('cache/filewatcher_dir.json', 'r') as f:
+    if os.path.exists(f'{constants.cache_path}/filewatcher_dir.json'):
+        with open(f'{constants.cache_path}/filewatcher_dir.json', 'r') as f:
             path = json.load(f)
             f.close()
         if os.path.exists(path):
@@ -137,11 +136,6 @@ def setFileWatcherDir():
         return None
 
 def saveFileWatcherDir(path):
-    os.makedirs('cache', exist_ok=True)
-    with open('cache/filewatcher_dir.json', 'w') as f:
+    with open(f'{constants.cache_path}/filewatcher_dir.json', 'w') as f:
         f.write(json.dumps(path))
         f.close()
-
-if __name__ == '__main__':
-    path = "F:/slide/test/H1719421/H1719421.dmetrix"
-    is_file_copy_finished(path)

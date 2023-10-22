@@ -11,6 +11,7 @@ from collections import OrderedDict
 import torch
 import openslide
 import numpy as np
+import constants
 from torch.cuda import amp
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
@@ -39,7 +40,7 @@ def Segment_Nuclei(model: torch.nn.Module,
                    bar_signal_nuclei_seg=None,
                    mode='HE',
                    region_info=None):
-
+    results_dir = os.path.join(constants.cache_path, results_dir)
     start = time.time()
     if mode == 'HE':
         dataset = WholeSlideSet_HE(slide=slide,

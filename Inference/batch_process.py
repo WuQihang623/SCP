@@ -8,6 +8,7 @@ import openslide
 from PyQt5.QtCore import QThread, pyqtSignal, QMutex, QWaitCondition, QRectF
 from PyQt5.QtWidgets import *
 
+import constants
 import numpy as np
 from function.utils import NpEncoder
 from Inference.diagnose.diagnose import diagnosis
@@ -20,6 +21,7 @@ class BatchProcessThread(QThread):
     tumor_segment_signal = pyqtSignal(int, int, str)
     nuclei_segment_signal = pyqtSignal(int, int, str)
     pdl1_judge_signal = pyqtSignal(int, int, str)
+    BatchProcessPath = os.path.join(constants.cache_path, "batch_process.json")
     def __init__(self, file_watcher:QWidget, mode, path):
         super(BatchProcessThread, self).__init__()
         self.file_watcher = file_watcher
@@ -179,17 +181,15 @@ class BatchProcessThread(QThread):
                     self.file_watcher.table_widget.viewport().update()
 
                     # 将这个信息保存下来
-                    os.makedirs('cache', exist_ok=True)
                     processed_list = []
-                    if os.path.exists('cache/batch_process.json'):
-                        with open('cache/batch_process.json', 'r') as f:
+                    if os.path.exists(self.BatchProcessPath):
+                        with open(self.BatchProcessPath, 'r') as f:
                             processed_list = json.load(f)
                             f.close()
                     processed_list.append(os.path.basename(slide_path))
-                    with open('cache/batch_process.json', 'w') as f:
+                    with open(self.BatchProcessPath, 'w') as f:
                         f.write(json.dumps(processed_list, indent=2))
                         f.close()
-
 
     def set_bar(self, length, idx, text):
         self.file_watcher.table_widget.setItem(self.row, 5, QTableWidgetItem(f'{text}：{int(idx/length*100)}%'))

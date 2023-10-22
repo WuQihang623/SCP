@@ -1,5 +1,7 @@
+import os
 import re
 import sys
+import constants
 from enum import Enum
 from PyQt5.QtWidgets import *
 from function import *
@@ -43,6 +45,7 @@ class AnnotationWidget(UI_Annotation):
     loadNucleiAnnSignal = pyqtSignal(str)
     # 保存修改的细胞核pkl结果
     saveNucleiAnnSignal = pyqtSignal(str)
+    AnnotationTypesPath = os.path.join(constants.cache_path, "AnnotationTypes.json")
     def __init__(self):
         super(AnnotationWidget, self).__init__()
         # 初始化
@@ -55,9 +58,8 @@ class AnnotationWidget(UI_Annotation):
 
         # 标注工具的模式切换标志
         self.mode = AnnotationMode.MOVE
-        os.makedirs('cache', exist_ok=True)
-        if os.path.exists('cache/AnnotationTypes.json'):
-            with open('cache/AnnotationTypes.json', 'r') as f:
+        if os.path.exists(self.AnnotationTypesPath):
+            with open(self.AnnotationTypesPath, 'r') as f:
                 self.AnnotationTypes = json.load(f)
                 f.close()
             self.init_AnnotationTypeTree()
@@ -110,7 +112,7 @@ class AnnotationWidget(UI_Annotation):
 
     def saveAnnotationTypeTree(self):
         self.set_activate_color_action()
-        with open('cache/AnnotationTypes.json', 'w') as f:
+        with open(self.AnnotationTypesPath, 'w') as f:
             f.write(json.dumps(self.AnnotationTypes, indent=2))
             f.close()
         return

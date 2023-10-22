@@ -2,6 +2,7 @@ import json
 import os
 
 import time
+import constants
 import openslide
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import *
@@ -125,6 +126,7 @@ class UpdateTableThread(QThread):
 class FileWatcher(QWidget):
     openslideSignal = pyqtSignal(str, str)
     closeSignal = pyqtSignal(bool)
+    BatchProcessPath = os.path.join(constants.cache_path, "batch_process.json")
     def __init__(self, file_path):
         super(FileWatcher, self).__init__()
         self.path = file_path
@@ -146,8 +148,8 @@ class FileWatcher(QWidget):
                                     "qptiff"]
 
         # 批处理状态
-        if os.path.exists('cache/batch_process.json'):
-            with open('cache/batch_process.json', 'r') as f:
+        if os.path.exists(self.BatchProcessPath):
+            with open(self.BatchProcessPath, 'r') as f:
                 self.processed_list = json.load(f)
                 f.close()
         else:
@@ -311,7 +313,7 @@ class FileWatcher(QWidget):
             self.t.batch_flag = False
 
     def set_style(self):
-        self.setStyleSheet("QLabel{font-family:微软雅黑; font: bold 16px;}")
+        self.setStyleSheet("QLabel{font-family:微软雅黑; font: bold 14px;}")
 
     def closeEvent(self, event):
         if hasattr(self, 't'):

@@ -1,19 +1,21 @@
 import os
 import json
+import constants
 from PyQt5.QtWidgets import QGraphicsScene, QGraphicsView, QGraphicsRectItem
 from PyQt5.QtCore import QPoint, Qt
 from PyQt5.QtGui import QColor, QPen, QBrush
 from window.slide_window.Tools.BaseTool import BaseTool
 
 class DrawFixedRect(BaseTool):
+    FixedRectSizePath = os.path.join(constants.cache_path, "FixedRectSize.json")
     def __init__(self, scene: QGraphicsScene, view: QGraphicsView):
         super().__init__(scene, view)
         self.WIDTH = 512  # ROI的大小
         self.HEIGHT = 512
 
         # 从缓存中读取Rect的大小
-        if os.path.exists('cache/FixedRectSize.json'):
-            with open('cache/FixedRectSize.json', 'r') as f:
+        if os.path.exists(self.FixedRectSizePath):
+            with open(self.FixedRectSizePath, 'r') as f:
                 data = json.load(f)
                 width = data.get('width')
                 height = data.get("height")
@@ -21,15 +23,12 @@ class DrawFixedRect(BaseTool):
                 self.HEIGHT = height if height is not None else self.HEIGHT
                 f.close()
 
-
     def set_rect_size(self, width, height):
         self.WIDTH = width
         self.HEIGHT = height
-        os.makedirs('cache', exist_ok=True)
-        with open('cache/FixedRectSize.json', 'w') as f:
+        with open(self.FixedRectSizePath, 'w') as f:
             f.write(json.dumps({"width": self.WIDTH, "height": self.HEIGHT}, indent=2))
             f.close()
-
 
     def mousePressEvent(self, event, downsample):
         if self.COLOR is not None:
@@ -118,7 +117,6 @@ class DrawFixedRect(BaseTool):
             cycle.setBrush(QBrush(color))
             cycle.setZValue(30)
             control_point_items.append(cycle)
-
         return rect_item, control_point_items, None
 
 
