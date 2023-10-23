@@ -27,6 +27,8 @@ class AnnotationWidget(UI_Annotation):
     toolChangeSignal = pyqtSignal(int)
     # 标注工具的颜色（标注类别）设置信号
     annotationTypeChooseSignal = pyqtSignal(str, list)
+    annotationActionCheckSignal = pyqtSignal(int)
+
     # 更改标注类型的信号（标注类型的添加，修改，删除）
     AnnotationTypeChangeSignal = pyqtSignal(dict)
     # 点击左侧的标注栏，将当前标注选中
@@ -68,13 +70,13 @@ class AnnotationWidget(UI_Annotation):
                                     "基质区域": [0, 0, 255, 255],
                                     "其他区域": [142, 255, 111, 255]}
         self.init_AnnotationTypeTree()
-
         # 设置标注工具
         self.annotation_type = None
         self.annotation_color = None
-
         # 连接信号与槽
         self.connectBtnFunc()
+        # 设置标注颜色的索引
+        self.annotation_flag = -1
 
     def connectBtnFunc(self):
         self.addType_btn.clicked.connect(self.addCategoryAnnotaion)
@@ -82,6 +84,7 @@ class AnnotationWidget(UI_Annotation):
 
         # 当点击标注时，进行标注的激活
         self.annotationTree.itemClicked.connect(self.onClickedAnnotationTree)
+        # 选择标注的类型
         self.annotationTypeTree.itemClicked.connect(self.onClickedTreeItemRow)
         # 双击标注时，进行标注描述的修改
         self.annotationTree.itemDoubleClicked.connect(self.set_description)
@@ -90,8 +93,6 @@ class AnnotationWidget(UI_Annotation):
         self.modify_annotation_action.triggered.connect(self.changeAnnotation)
         # 删除标注
         self.delete_annotation_action.triggered.connect(self.deleteAnnotation)
-        # 描述标注
-        # self.set_description_action.triggered.connect(self.set_description)
 
         # 导入标注
         self.loadAnnotation_btn.clicked.connect(self.loadAnnotation)
@@ -193,12 +194,15 @@ class AnnotationWidget(UI_Annotation):
     # i表示在AnnotationTree中的第几行
     def set_AnnotationColor(self, i):
         num_types = self.annotationTypeTree.topLevelItemCount()
-        if i < num_types:
+        if i < num_types and i >= 0:
+            self.annotation_flag = i
             self.annotation_type = self.annotationTypeTree.topLevelItem(i).text(0)
             self.annotation_color = self.AnnotationTypes[self.annotation_type]
             # 发送信号到TOOLManager
             self.annotationTypeChooseSignal.emit(self.annotation_type, self.annotation_color)
+            self.annotationActionCheckSignal.emit(i)
             print("当前选择的标注颜色是：", self.annotation_type, self.annotation_color)
+
 
     # 标注模式切换(移动，固定矩形，矩形……)
     def set_annotation_mode(self, mode):

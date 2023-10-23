@@ -218,7 +218,7 @@ class ToolManager(QObject):
 
 
     # 设置标注工具的类型和颜色
-    def set_AnnotationColor(self, type, color):
+    def set_annotationColor(self, type, color):
         self.draw_fixedRect.set_AnnotationColor(type, color)
         self.draw_Rect.set_AnnotationColor(type, color)
         self.draw_polygon.set_AnnotationColor(type, color)

@@ -115,13 +115,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     # 设置action使能
     def setEnable(self):
-        # self.paired_slide_menu.setEnabled(False)
         self.fill_screen_action.setEnabled(False)
-        # self.quit.setEnabled(False)
         self.recall_action.setEnabled(False)
-        # self.convert_color_space_action.setEnabled(False)
         self.shot_screen_action.setEnabled(False)
-
 
     # 打开slide window
     def open_slide_window(self):
@@ -139,19 +135,19 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.slide_file_dir = os.path.dirname(file_path)
                 slide_window = SlideWindow(file_path)
                 slide_window.annotation.AnnotationTypeChangeSignal.connect(self.bindAnnotationColor)
+                slide_window.annotation.annotationActionCheckSignal.connect(self.set_color_action_checked)
                 self.mdiArea.addSubWindow(slide_window)
                 slide_window.show()
                 slide_window.setWindowTitle(os.path.basename(file_path))
                 # 设置工具栏上的图像块的颜色
                 slide_window.annotation.set_activate_color_action()
                 # 设置工具栏上图像块点击所发出的指令
-                self.set_AnnotationColor()
+                self.connect_Annotation_ation()
                 self.add_recent_path(file_path)
                 if mode == '诊断':
                     self.diagnose_action.trigger()
                     slide_window.diagnose.loadDiagnoseResults_btn.click()
                 # TODO:直接跳转到微环境分析以及PD-L1测量页面
-
             else:
                 if waning_text is None:
                     return
@@ -191,7 +187,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 slide_viewer_pair.load_slide(file_path)
                 splitter_viewer = sub_active.widget().splitter_viewer
                 splitter_viewer.widget(1).show()
-                # sub_active.widget().slide_viewer.synchronousSignal.connect(slide_viewer_pair.eventFilter1)
             else:
                 if waning_text is None:
                     return
@@ -326,6 +321,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                         sub_active.widget().slide_viewer_pair.update_pdl1_show(sub_active.widget().slide_viewer_pair.show_list_pdl1)
                     if mode2switch != 0:
                         sub_active.widget().slide_viewer.setCursor(Qt.ArrowCursor)
+                        self.annotation_action_enable(False)
+                    else:
+                        self.annotation_action_enable(True)
         except:
             QMessageBox.warning(self, '警告', "没有打开图像子窗口")
 
@@ -377,7 +375,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         action.triggered.disconnect()
 
     # 进行链接：点击状态栏中的图像块，设置标注的颜色与类型
-    def set_AnnotationColor(self):
+    def connect_Annotation_ation(self):
         # 解除activate_color_action与之前绑定的函数的链接
         self.disconnect_action_signal(self.activate_color_action1)
         self.disconnect_action_signal(self.activate_color_action2)
@@ -391,6 +389,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.activate_color_action2.triggered.connect(lambda: annotation.set_AnnotationColor(1))
                 self.activate_color_action3.triggered.connect(lambda: annotation.set_AnnotationColor(2))
                 self.activate_color_action4.triggered.connect(lambda: annotation.set_AnnotationColor(3))
+
+                # 连接信号，选择标注时，同样会激活菜单栏中的颜色块
+                self.set_color_action_checked(annotation.annotation_flag)
+
         except:
             QMessageBox.warning(self, '警告', "没有打开图像子窗口")
 
@@ -416,6 +418,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # 设置 QAction 被选中的状态
         action.setChecked(True)
 
+    # 切换子窗口
     # 当切换子窗口时，把标注工具设置成移动工具，模式与上次切换时保持一致
     def set_window_status(self):
         sub_active = self.mdiArea.activeSubWindow()
@@ -432,7 +435,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             if hasattr(sub_active.widget(), 'slide_viewer'):
                 # 设置状态栏中的颜色，并于AnnotationTypeTree中的信息进行链接
                 self.bindAnnotationColor(sub_active.widget().annotation.AnnotationTypes)
-                self.set_AnnotationColor()
+                self.connect_Annotation_ation()
 
                 # 设置模式，设置为当前模式
                 current_mode = self.get_visible_widget(sub_active.widget().splitter)

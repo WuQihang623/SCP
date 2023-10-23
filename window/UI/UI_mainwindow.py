@@ -128,16 +128,16 @@ class Ui_MainWindow(object):
         color = QtGui.QColor(255, 255, 255, 255)
         pixmap.fill(color)
         icon12 = QtGui.QIcon(pixmap)
-        self.activate_color_action1 = QtWidgets.QAction(MainWindow)
+        self.activate_color_action1 = QtWidgets.QAction(MainWindow, checkable=True)
         self.activate_color_action1.setIcon(icon12)
         self.activate_color_action1.setObjectName("activate_color_action1")
-        self.activate_color_action2 = QtWidgets.QAction(MainWindow)
+        self.activate_color_action2 = QtWidgets.QAction(MainWindow, checkable=True)
         self.activate_color_action2.setIcon(icon12)
         self.activate_color_action2.setObjectName("activate_color_action2")
-        self.activate_color_action3 = QtWidgets.QAction(MainWindow)
+        self.activate_color_action3 = QtWidgets.QAction(MainWindow, checkable=True)
         self.activate_color_action3.setIcon(icon12)
         self.activate_color_action3.setObjectName("activate_color_action3")
-        self.activate_color_action4 = QtWidgets.QAction(MainWindow)
+        self.activate_color_action4 = QtWidgets.QAction(MainWindow, checkable=True)
         self.activate_color_action4.setIcon(icon12)
         self.activate_color_action4.setObjectName("activate_color_action4")
 
@@ -248,22 +248,63 @@ class Ui_MainWindow(object):
 
 
     # 只有在载入图像的叶片中激活这些功能
-    def action_enabel(self, enabel=True):
-        self.annotation_action.setEnabled(enabel)
-        self.diagnose_action.setEnabled(enabel)
-        self.microenv_action.setEnabled(enabel)
-        self.pdl1_action.setEnabled(enabel)
-        self.open_paired_action.setEnabled(enabel)
-        self.open_paired_win_action.setEnabled(enabel)
-        self.close_paired_win_action.setEnabled(enabel)
-        self.fixed_rect_action.setEnabled(enabel)
-        self.rect_action.setEnabled(enabel)
-        self.polygon_action.setEnabled(enabel)
-        self.measure_tool_action.setEnabled(enabel)
-        self.modify_action.setEnabled(enabel)
-        self.move_action.setEnabled(enabel)
-        self.activate_color_action1.setEnabled(enabel)
-        self.activate_color_action2.setEnabled(enabel)
-        self.activate_color_action3.setEnabled(enabel)
-        self.activate_color_action4.setEnabled(enabel)
-        self.convert_color_space_action.setEnabled(enabel)
+    def action_enabel(self, enable=True):
+        self.annotation_action.setEnabled(enable)
+        self.diagnose_action.setEnabled(enable)
+        self.microenv_action.setEnabled(enable)
+        self.pdl1_action.setEnabled(enable)
+        self.open_paired_action.setEnabled(enable)
+        self.open_paired_win_action.setEnabled(enable)
+        self.close_paired_win_action.setEnabled(enable)
+        self.fixed_rect_action.setEnabled(enable)
+        self.rect_action.setEnabled(enable)
+        self.polygon_action.setEnabled(enable)
+        self.measure_tool_action.setEnabled(enable)
+        self.modify_action.setEnabled(enable)
+        self.move_action.setEnabled(enable)
+        self.activate_color_action1.setEnabled(enable)
+        self.activate_color_action2.setEnabled(enable)
+        self.activate_color_action3.setEnabled(enable)
+        self.activate_color_action4.setEnabled(enable)
+        self.convert_color_space_action.setEnabled(enable)
+
+    # 只有在标注模式下这些action的使能才会被打开
+    def annotation_action_enable(self, enable):
+        self.fixed_rect_action.setEnabled(enable)
+        self.rect_action.setEnabled(enable)
+        self.polygon_action.setEnabled(enable)
+        self.measure_tool_action.setEnabled(enable)
+        self.modify_action.setEnabled(enable)
+        self.move_action.setEnabled(enable)
+        self.activate_color_action1.setEnabled(enable)
+        self.activate_color_action2.setEnabled(enable)
+        self.activate_color_action3.setEnabled(enable)
+        self.activate_color_action4.setEnabled(enable)
+
+    # 当选择标注颜色后，会使得菜单栏的颜色块被激活
+    def set_color_action_checked(self, idx):
+        # 阻止信号发送
+        self.activate_color_action1.blockSignals(True)
+        self.activate_color_action2.blockSignals(True)
+        self.activate_color_action3.blockSignals(True)
+        self.activate_color_action4.blockSignals(True)
+
+        self.activate_color_action1.setChecked(False)
+        self.activate_color_action2.setChecked(False)
+        self.activate_color_action3.setChecked(False)
+        self.activate_color_action4.setChecked(False)
+        if idx == 0:
+            print("激活颜色块1")
+            self.activate_color_action1.setChecked(True)
+        elif idx == 1:
+            self.activate_color_action2.setChecked(True)
+        elif idx == 2:
+            self.activate_color_action3.setChecked(True)
+        elif idx == 3:
+            self.activate_color_action4.setChecked(True)
+
+        # 打开信号发送通道
+        self.activate_color_action1.blockSignals(False)
+        self.activate_color_action2.blockSignals(False)
+        self.activate_color_action3.blockSignals(False)
+        self.activate_color_action4.blockSignals(False)

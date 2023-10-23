@@ -64,7 +64,7 @@ class SlideWindow(QFrame):
         # 切换模式时，将ToolManager中的标志位切换了，实现工具的切换
         self.annotation.toolChangeSignal.connect(self.slide_viewer.ToolManager.set_annotation_mode)
         # 切换颜色，将ToolManager中的颜色与类型切换了
-        self.annotation.annotationTypeChooseSignal.connect(self.slide_viewer.ToolManager.set_AnnotationColor)
+        self.annotation.annotationTypeChooseSignal.connect(self.slide_viewer.ToolManager.set_annotationColor)
         # 绘制完成标注后，将标注的内容添加到annotaionTree中
         self.slide_viewer.ToolManager.sendAnnotationSignal.connect(self.annotation.addAnnotation)
         # 点击标注栏中的item，获取该标注在视图中的位置
