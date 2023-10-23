@@ -22,13 +22,13 @@ class ZoomSlider(QWidget):
     def init_label(self):
         self.label_0 = QLabel()
         self.label_0.setWordWrap(True)
-        self.label_0.setText('  1×')
+        self.label_0.setText(' 1×')
         self.label_1 = QLabel()
         self.label_1.setWordWrap(True)
-        self.label_1.setText('  2×')
+        self.label_1.setText(' 2×')
         self.label_2 = QLabel()
         self.label_2.setWordWrap(True)
-        self.label_2.setText('  4×')
+        self.label_2.setText(' 4×')
         self.label_3 = QLabel()
         self.label_3.setWordWrap(True)
         self.label_3.setText('10×')
@@ -49,4 +49,4 @@ class ZoomSlider(QWidget):
         self.set_style()
 
     def set_style(self):
-        self.setStyleSheet("QLabel{font-family:微软雅黑; font: bold 12px;}")
+        self.setStyleSheet("QLabel{font-family:宋体; font: bold 12px;}")
