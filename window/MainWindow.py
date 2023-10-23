@@ -29,7 +29,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def init_UI(self):
         self.setupUi(self)
-        self.setStyleSheet("QMenuBar{font-family:微软雅黑; font: bold 14px;font-weight:400}")
+        self.setStyleSheet("QMenuBar{font-family:宋体; font: bold 14px;font-weight:400}")
         self.setWindowTitle('智能病理辅助诊断平台(Computational Pathology Platform)')
 
         icon = QIcon('logo/logo.png')
@@ -47,6 +47,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # 初始化状态栏
         self.statusbar = StatusBar(self.mdiArea)
         self.setStatusBar(self.statusbar)
+        self.action_enabel(False)
 
         # 全屏显示
         self.showMaximized()
@@ -83,7 +84,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.measure_tool_action.triggered.connect(lambda: self.tools_toggle(5))
         self.modify_action.triggered.connect(lambda: self.tools_toggle(6))
         self.convert_color_space_action.triggered.connect(self.colorspace_transform)
-
 
         # 创建一个 QAction 组
         self.mode_group = QActionGroup(self)
@@ -383,7 +383,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.disconnect_action_signal(self.activate_color_action2)
         self.disconnect_action_signal(self.activate_color_action3)
         self.disconnect_action_signal(self.activate_color_action4)
-
         sub_active = self.mdiArea.activeSubWindow()
         try:
             if hasattr(sub_active.widget(), 'annotation'):
@@ -420,6 +419,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     # 当切换子窗口时，把标注工具设置成移动工具，模式与上次切换时保持一致
     def set_window_status(self):
         sub_active = self.mdiArea.activeSubWindow()
+        # 如果打开的是并不是图像窗口，那么需要将菜单栏的使能关闭
+        try:
+            if hasattr(sub_active.widget(), 'slide_viewer'):
+                self.action_enabel(True)
+            else:
+                self.action_enabel(False)
+        except:
+            print("Main Window 429行")
+
         try:
             if hasattr(sub_active.widget(), 'slide_viewer'):
                 # 设置状态栏中的颜色，并于AnnotationTypeTree中的信息进行链接
@@ -435,7 +443,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.tools_toggle(1)
                 self.move_action.setChecked(True)
         except:
-            pass
+            print("MainWindow 437 行")
 
         # 如果激活了文件监控窗口，则打开定时器
         # 如果激活的不是文件监控窗口，则关闭定时器
@@ -451,7 +459,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                         file_watcher = sub_window.window().file_watcher
                         file_watcher.stop_timer()
         except:
-            pass
+            print("MainWindow 453 行")
+
     # TODO: 关闭子窗口时会触发mdiArea.subWindowActivated，要避免这种情况
 
     # 增加action

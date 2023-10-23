@@ -245,3 +245,25 @@ class Ui_MainWindow(object):
         self.activate_color_action2.setText(_translate("MainWindow", "颜色2"))
         self.activate_color_action3.setText(_translate("MainWindow", "颜色3"))
         self.activate_color_action4.setText(_translate("MainWindow", "颜色4"))
+
+
+    # 只有在载入图像的叶片中激活这些功能
+    def action_enabel(self, enabel=True):
+        self.annotation_action.setEnabled(enabel)
+        self.diagnose_action.setEnabled(enabel)
+        self.microenv_action.setEnabled(enabel)
+        self.pdl1_action.setEnabled(enabel)
+        self.open_paired_action.setEnabled(enabel)
+        self.open_paired_win_action.setEnabled(enabel)
+        self.close_paired_win_action.setEnabled(enabel)
+        self.fixed_rect_action.setEnabled(enabel)
+        self.rect_action.setEnabled(enabel)
+        self.polygon_action.setEnabled(enabel)
+        self.measure_tool_action.setEnabled(enabel)
+        self.modify_action.setEnabled(enabel)
+        self.move_action.setEnabled(enabel)
+        self.activate_color_action1.setEnabled(enabel)
+        self.activate_color_action2.setEnabled(enabel)
+        self.activate_color_action3.setEnabled(enabel)
+        self.activate_color_action4.setEnabled(enabel)
+        self.convert_color_space_action.setEnabled(enabel)
