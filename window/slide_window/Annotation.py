@@ -150,18 +150,24 @@ class AnnotationWidget(UI_Annotation):
         current_item = self.annotationTypeTree.currentItem()
         if current_item:
             current_type = current_item.text(0)
-            if current_type == "肿瘤外基质区域":
-                QMessageBox.warning(self, '警告', '该类别为固定类别，不可修改')
-            else:
-                dialog = ChangeTypeDialog()
-                if dialog.exec_() == QDialog.Accepted:
-                    new_type = dialog.get_text()
-                    if new_type and new_type not in self.AnnotationTypes.keys():
-                        current_item.setText(0, new_type)
-                        self.AnnotationTypes = update_dict_key(self.AnnotationTypes, current_type, new_type)
-                        # 保存
-                        self.saveAnnotationTypeTree()
-                        # TODO:更新下面的表格
+            current_color = self.AnnotationTypes[current_type]
+            dialog = ChangeTypeDialog()
+            if dialog.exec_() == QDialog.Accepted:
+                new_type = dialog.get_text()
+                if new_type and new_type not in self.AnnotationTypes.keys():
+                    current_item.setText(0, new_type)
+                    self.AnnotationTypes = update_dict_key(self.AnnotationTypes, current_type, new_type)
+                    # 保存
+                    self.saveAnnotationTypeTree()
+
+                    # 遍历一遍annotationTree
+                    for row in range(self.annotationTree.topLevelItemCount()):
+                        item = self.annotationTree.topLevelItem(row)
+                        type = item.text(1)
+                        if type == current_type:
+                            item.setText(1, new_type)
+                            self.Annotations[f'标注{row}']['type'] = new_type
+                            self.changeAnnotaionSignal.emit(row, new_type, current_color)
 
     # 删除上面表格的类别
     def delete_annotationTypeItem(self):
@@ -177,6 +183,9 @@ class AnnotationWidget(UI_Annotation):
             self.AnnotationTypes.pop(item.text(0))
             self.saveAnnotationTypeTree()
             (item.parent() or self.annotationTypeTree.invisibleRootItem()).removeChild(item)
+
+    # 双击annotationTypeTree，如果点击的是名字，则修改标注的名称，如果点的是颜色，则修改标注的颜色
+
 
     # 获取被点击的Tree item所在的行,并设置标注工具的颜色
     def onClickedTreeItemRow(self, item, colum):
@@ -312,6 +321,7 @@ class AnnotationWidget(UI_Annotation):
         else:
             QMessageBox.warning(self, '警告', '请先选择要删除的标注')
 
+    # 填写对标注的描述
     def set_description(self, item, column):
         if column == 4:
             self.editItem(item, column)
