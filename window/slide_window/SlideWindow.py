@@ -275,6 +275,7 @@ class SlideWindow(QFrame):
                         event.accept()
                 else:
                     event.ignore()
+                    return
         self.slide_viewer.closeEvent()
         self.slide_viewer_pair.closeEvent()
         return
