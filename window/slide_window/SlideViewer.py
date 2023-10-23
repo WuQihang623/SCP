@@ -322,7 +322,7 @@ class SlideViewer(BasicSlideViewer):
         self.heatmap_downsample_diagnose = results["preds"]['down']
         self.heatmap_diagnose = results["heatmap"]
         self.heatmap_diagnose = cv2.cvtColor(self.heatmap_diagnose, cv2.COLOR_RGB2GRAY)
-        # self.heatmap_diagnose = 255 - self.heatmap_diagnose
+        self.heatmap_diagnose = 255 - self.heatmap_diagnose
         self.heatmap = self.heatmap_diagnose.copy()
         self.heatmap_downsample = self.heatmap_downsample_diagnose
         # 显示热图
