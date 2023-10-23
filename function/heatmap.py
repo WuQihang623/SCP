@@ -80,7 +80,7 @@ def viz_tile_heatmap(slide, mask: np.ndarray,
     return heatmap
 
 def viz_tile_colormap(slide, mask: np.ndarray,
-                     window_box: list, level: int, mask_downsample: int, alph=0.3):
+                      window_box: list, level: int, mask_downsample: int, alph=0.3):
     assert level >= 0
     if isinstance(slide, str):
         slide = openslide.open_slide(slide)

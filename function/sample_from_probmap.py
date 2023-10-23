@@ -7,7 +7,7 @@ def sample_from_porbmap(probmap, distance=4, num_points=50):
     num = 0
     all_coords = []
     kernel = np.ones((3, 3), np.uint8)
-    thresholds = [1, 0.9, 0.7, 0.5, 0.2]
+    thresholds = [1, 0.9, 0.7, 0.5, 0.2, 0]
     for i in range(1, len(thresholds)):
         threshold_max = thresholds[i-1]
         threshold_min = thresholds[i]
