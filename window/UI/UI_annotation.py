@@ -29,6 +29,12 @@ class UI_Annotation(QFrame):
 
         self.annotationTree = QTreeWidget()
         self.annotationTree.setHeaderLabels(['标注名称', '类型', '形状', '颜色', '描述'])
+        header = self.annotationTree.header()
+        header.setSectionResizeMode(0, QHeaderView.Stretch)
+        header.setSectionResizeMode(1, QHeaderView.Stretch)
+        header.setSectionResizeMode(2, QHeaderView.Stretch)
+        header.setSectionResizeMode(3, QHeaderView.Stretch)
+        header.setSectionResizeMode(4, QHeaderView.Stretch)
         self.folderselector = FolderSelector(annotation=True)
         self.save_btn = QPushButton('保存标注')
         self.loadAnnotation_btn = QPushButton('导入标注')
@@ -44,7 +50,6 @@ class UI_Annotation(QFrame):
         self.annotaion_layout.addWidget(self.loadNucleiAnn_btn, 3, 0, 1, 2)
         self.annotaion_layout.addWidget(self.showNucleiAnn_btn, 3, 2, 1, 1)
 
-
         self.type_widget = QWidget()
         self.type_widget.setLayout(self.type_layout)
         self.splitter.addWidget(self.type_widget)
@@ -53,17 +58,6 @@ class UI_Annotation(QFrame):
         self.splitter.addWidget(self.annotation_widget)
         self.splitter.setSizes([1000, 2000])
         self.main_layout.addWidget(self.splitter)
-
-        # 设置annotationTypeTree的列宽策略
-        # header = self.annotationTypeTree.header()
-        # header.setSectionResizeMode(0, header.Stretch)
-        # header.setSectionResizeMode(1, header.Stretch)
-
-        # header = self.annotationTree.header()
-        # header.setSectionResizeMode(0, header.Stretch)
-        # header.setSectionResizeMode(1, header.Stretch)
-        # header.setSectionResizeMode(2, header.Stretch)
-        # header.setSectionResizeMode(3, header.Stretch)
 
         # 设置删除按键
         self.delete_type_action = QAction("删除")
@@ -77,11 +71,9 @@ class UI_Annotation(QFrame):
         # 设置修改按钮与删除按钮
         self.modify_annotation_action = QAction("修改标注")
         self.delete_annotation_action = QAction("删除标注")
-        # self.set_description_action = QAction("设置描述")
         self.annotationTree_menu = QMenu()
         self.annotationTree_menu.addAction(self.modify_annotation_action)
         self.annotationTree_menu.addAction(self.delete_annotation_action)
-        # self.annotationTree_menu.addAction(self.set_description_action)
 
         self.annotationTree.setContextMenuPolicy(Qt.CustomContextMenu)
         self.annotationTree.customContextMenuRequested.connect(self.show_annotationTree_menu)
