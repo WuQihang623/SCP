@@ -420,7 +420,7 @@ class SlideViewer(BasicSlideViewer):
     def removeContourItem(self, item):
         self.scene.removeItem(item)
 
-    # TODO: 加载微环境分析结果
+    # 加载微环境分析结果
     def loadMicroenv(self, path):
         try:
             with open(path, 'rb') as f:

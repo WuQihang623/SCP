@@ -21,11 +21,11 @@ class UI_Annotation(QFrame):
         header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
 
         self.addType_btn = QPushButton("增加类别")
-        self.changeType_btn = QPushButton('修改类别')
+        self.deleteType_btn = QPushButton('删除类别')
         self.type_layout = QGridLayout()
         self.type_layout.addWidget(self.annotationTypeTree, 0, 0, 1, 2)
         self.type_layout.addWidget(self.addType_btn, 1, 0, 1, 1)
-        self.type_layout.addWidget(self.changeType_btn, 1, 1, 1, 1)
+        self.type_layout.addWidget(self.deleteType_btn, 1, 1, 1, 1)
 
         self.annotationTree = QTreeWidget()
         self.annotationTree.setHeaderLabels(['标注名称', '类型', '形状', '颜色', '描述'])
@@ -62,8 +62,12 @@ class UI_Annotation(QFrame):
         # 设置删除按键
         self.delete_type_action = QAction("删除")
         self.delete_type_action.triggered.connect(self.delete_annotationTypeItem)
+        self.change_type_name_action = QAction("修改标注")
+        self.change_type_color_action = QAction("修改颜色")
         self.annotationTypeTree_menu = QMenu()
         self.annotationTypeTree_menu.addAction(self.delete_type_action)
+        self.annotationTypeTree_menu.addAction(self.change_type_name_action)
+        self.annotationTypeTree_menu.addAction(self.change_type_color_action)
 
         self.annotationTypeTree.setContextMenuPolicy(Qt.CustomContextMenu)
         self.annotationTypeTree.customContextMenuRequested.connect(self.show_annotationTypeTree_menu)

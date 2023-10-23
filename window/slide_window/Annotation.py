@@ -80,7 +80,7 @@ class AnnotationWidget(UI_Annotation):
 
     def connectBtnFunc(self):
         self.addType_btn.clicked.connect(self.addCategoryAnnotaion)
-        self.changeType_btn.clicked.connect(self.changeCategory)
+        self.deleteType_btn.clicked.connect(self.delete_annotationTypeItem)
 
         # 当点击标注时，进行标注的激活
         self.annotationTree.itemClicked.connect(self.onClickedAnnotationTree)
@@ -88,6 +88,8 @@ class AnnotationWidget(UI_Annotation):
         self.annotationTypeTree.itemClicked.connect(self.onClickedTreeItemRow)
         # 双击标注时，进行标注描述的修改
         self.annotationTree.itemDoubleClicked.connect(self.set_description)
+        # 双击标注类别时，对类别进行修改
+        self.annotationTypeTree.itemDoubleClicked.connect(self.changeAnnotationTypeEvent)
 
         # 修改标注
         self.modify_annotation_action.triggered.connect(self.changeAnnotation)
@@ -102,6 +104,9 @@ class AnnotationWidget(UI_Annotation):
         self.clearAnnotation_btn.clicked.connect(self.clearAnnotations)
         # 导入细胞核标注
         self.loadNucleiAnn_btn.clicked.connect(self.load_nuclei)
+        # 修改标注名称
+        self.change_type_name_action.triggered.connect(self.changeCategory)
+        self.change_type_color_action.triggered.connect(self.changeAnnotationColor)
 
     def init_AnnotationTypeTree(self):
         for key, rgb in self.AnnotationTypes.items():
@@ -145,6 +150,21 @@ class AnnotationWidget(UI_Annotation):
                 else:
                     QMessageBox.warning(self, '警告', "该颜色或文本已被添加！")
 
+    # 删除上面表格的类别
+    def delete_annotationTypeItem(self):
+        items = self.annotationTypeTree.selectedItems()
+        for item in items:
+            # TODO:如果删除的类别已被使用，则无法删除
+            existed_type = []
+            for name, annotation in self.Annotations.items():
+                existed_type.append(annotation['type'])
+            if item.text(0) in existed_type:
+                QMessageBox.warning(self, '警告', '无法删除已存在的标注类型！')
+                return
+            self.AnnotationTypes.pop(item.text(0))
+            self.saveAnnotationTypeTree()
+            (item.parent() or self.annotationTypeTree.invisibleRootItem()).removeChild(item)
+
     # 修改上面表格的类别
     def changeCategory(self):
         current_item = self.annotationTypeTree.currentItem()
@@ -169,23 +189,41 @@ class AnnotationWidget(UI_Annotation):
                             self.Annotations[f'标注{row}']['type'] = new_type
                             self.changeAnnotaionSignal.emit(row, new_type, current_color)
 
-    # 删除上面表格的类别
-    def delete_annotationTypeItem(self):
-        items = self.annotationTypeTree.selectedItems()
-        for item in items:
-            # TODO:如果删除的类别已被使用，则无法删除
-            existed_type = []
-            for name, annotation in self.Annotations.items():
-                existed_type.append(annotation['type'])
-            if item.text(0) in existed_type:
-                QMessageBox.warning(self, '警告', '无法删除已存在的标注类型！')
-                return
-            self.AnnotationTypes.pop(item.text(0))
-            self.saveAnnotationTypeTree()
-            (item.parent() or self.annotationTypeTree.invisibleRootItem()).removeChild(item)
+    # 更改标注颜色
+    def changeAnnotationColor(self):
+        new_color = QColorDialog.getColor(QColor(0, 0, 0), self, "选择颜色")
+        if new_color.isValid():
+            if list(new_color.getRgb()) not in self.AnnotationTypes.values():
+                current_item = self.annotationTypeTree.currentItem()
+                if current_item:
+                    # 将图像块颜色替换
+                    current_type = current_item.text(0)
+                    current_color = self.AnnotationTypes[current_type]
+                    pixmap = QPixmap(20, 20)
+                    pixmap.fill(new_color)
+                    current_item.setIcon(1, QIcon(pixmap))
+                    # 更换到类别的颜色
+                    self.AnnotationTypes[current_type] = list(new_color.getRgb())
+
+                    # 重新绘制该颜色的标注
+                    # 遍历一遍annotationTree
+                    for row in range(self.annotationTree.topLevelItemCount()):
+                        item = self.annotationTree.topLevelItem(row)
+                        type = item.text(1)
+                        if type == current_type:
+                            item.setIcon(3, QIcon(pixmap))
+                            self.Annotations[f'标注{row}']['color'] = list(new_color.getRgb())
+                            self.changeAnnotaionSignal.emit(row, current_type, list(new_color.getRgb()))
+                    self.showAnnotationSignal.emit(True)
+            else:
+                QMessageBox.warning(self, "警告", "该颜色已被使用！")
 
     # 双击annotationTypeTree，如果点击的是名字，则修改标注的名称，如果点的是颜色，则修改标注的颜色
-
+    def changeAnnotationTypeEvent(self, item, colum):
+        if colum == 0:
+            self.changeCategory()
+        else:
+            self.changeAnnotationColor()
 
     # 获取被点击的Tree item所在的行,并设置标注工具的颜色
     def onClickedTreeItemRow(self, item, colum):
