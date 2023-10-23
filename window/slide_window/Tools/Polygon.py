@@ -172,8 +172,10 @@ class DrawPolygon(BaseTool):
         self.CONTINUE_FLAG = False
         return
 
-    def redraw(self, downsample):
+    def redraw(self, downsample, width=None):
         if self.DRAW_FLAG:
+            if width is not None:
+                self.pen.setWidth(width)
             self.PathItem = QGraphicsPathItem()
             self.path = QPainterPath()
             self.PathItem.setPen(self.pen)

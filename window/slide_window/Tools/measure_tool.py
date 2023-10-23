@@ -110,8 +110,10 @@ class MeasureTool(BaseTool):
                     self.scene.removeItem(item)
         return None
 
-    def redraw(self, downsample):
+    def redraw(self, downsample, width=None):
         if self.DRAW_FLAG:
+            if width is not None:
+                self.pen.setWidth(width)
             self.line_item = QGraphicsLineItem()
             self.line_item.setPen(self.pen)
             self.text_item = TranslucentTextItem()

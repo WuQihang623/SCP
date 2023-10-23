@@ -196,15 +196,16 @@ class ToolManager(QObject):
 
     # 当scene改变后，需要重新绘制当前绘制的这个形状
     def redraw(self, level, downsample):
+        width = int(4 / self.view.transform().m11())
         # 重新绘制当前绘制的标注
         if self.TOOL_FLAG == 2:
-            self.draw_fixedRect.redraw(downsample)
+            self.draw_fixedRect.redraw(downsample, width)
         elif self.TOOL_FLAG == 3:
-            self.draw_Rect.redraw(downsample)
+            self.draw_Rect.redraw(downsample, width)
         elif self.TOOL_FLAG == 4:
-            self.draw_polygon.redraw(downsample)
+            self.draw_polygon.redraw(downsample, width)
         elif self.TOOL_FLAG == 5:
-            self.measure_tool.redraw(downsample)
+            self.measure_tool.redraw(downsample, width)
 
         # 重新绘制绘制好的标注
         for idx, (name, annotation) in enumerate(self.Annotations.items()):

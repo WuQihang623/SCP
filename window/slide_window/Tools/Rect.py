@@ -78,8 +78,10 @@ class DrawRect(BaseTool):
         return None
 
     # 当scene改变后，需要重新绘制当前绘制的这个形状
-    def redraw(self, downsample):
+    def redraw(self, downsample, width=None):
         if self.DRAW_FLAG:
+            if width is not None:
+                self.pen.setWidth(width)
             self.rect_item = QGraphicsRectItem()
             self.rect_item.setPen(self.pen)
 
