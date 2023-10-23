@@ -27,6 +27,7 @@ class BasicSlideViewer(QFrame):
         self.view.setScene(self.scene)
         self.thumbnail = Thumbnail()
         self.slider = ZoomSlider()
+        self.menu = QMenu()
 
         self.view.setTransformationAnchor(QGraphicsView.NoAnchor)
         self.view.viewport().installEventFilter(self)
@@ -56,6 +57,14 @@ class BasicSlideViewer(QFrame):
 
         # 初始的slider的值
         self.slider_value = -1
+
+    # 设置右键的菜单栏
+    def addAction2Menu(self, action_list):
+        for action in action_list:
+            if action is None:
+                self.menu.addSeparator()
+            else:
+                self.menu.addAction(action)
 
     # 载入slide,同时初始化缩略图，放大滑块
     def load_slide(self, slide_path, zoom_step=1.35):
@@ -135,7 +144,6 @@ class BasicSlideViewer(QFrame):
             # 视图移动
             if self.move_flag and self.move_allow_flag:
                 self.responseMouseMove(event)
-
         return True
 
     # 响应鼠标拖动屏幕

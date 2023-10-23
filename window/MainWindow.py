@@ -144,6 +144,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 # 设置工具栏上图像块点击所发出的指令
                 self.connect_Annotation_ation()
                 self.add_recent_path(file_path)
+
+                # 将菜单栏中的按键连接到Slideviewer中
+                slide_window.slide_viewer.addAction2Menu([self.move_action, self.fixed_rect_action, self.rect_action,
+                                                          self.polygon_action, self.measure_tool_action, self.modify_action,
+                                                          None, self.annotation_action, self.diagnose_action, self.microenv_action,
+                                                          self.pdl1_action])
+
                 if mode == '诊断':
                     self.diagnose_action.trigger()
                     slide_window.diagnose.loadDiagnoseResults_btn.click()

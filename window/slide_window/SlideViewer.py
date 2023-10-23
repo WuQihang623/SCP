@@ -195,6 +195,11 @@ class SlideViewer(BasicSlideViewer):
                     if self.ToolManager.TOOL_FLAG == 1:
                         self.modify_nuclei(event.pos())
 
+        elif event.button() == Qt.RightButton:
+            # 鼠标右键
+            if event.type() == QEvent.MouseButtonRelease:
+                self.menu.exec_(self.mapToGlobal(event.pos()))
+
         elif event.type() == QEvent.MouseMove:
             # 更新状态栏鼠标位置
             self.mousePosSignal.emit(self.view.mapToScene(event.pos()))
