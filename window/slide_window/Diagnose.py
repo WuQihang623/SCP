@@ -1,8 +1,10 @@
 import json
 import os
+import pickle
 import sys
 
 import cv2
+import constants
 import numpy as np
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import pyqtSignal, QEvent
@@ -28,7 +30,6 @@ class DiagnoseWidget(UI_Diagnose):
     def __init__(self):
         super(DiagnoseWidget, self).__init__()
         self.file_dir = self.folderselector.FileDir()
-
         self.btn_connect()
 
     def btn_connect(self):
@@ -56,13 +57,13 @@ class DiagnoseWidget(UI_Diagnose):
         self.slide_name = slide_name
         # 如果不存在，就根据当前文本框的路径加上文件名设置默认的载入路径
         if not os.path.exists(path) or not isinstance(path, str):
-            options = QFileDialog.Options()
-            file_dir = os.path.join(self.file_dir, "Diagnose", self.slide_name)
-            if not os.path.exists(file_dir):
-                file_dir = os.path.join(self.file_dir)
-            path, _ = QFileDialog.getOpenFileName(self, "选择诊断结果存放的路径", file_dir,
-                                                  "热图(*.jpg)", options=options)
-            # path = os.path.join('results', 'Diagnose', slide_name, f"{slide_name}_result.jpg")
+            # 先自动搜寻地址
+            path = os.path.join(self.file_dir, self.slide_name+".pkl")
+            if not os.path.exists(path):
+                options = QFileDialog.Options()
+                path, _ = QFileDialog.getOpenFileName(self, "选择诊断结果存放的路径", self.file_dir,
+                                                      "*热图(*.pkl)", options=options)
+
         if path == '':
             return
         if not os.path.exists(path):
@@ -71,21 +72,28 @@ class DiagnoseWidget(UI_Diagnose):
         if slide_name not in path:
             QMessageBox.warning(self, '警告', '结果文件与图片不匹配！')
             return
-        # self.file_dir = os.path.dirname(path)
+
+        # 判断结果是否有错
+        try:
+            with open(path, 'rb') as f:
+                results = pickle.load(f)
+                f.close()
+            self.preds = results["preds"]
+            self.probs = results["probs"]
+            heatmap = results["heatmap"]
+            image = results["image"]
+        except:
+            QMessageBox.warning(self, '警告', '文件内容确实！')
+            return
+
         self.loadDiagnoseSignal.emit(path)
         self.showHeatmap_btn.setChecked(True)
 
         # 加载预测结果
-        preds_path = path.replace('result.jpg', 'preds_down.json')
-        with open(preds_path, 'r') as f:
-            self.preds = json.load(f)
-            f.close()
         self.setText(self.preds['preds'])
 
         # 加载预测mask
         size = 256
-        probs_path = path.replace('result.jpg', 'probs.npy')
-        self.probs = np.load(probs_path)
         probs_shape = (int(self.slide_helper.get_level_dimension(0)[0] / size),
                        int(self.slide_helper.get_level_dimension(0)[1] / size))
         self.probs = cv2.resize(self.probs, probs_shape, cv2.INTER_LINEAR)
@@ -94,17 +102,17 @@ class DiagnoseWidget(UI_Diagnose):
         downsample = self.slide_helper.get_level_dimension(0)[0] / self.probs.shape[1]
         coords = sample_from_porbmap(self.probs)
         num = 0
+        # 绘制诊断框
         self.rect_list = []
         for coord in coords:
             original_x = int(coord[1] * downsample)
             original_y = int(coord[0] * downsample)
-
             level = 0
             if level > self.slide_helper.get_max_level():
                 level = self.slide_helper.get_max_level()
             pil_image = self.slide_helper.read_region((original_x, original_y), level, (size, size))
-            os.makedirs(f'results/Diagnose/{slide_name}/images', exist_ok=True)
-            pil_image.convert('RGB').save(f'results/Diagnose/{slide_name}/images/{num}.jpg')
+            os.makedirs(f'{constants.diagnose_path}/{slide_name}/images', exist_ok=True)
+            pil_image.convert('RGB').save(f'{constants.diagnose_path}/{slide_name}/images/{num}.jpg')
             pixmap = self.pilimage_to_pixmap(pil_image)
             item = MyGraphicsPixmapItem(pixmap, num)
             item.setScale(256 / size)
@@ -112,7 +120,6 @@ class DiagnoseWidget(UI_Diagnose):
             self.scene.addItem(item)
             self.rect_list.append([original_x, original_y, size, size])
             num += 1
-
             if num == 50:
                 break
         self.sendDiagnoseRectSignal.emit(self.rect_list)
@@ -120,8 +127,8 @@ class DiagnoseWidget(UI_Diagnose):
     # 生成诊断报告
     def show_report(self):
         if hasattr(self, 'slide_name'):
-            self.diagnose_report = DiagnoseReport(f'results/Diagnose/{self.slide_name}/images',
-                                                  f"results/Diagnose/{self.slide_name}/report.pdf",
+            self.diagnose_report = DiagnoseReport(f'{constants.diagnose_path}/{self.slide_name}/images',
+                                                  f"{constants.diagnose_path}/{self.slide_name}/report.pdf",
                                                   self.diagnoseConclusion_label.text()[5:])
             self.diagnose_report.show()
 
@@ -133,7 +140,6 @@ class DiagnoseWidget(UI_Diagnose):
     def set_slide_path(self, slide_path):
         self.slide_path = slide_path
         self.slide_helper = SlideHelper(slide_path)
-        # self.wsi_path_text.setText(f"   {slide_path}")
 
     # 点击某个矩形，则将画面跳转到那个视图下
     def mousePressEvent(self, event):
@@ -145,7 +151,7 @@ class DiagnoseWidget(UI_Diagnose):
 
     def diagnose(self):
         slide_name, _ = os.path.splitext(os.path.basename(self.slide_path))
-        path = os.path.join(self.file_dir, 'Diagnose', slide_name, f"{slide_name}_result.jpg")
+        path = os.path.join(self.file_dir, slide_name+".pkl")
         if os.path.exists(path):
             self.load_result(path)
         else:

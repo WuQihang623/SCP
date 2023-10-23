@@ -40,7 +40,7 @@ def Segment_Nuclei(model: torch.nn.Module,
                    bar_signal_nuclei_seg=None,
                    mode='HE',
                    region_info=None):
-    results_dir = os.path.join(constants.cache_path, results_dir)
+    results_dir = os.path.join(constants.micro_path, results_dir)
     start = time.time()
     if mode == 'HE':
         dataset = WholeSlideSet_HE(slide=slide,

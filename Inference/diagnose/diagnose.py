@@ -1,6 +1,8 @@
 import math
 import os
+import pickle
 
+import constants
 import json
 import cv2
 import numpy as np
@@ -236,12 +238,12 @@ class Thread_Diagnose(QThread):
     def run(self):
         result, preds, heatmap, downsample, probs, overview_shape = diagnosis(**self.kwargs)
         slide_name, extension = os.path.splitext(os.path.basename(self.kwargs['slidepath']))
-        os.makedirs(f'results/Diagnose/{slide_name}', exist_ok=True)
-        cv2.imwrite(f'results/Diagnose/{slide_name}/{slide_name}_result.jpg', cv2.resize(result, self.overview_shape))
         preds_down = {'preds': preds, 'down': downsample}
-        with open(f"results/Diagnose/{slide_name}/{slide_name}_preds_down.json", 'w') as f:
-            f.write(json.dumps(preds_down, indent=2, cls=NpEncoder))
+        results = {"image": cv2.resize(result, self.overview_shape),
+                   "preds": preds_down,
+                   "heatmap": heatmap,
+                   "probs": probs}
+        with open(f"{constants.diagnose_path}/{slide_name}.pkl", 'wb') as f:
+            pickle.dump(results, f)
             f.close()
-        np.save(f"results/Diagnose/{slide_name}/{slide_name}_heatmap.npy", heatmap)
-        np.save(f"results/Diagnose/{slide_name}/{slide_name}_probs.npy", probs)
-        self.complete_signal.emit(f'results/Diagnose/{slide_name}/{slide_name}_result.jpg')
+        self.complete_signal.emit(f"{constants.diagnose_path}/{slide_name}.pkl")

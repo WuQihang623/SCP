@@ -34,7 +34,7 @@ def Segment_Tumor(model: torch.nn.Module,
                   results_dir='results',
                   bar_signal_tumor_seg=None,
                   mode='HE'):
-    results_dir = os.path.join(constants.cache_path, results_dir)
+    results_dir = os.path.join(constants.micro_path, results_dir)
     start = time.time()
     if mode == 'HE':
         dataset = WholeSlideSet_HE(slide=slide,

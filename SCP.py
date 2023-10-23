@@ -19,6 +19,8 @@ def toggle_theme(theme):
 if __name__ == "__main__":
     warnings.filterwarnings('ignore')
     os.makedirs(constants.cache_path, exist_ok=True)
+    os.makedirs(constants.diagnose_path, exist_ok=True)
+    os.makedirs(constants.micro_path, exist_ok=True)
     # 解决不同电脑不同缩放比例问题
     QtCore.QCoreApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
     # QGuiApplication.setAttribute(Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)

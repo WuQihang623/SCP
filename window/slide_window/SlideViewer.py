@@ -8,9 +8,7 @@ import numpy as np
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import QPoint, Qt, QEvent, pyqtSignal, QPointF
 from PyQt5.QtGui import QWheelEvent, QMouseEvent,  QPixmap, QColor, QPen
-from function.heatmap_background import get_colormap_background
-
-
+from function.heatmap_background import get_colormap_background, numpy_to_pixmap
 from window.slide_window.BasicSlideViewer import BasicSlideViewer
 from window.slide_window.Tools import ToolManager
 from window.slide_window.TileLoader.RegionContourLoader import RegionContourLoader
@@ -316,16 +314,15 @@ class SlideViewer(BasicSlideViewer):
         self.showImageAtThumbnailArea(QPointF(0, 0), [self.thumbnail.width(), self.thumbnail.height()])
 
     # TODO：加载诊断模式的结果
-    def load_diagnose(self, overview_path):
-        heatmap_path = overview_path.replace('result.jpg', 'heatmap.npy')
-        self.overview_diagnose = QPixmap(overview_path)
-        preds_path = overview_path.replace('result.jpg', 'preds_down.json')
-        with open(preds_path, 'r') as f:
-            self.heatmap_downsample_diagnose = json.load(f)['down']
+    def load_diagnose(self, path):
+        with open(path, 'rb') as f:
+            results = pickle.load(f)
             f.close()
-        self.heatmap_diagnose = np.load(heatmap_path)
+        self.overview_diagnose = numpy_to_pixmap(results['image'])
+        self.heatmap_downsample_diagnose = results["preds"]['down']
+        self.heatmap_diagnose = results["heatmap"]
         self.heatmap_diagnose = cv2.cvtColor(self.heatmap_diagnose, cv2.COLOR_RGB2GRAY)
-        self.heatmap_diagnose = 255 - self.heatmap_diagnose
+        # self.heatmap_diagnose = 255 - self.heatmap_diagnose
         self.heatmap = self.heatmap_diagnose.copy()
         self.heatmap_downsample = self.heatmap_downsample_diagnose
         # 显示热图

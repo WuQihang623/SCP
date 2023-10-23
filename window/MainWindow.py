@@ -132,31 +132,34 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     # 打开文件
     def openslide(self, file_path, mode=None):
-        # 判断文件是否可以打开
-        waning_text = judge_slide_path(file_path)
-        if waning_text == True:
-            self.slide_file_dir = os.path.dirname(file_path)
-            slide_window = SlideWindow(file_path)
-            slide_window.annotation.AnnotationTypeChangeSignal.connect(self.bindAnnotationColor)
-            self.mdiArea.addSubWindow(slide_window)
-            slide_window.show()
-            slide_window.setWindowTitle(os.path.basename(file_path))
-            # 设置工具栏上的图像块的颜色
-            slide_window.annotation.set_activate_color_action()
-            # 设置工具栏上图像块点击所发出的指令
-            self.set_AnnotationColor()
-            self.add_recent_path(file_path)
+        try:
+            # 判断文件是否可以打开
+            waning_text = judge_slide_path(file_path)
+            if waning_text == True:
+                self.slide_file_dir = os.path.dirname(file_path)
+                slide_window = SlideWindow(file_path)
+                slide_window.annotation.AnnotationTypeChangeSignal.connect(self.bindAnnotationColor)
+                self.mdiArea.addSubWindow(slide_window)
+                slide_window.show()
+                slide_window.setWindowTitle(os.path.basename(file_path))
+                # 设置工具栏上的图像块的颜色
+                slide_window.annotation.set_activate_color_action()
+                # 设置工具栏上图像块点击所发出的指令
+                self.set_AnnotationColor()
+                self.add_recent_path(file_path)
+                if mode == '诊断':
+                    self.diagnose_action.trigger()
+                    slide_window.diagnose.loadDiagnoseResults_btn.click()
+                # TODO:直接跳转到微环境分析以及PD-L1测量页面
 
-            if mode == '诊断':
-                self.diagnose_action.trigger()
-                slide_window.diagnose.loadDiagnoseResults_btn.click()
-            # TODO:直接跳转到微环境分析以及PD-L1测量页面
-
-        else:
-            if waning_text is None:
-                return
             else:
-                QMessageBox.warning(self, '警告', waning_text)
+                if waning_text is None:
+                    return
+                else:
+                    QMessageBox.warning(self, '警告', waning_text)
+        except Exception as e:
+            QMessageBox.warning(self, '警告', str(e))
+
 
     def add_recent_path(self, file_path):
         # 添加到最近文件中
