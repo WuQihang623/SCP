@@ -1,7 +1,7 @@
 import os
 
 from PyQt5.QtWidgets import *
-from PyQt5.QtGui import QKeySequence
+from PyQt5.QtGui import QKeySequence, QCursor, QScreen
 from window.slide_window import *
 from PyQt5.QtCore import Qt
 from window.slide_window.utils.AffirmDialog import CloseDialog
@@ -17,6 +17,7 @@ class SlideWindow(QFrame):
         self.connectSignalSlot()
         # 设置初始化的颜色
         self.annotation.set_AnnotationColor(0)
+        self.full_screen_flag = False
 
     def init_UI(self):
         main_layout = QVBoxLayout(self)
@@ -57,6 +58,7 @@ class SlideWindow(QFrame):
         self.saveAnnShortcut = QShortcut(QKeySequence("Ctrl+S"), self)
         self.stopDrawShortcut = QShortcut(QKeySequence(Qt.Key_Escape), self)
         self.deleteAnnShortcut = QShortcut(QKeySequence(Qt.Key_Delete), self)
+        self.full_screenShortcut = QShortcut(QKeySequence(Qt.Key_Q), self)
 
     # 连接信号与槽
     def connectSignalSlot(self):
@@ -132,6 +134,8 @@ class SlideWindow(QFrame):
         self.slide_viewer.sendNucleiShowTypePDL1Signal.connect(self.pdl1.showNucleiType_Combox.setChecked)
         # 人为选择要显示表皮细胞，淋巴细胞
         self.pdl1.showNucleiType_Combox.selectionChangedSignal.connect(self.slide_viewer.update_show_nuclei_types_pdl1)
+        # 全屏模式链接
+        self.slide_viewer.full_screen_action.triggered.connect(self.full_screen)
 
         """标注模式下导入细胞核分割"""
         self.annotation.loadNucleiAnnSignal.connect(self.slide_viewer.loadNuclei)
@@ -152,6 +156,7 @@ class SlideWindow(QFrame):
         self.saveAnnShortcut.activated.connect(self.saveAnnotations)
         self.stopDrawShortcut.activated.connect(self.stopDraw)
         self.deleteAnnShortcut.activated.connect(self.deleteAnnotation)
+        self.full_screenShortcut.activated.connect(self.full_screen)
 
 
     # 将WSI加载到slide_viewer中
@@ -251,6 +256,31 @@ class SlideWindow(QFrame):
             # 如果时标注模式
             if self.splitter.widget(0).isVisible():
                 self.slide_viewer.ToolManager.cancel_drawing()
+
+    def full_screen(self):
+        try:
+            if hasattr(self, "slide_viewer") and self.isActiveWindow():
+                if self.full_screen_flag:
+                    # 恢复正常屏幕
+                    self.setWindowFlags(Qt.SubWindow)
+                    self.showNormal()
+                    self.showMaximized()
+                    self.full_screen_flag = False
+                else:
+                    # 全屏
+                    # # 获取鼠标的当前位置
+                    cursor = QCursor()
+                    cursor_pos = cursor.pos()
+                    # 获取包含鼠标位置的屏幕
+                    screen = QDesktopWidget().screenNumber(cursor_pos)
+                    screen_geometry = QDesktopWidget().screenGeometry(screen)
+                    # 将窗口设置为包含鼠标位置的屏幕的工作区域
+                    self.setGeometry(screen_geometry)
+                    self.setWindowFlags(Qt.Window | Qt.FramelessWindowHint)
+                    self.showFullScreen()
+                    self.full_screen_flag = True
+        except Exception as e:
+            print(str(e))
 
     # 快捷键--删除选中标注
     def deleteAnnotation(self):

@@ -216,7 +216,7 @@ class Ui_MainWindow(object):
         self.mode_menu.setTitle(_translate("MainWindow", "模式选择"))
         self.toolBar.setWindowTitle(_translate("MainWindow", "toolBar"))
         self.open_slide_action.setText(_translate("MainWindow", "导入文件"))
-        self.fill_screen_action.setText(_translate("MainWindow", "全屏模式"))
+        self.fill_screen_action.setText(_translate("MainWindow", "切换全屏显示(Q)"))
         self.shot_screen_action.setText(_translate("MainWindow", "截图"))
         self.quit.setText(_translate("MainWindow", "退出"))
         self.rect_resiz_action.setText(_translate("MainWindow", "矩形尺寸设置"))
@@ -267,6 +267,7 @@ class Ui_MainWindow(object):
         self.activate_color_action3.setEnabled(enable)
         self.activate_color_action4.setEnabled(enable)
         self.convert_color_space_action.setEnabled(enable)
+        self.fill_screen_action.setEnabled(enable)
 
     # 只有在标注模式下这些action的使能才会被打开
     def annotation_action_enable(self, enable):
@@ -294,7 +295,6 @@ class Ui_MainWindow(object):
         self.activate_color_action3.setChecked(False)
         self.activate_color_action4.setChecked(False)
         if idx == 0:
-            print("激活颜色块1")
             self.activate_color_action1.setChecked(True)
         elif idx == 1:
             self.activate_color_action2.setChecked(True)

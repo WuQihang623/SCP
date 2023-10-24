@@ -28,6 +28,9 @@ class BasicSlideViewer(QFrame):
         self.thumbnail = Thumbnail()
         self.slider = ZoomSlider()
         self.menu = QMenu()
+        self.full_screen_action = QAction("切换全屏模式(Q)")
+        # TODO: full screen action 触发会报错
+        self.full_screen_action.setEnabled(False)
 
         self.view.setTransformationAnchor(QGraphicsView.NoAnchor)
         self.view.viewport().installEventFilter(self)
@@ -65,6 +68,7 @@ class BasicSlideViewer(QFrame):
                 self.menu.addSeparator()
             else:
                 self.menu.addAction(action)
+        self.menu.addAction(self.full_screen_action)
 
     # 载入slide,同时初始化缩略图，放大滑块
     def load_slide(self, slide_path, zoom_step=1.35):

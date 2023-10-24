@@ -115,7 +115,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     # 设置action使能
     def setEnable(self):
-        self.fill_screen_action.setEnabled(False)
+        # self.fill_screen_action.setEnabled(False)
         self.recall_action.setEnabled(False)
         self.shot_screen_action.setEnabled(False)
 
@@ -149,8 +149,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 slide_window.slide_viewer.addAction2Menu([self.move_action, self.fixed_rect_action, self.rect_action,
                                                           self.polygon_action, self.measure_tool_action, self.modify_action,
                                                           None, self.annotation_action, self.diagnose_action, self.microenv_action,
-                                                          self.pdl1_action])
-
+                                                          self.pdl1_action, None])
+                # 全屏的功能连接
+                self.fill_screen_action.triggered.connect(slide_window.full_screen)
                 if mode == '诊断':
                     self.diagnose_action.trigger()
                     slide_window.diagnose.loadDiagnoseResults_btn.click()

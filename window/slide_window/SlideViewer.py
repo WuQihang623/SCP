@@ -59,11 +59,8 @@ class SlideViewer(BasicSlideViewer):
         self.RegionContourLoader = RegionContourLoader(scene=self.scene)
         self.RegionContourLoader.addContourItemSignal.connect(self.addContourItem)
         self.RegionContourLoader.removeItemSignal.connect(self.removeContourItem)
-
         # 细胞核轮廓加载器
         self.NucleiContourLoader = NucleiContourLoader(scene=self.scene)
-        # self.NucleiContourLoader.addContourItemSignal.connect(self.addContourItem)
-        # self.NucleiContourLoader.removeItemSignal.connect(self.removeContourItem)
 
     def init_variable(self):
         super(SlideViewer, self).init_variable()
