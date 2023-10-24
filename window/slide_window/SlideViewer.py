@@ -6,7 +6,8 @@ import pickle
 import constants
 import numpy as np
 from PyQt5.QtWidgets import *
-from PyQt5.QtCore import QPoint, Qt, QEvent, pyqtSignal, QPointF
+from function.shot_screen import build_screenshot_image
+from PyQt5.QtCore import QPoint, Qt, QEvent, pyqtSignal, QPointF, QSize
 from PyQt5.QtGui import QWheelEvent, QMouseEvent,  QPixmap, QColor, QPen
 from function.heatmap_background import get_colormap_background, numpy_to_pixmap
 from window.slide_window.BasicSlideViewer import BasicSlideViewer
@@ -967,6 +968,7 @@ class SlideViewer(BasicSlideViewer):
                                           color_dict=self.nuclei_type_dict,
                                           show_types=self.show_nuclei_types_pdl1,
                                           mode=3)
+
 
     def closeEvent(self, *args, **kwargs):
         super().closeEvent()

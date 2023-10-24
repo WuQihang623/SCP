@@ -1,13 +1,16 @@
+import os.path
 import sys
 import time
+import constants
 import openslide
 import numpy as np
 from PyQt5.QtWidgets import *
-from PyQt5.QtCore import QPoint, Qt, QEvent, QRectF, pyqtSignal, QPointF, QObject
+from PyQt5.QtCore import QPoint, Qt, QEvent, QRectF, pyqtSignal, QPointF, QObject, QSize
 from PyQt5.QtGui import QWheelEvent, QMouseEvent, QTransform
 from window.slide_window.utils.thumbnail import Thumbnail
 from window.slide_window.slider import ZoomSlider
 
+from function.shot_screen import build_screenshot_image
 from window.slide_window.utils.SlideHelper import SlideHelper
 from window.slide_window.TileLoader.TileLoader import TileManager
 
@@ -31,6 +34,8 @@ class BasicSlideViewer(QFrame):
         self.full_screen_action = QAction("切换全屏模式(Q)")
         # TODO: full screen action 触发会报错
         self.full_screen_action.setEnabled(False)
+        self.shot_screen_action = QAction("截图")
+        self.shot_screen_action.triggered.connect(self.shotScreen)
 
         self.view.setTransformationAnchor(QGraphicsView.NoAnchor)
         self.view.viewport().installEventFilter(self)
@@ -69,11 +74,13 @@ class BasicSlideViewer(QFrame):
             else:
                 self.menu.addAction(action)
         self.menu.addAction(self.full_screen_action)
+        self.menu.addAction(self.shot_screen_action)
 
     # 载入slide,同时初始化缩略图，放大滑块
     def load_slide(self, slide_path, zoom_step=1.35):
         self.slide = openslide.open_slide(slide_path)
         self.slide_helper = SlideHelper(slide_path)
+        self.slide_name = os.path.splitext(os.path.basename(slide_path))[0]
         self.zoom_step = zoom_step
         # 初始化heatmap为False
         self.heatmap = None
@@ -347,6 +354,16 @@ class BasicSlideViewer(QFrame):
             self.TileLoader.restart_load_set()
             # 绘制当前rect的图片
             self.TileLoader.load_tiles_in_view(self.current_level, scene_view_rect, heatmap, heatmap_downsample)
+
+    # 截图屏幕
+    def shotScreen(self):
+        os.makedirs(constants.shot_screen_path, exist_ok=True)
+        options = QFileDialog.Options()
+        file_path, _ = QFileDialog.getSaveFileName(self, "保存截图",
+                                                   f"{constants.shot_screen_path}/{self.slide_name}.jpg",
+                                                   'jpg Files(*.jpg)', options=options)
+        image = build_screenshot_image(self.scene, QSize(1024, 1024), self.get_current_view_scene_rect())
+        image.save(file_path)
 
     def closeEvent(self):
         if hasattr(self, "TileLoader"):
