@@ -1,12 +1,11 @@
 import os.path
 import sys
-import time
 import constants
 import openslide
 import numpy as np
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import QPoint, Qt, QEvent, QRectF, pyqtSignal, QPointF, QObject, QSize
-from PyQt5.QtGui import QWheelEvent, QMouseEvent, QTransform
+from PyQt5.QtGui import QWheelEvent, QMouseEvent, QTransform, QPainter
 from window.slide_window.utils.thumbnail import Thumbnail
 from window.slide_window.slider import ZoomSlider
 
@@ -77,7 +76,7 @@ class BasicSlideViewer(QFrame):
         self.menu.addAction(self.shot_screen_action)
 
     # 载入slide,同时初始化缩略图，放大滑块
-    def load_slide(self, slide_path, zoom_step=1.35):
+    def load_slide(self, slide_path, zoom_step=1.25):
         self.slide = openslide.open_slide(slide_path)
         self.slide_helper = SlideHelper(slide_path)
         self.slide_name = os.path.splitext(os.path.basename(slide_path))[0]

@@ -71,6 +71,6 @@ class StatusBar(QStatusBar):
 
     def point_to_str(self, point: QPoint, downsample: int):
         if isinstance(point, QPointF):
-            return "({:.2f}, {:.2f})".format(point.x()*downsample, point.y()*downsample)
+            return "({:.0f}, {:.0f})".format(point.x()*downsample, point.y()*downsample)
         else:
             return "({}, {})".format(point.x()*downsample, point.y()*downsample)
