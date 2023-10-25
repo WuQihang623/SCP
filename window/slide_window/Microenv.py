@@ -8,7 +8,7 @@ from PyQt5.QtCore import pyqtSignal
 class MicroenvWidget(UI_Microenv):
     # 载入微环境分析结果信号
     loadMicroenvSignal = pyqtSignal(str)
-    # 如在微环境对比结果
+    # 载入微环境对比结果
     loadMicroenvComparisonSignal = pyqtSignal(str)
     # 打开同步窗口信号
     loadPairedWindowSignal = pyqtSignal(str)

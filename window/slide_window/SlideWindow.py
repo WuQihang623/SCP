@@ -1,12 +1,17 @@
 import os
 
+import numpy as np
+from skimage.transform import estimate_transform
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import QKeySequence, QCursor, QScreen
 from window.slide_window import *
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, pyqtSignal
 from window.slide_window.utils.AffirmDialog import CloseDialog
+from window.slide_window.utils.RegistrationDialog import RegistrationDialog
+from window.slide_window.utils.RegistrationTipDialog import RegistrationTipDialog
 
 class SlideWindow(QFrame):
+    lockModeSignal = pyqtSignal(bool)
     def __init__(self, file_path):
         super(SlideWindow, self).__init__()
         self.init_UI()
@@ -72,7 +77,7 @@ class SlideWindow(QFrame):
         # 点击标注栏中的item，获取该标注在视图中的位置
         self.annotation.updateChoosedItemSignal.connect(self.slide_viewer.ToolManager.switch2choosedItem)
         # 将选中标注的位置传送出去，将该位置设置为视图的中心点
-        self.slide_viewer.ToolManager.switch2choosedItemSignal.connect(self.slide_viewer.switchWindow)
+        self.slide_viewer.ToolManager.switch2choosedItemSignal.connect(self.slide_viewer.switch2annotation)
         # 将当前的downsample传给ToolManager，用于删除上一个激活的item并重画，再重画当前激活的item
         self.slide_viewer.reactivateItemSignal.connect(self.slide_viewer.ToolManager.reactivateItem)
         # 修改标注类型
@@ -143,13 +148,12 @@ class SlideWindow(QFrame):
         self.annotation.showNucleiAnn_btn.clicked.connect(self.slide_viewer.reverse_nulei)
         self.slide_viewer.reverseBtnSignal.connect(self.annotation.reverse_btn)
 
-        """加载对比结果"""
-        # 同步功能开启时，设置为移动模式
-        self.slide_viewer.setMoveModeSignal.connect(self.annotation.set_move_mode)
-        self.microenv.loadPairedWindowSignal.connect(self.load_slide_pair)
+        '''载入对比结果'''
+        self.microenv.loadPairedWindowSignal.connect(self.load_comparison_slide)
         self.microenv.loadMicroenvComparisonSignal.connect(self.slide_viewer_pair.loadMicroenv)
-        self.pdl1.loadPairedWidowSignal.connect(self.load_slide_pair)
+        self.pdl1.loadPairedWidowSignal.connect(self.load_comparison_slide)
         self.pdl1.loadPDL1ComparisonSignal.connect(self.slide_viewer_pair.loadPDL1)
+
         self.microenv.show_hierarchy_mask_checkbox.stateChanged.connect(self.slide_viewer_pair.change_hierarchy_mask_and_region_mask)
 
         """快捷键"""
@@ -167,81 +171,135 @@ class SlideWindow(QFrame):
         self.microenv.set_slide_path(slide_path)
         self.pdl1.set_slide_path(slide_path)
 
-    # 将WSI加载到slide_viewer中
-    def load_slide_pair(self, slide_path, mode=1):
+    # TODO:将WSI加载到slide_viewer中
+    def load_comparison_slide(self, slide_path):
         """
         :param slide_path:
         :param mode: mode为1，则为微环境，mode为2，则为pdl1
         :return:
         """
-        if not hasattr(self.slide_viewer_pair, 'slide_helper'):
+        if not hasattr(self.slide_viewer_pair, "TileLoader"):
             self.slide_viewer_pair.load_slide(slide_path)
             self.splitter_viewer.widget(1).show()
-            self.slide_viewer.synchronousSignal.connect(self.slide_viewer_pair.eventFilter_from_another_window)
-            self.slide_viewer_pair.synchronousSignal.connect(self.slide_viewer.eventFilter_from_another_window)
-            self.slide_viewer.slider.slider.valueChanged.connect(
-                self.slide_viewer_pair.responseSlider_from_another_window)
-            self.slide_viewer_pair.slider.slider.valueChanged.connect(
-                self.slide_viewer.responseSlider_from_another_window)
-            self.slide_viewer.synchronousThumSignal.connect(
-                self.slide_viewer_pair.showImageAtThumArea_from_annother_window)
-            self.slide_viewer_pair.synchronousThumSignal.connect(
-                self.slide_viewer.showImageAtThumArea_from_annother_window)
-        else:
-            if self.slide_viewer_pair.slide_helper.slide_path != slide_path:
-                self.slide_viewer_pair.load_slide(slide_path)
-                self.splitter_viewer.widget(1).show()
-                self.slide_viewer.synchronousSignal.connect(self.slide_viewer_pair.eventFilter_from_another_window)
-                self.slide_viewer_pair.synchronousSignal.connect(self.slide_viewer.eventFilter_from_another_window)
-                self.slide_viewer.slider.slider.valueChanged.connect(
-                    self.slide_viewer_pair.responseSlider_from_another_window)
-                self.slide_viewer_pair.slider.slider.valueChanged.connect(
-                    self.slide_viewer.responseSlider_from_another_window)
-                self.slide_viewer.synchronousThumSignal.connect(
-                    self.slide_viewer_pair.showImageAtThumArea_from_annother_window)
-                self.slide_viewer_pair.synchronousThumSignal.connect(
-                    self.slide_viewer.showImageAtThumArea_from_annother_window)
-            self.splitter_viewer.widget(1).show()
 
-        # 连接同步信号
-        self.slide_viewer.init_position()
-        self.slide_viewer_pair.init_position()
+        '''对比窗口加载结果链接'''
+        # 载入结果后，初始化设置要显示的组织轮廓类型
+        self.slide_viewer_pair.sendRegionShowTypeMicroenvSignal.connect(
+            self.microenv.showRegionType_Combox.setChecked)
+        # 人为选择要显示的组织轮廓类型
+        self.microenv.showRegionType_Combox.selectionChangedSignal.connect(
+            self.slide_viewer_pair.update_show_region_types_microenv)
+        # 载入结果后，初始化设置要不要显示热图，组织区域，细胞核分割
+        self.slide_viewer_pair.sendShowMicroenvSignal.connect(self.microenv.showCombox.setChecked)
+        # 人为选择要显示热图，组织轮廓，细胞核分割轮廓
+        self.microenv.showCombox.selectionChangedSignal.connect(self.slide_viewer_pair.update_microenv_show)
+        # 载入结果后，初始化设置要不要显示表皮细胞，淋巴细胞
+        self.slide_viewer_pair.sendNucleiShowTypeMicroenvSignal.connect(
+            self.microenv.showNucleiType_Combox.setChecked)
+        # 人为选择要显示表皮细胞，淋巴细胞
+        self.microenv.showNucleiType_Combox.selectionChangedSignal.connect(
+            self.slide_viewer_pair.update_show_nuclei_types_microenv)
 
-        if mode == 1:
-            # 载入结果后，初始化设置要显示的组织轮廓类型
-            self.slide_viewer_pair.sendRegionShowTypeMicroenvSignal.connect(
-                self.microenv.showRegionType_Combox.setChecked)
-            # 人为选择要显示的组织轮廓类型
-            self.microenv.showRegionType_Combox.selectionChangedSignal.connect(
-                self.slide_viewer_pair.update_show_region_types_microenv)
-            # 载入结果后，初始化设置要不要显示热图，组织区域，细胞核分割
-            self.slide_viewer_pair.sendShowMicroenvSignal.connect(self.microenv.showCombox.setChecked)
-            # 人为选择要显示热图，组织轮廓，细胞核分割轮廓
-            self.microenv.showCombox.selectionChangedSignal.connect(self.slide_viewer_pair.update_microenv_show)
-            # 载入结果后，初始化设置要不要显示表皮细胞，淋巴细胞
-            self.slide_viewer_pair.sendNucleiShowTypeMicroenvSignal.connect(
-                self.microenv.showNucleiType_Combox.setChecked)
-            # 人为选择要显示表皮细胞，淋巴细胞
-            self.microenv.showNucleiType_Combox.selectionChangedSignal.connect(
-                self.slide_viewer_pair.update_show_nuclei_types_microenv)
-        elif mode == 2:
-            # 载入结果后，初始化设置要显示的组织轮廓类型
-            self.slide_viewer_pair.sendRegionShowTypePDL1Signal.connect(self.pdl1.showRegionType_Combox.setChecked)
-            # 人为选择要显示的组织轮廓类型
-            self.pdl1.showRegionType_Combox.selectionChangedSignal.connect(
-                self.slide_viewer_pair.update_show_region_types_pdl1)
-            # 载入结果后，初始化设置要不要显示热图，组织区域，细胞核分割
-            self.slide_viewer_pair.sendShowPDL1Signal.connect(self.pdl1.showCombox.setChecked)
-            # 人为选择要显示热图，组织轮廓，细胞核分割轮廓
-            self.pdl1.showCombox.selectionChangedSignal.connect(self.slide_viewer_pair.update_pdl1_show)
-            # 载入结果后，初始化设置要不要显示表皮细胞，淋巴细胞
-            self.slide_viewer_pair.sendNucleiShowTypePDL1Signal.connect(self.pdl1.showNucleiType_Combox.setChecked)
-            # 人为选择要显示表皮细胞，淋巴细胞
-            self.pdl1.showNucleiType_Combox.selectionChangedSignal.connect(
-                self.slide_viewer_pair.update_show_nuclei_types_pdl1)
+        # 载入结果后，初始化设置要显示的组织轮廓类型
+        self.slide_viewer_pair.sendRegionShowTypePDL1Signal.connect(self.pdl1.showRegionType_Combox.setChecked)
+        # 人为选择要显示的组织轮廓类型
+        self.pdl1.showRegionType_Combox.selectionChangedSignal.connect(
+            self.slide_viewer_pair.update_show_region_types_pdl1)
+        # 载入结果后，初始化设置要不要显示热图，组织区域，细胞核分割
+        self.slide_viewer_pair.sendShowPDL1Signal.connect(self.pdl1.showCombox.setChecked)
+        # 人为选择要显示热图，组织轮廓，细胞核分割轮廓
+        self.pdl1.showCombox.selectionChangedSignal.connect(self.slide_viewer_pair.update_pdl1_show)
+        # 载入结果后，初始化设置要不要显示表皮细胞，淋巴细胞
+        self.slide_viewer_pair.sendNucleiShowTypePDL1Signal.connect(self.pdl1.showNucleiType_Combox.setChecked)
+        # 人为选择要显示表皮细胞，淋巴细胞
+        self.pdl1.showNucleiType_Combox.selectionChangedSignal.connect(
+            self.slide_viewer_pair.update_show_nuclei_types_pdl1)
 
         # 将slide_viewer_pair的colorspace与主窗口对齐
         self.slide_viewer_pair.TileLoader.change_colorspace(self.slide_viewer.TileLoader.colorspace)
+
+        transform_matrix = np.array([[1, 0, 0],
+                                     [0, 1, 0],
+                                     [0, 0, 1]])
+        self.slide_viewer.init_Registration(transform_matrix, Registration=True)
+        self.slide_viewer_pair.init_Registration(np.linalg.inv(transform_matrix), Registration=True)
+        self.slide_viewer.moveTogetherSignal.connect(self.slide_viewer_pair.move_together)
+        self.slide_viewer_pair.moveTogetherSignal.connect(self.slide_viewer.move_together)
+        self.slide_viewer.scaleTogetherSignal.connect(self.slide_viewer_pair.scale_together)
+        self.slide_viewer_pair.scaleTogetherSignal.connect(self.slide_viewer.scale_together)
+        self.slide_viewer_pair.receive_match(*self.slide_viewer.send_match())
+
+    # 将配对窗口与主窗口配对上
+    def hook_slide_viewers(self):
+        # 如果载入了对比结果
+        if hasattr(self.slide_viewer_pair, "TileLoader"):
+            if not self.splitter_viewer.widget(1).isVisible():
+                self.splitter_viewer.widget(1).show()
+            dialog = RegistrationDialog()
+            if dialog.exec_() == QDialog.Accepted:
+                if dialog.get_flag() is False:
+                    transform_matrix = np.array([[1, 0, 0],
+                                                 [0, 1, 0],
+                                                 [0, 0, 1]])
+                else:
+                    # 设置为标注模式，不可更改
+                    self.lockModeSignal.emit(True)
+                    # 设置slide_viewer开启标点模式
+                    self.slide_viewer.ToolManager.set_registration_flag(True)
+                    self.slide_viewer_pair.ToolManager.set_registration_flag(True)
+                    while True:
+                        tip_dialog = RegistrationTipDialog()
+                        tip_dialog.setWindowFlag(Qt.WindowStaysOnTopHint, True)
+                        tip_dialog.show()
+                        reply = tip_dialog.exec_()
+                        if reply == QDialog.Accepted:
+                            points1 = self.slide_viewer.ToolManager.draw_point.get_registration_points()
+                            points2 = self.slide_viewer_pair.ToolManager.draw_point.get_registration_points()
+                            if points1 is None or points2 is None:
+                                QMessageBox.warning(self, "警告", "要求在图中各选择4个点位！")
+                            else:
+                                # 计算仿射变换矩阵
+                                points1 = np.array(points1)
+                                points2 = np.array(points2)
+                                transform_matrix = estimate_transform('similarity', points2, points1)
+                                break
+                        else:
+                            break
+                    # 打开模式切换开关
+                    self.lockModeSignal.emit(False)
+                    # 设置slide_viewer关闭标点模式
+                    self.slide_viewer.ToolManager.set_registration_flag(False)
+                    self.slide_viewer_pair.ToolManager.set_registration_flag(False)
+                    if reply != QDialog.Accepted:
+                        return
+            else:
+                return
+            self.slide_viewer.init_Registration(transform_matrix, Registration=True)
+            self.slide_viewer_pair.init_Registration(np.linalg.inv(transform_matrix), Registration=True)
+            self.slide_viewer.moveTogetherSignal.connect(self.slide_viewer_pair.move_together)
+            self.slide_viewer_pair.moveTogetherSignal.connect(self.slide_viewer.move_together)
+            self.slide_viewer.scaleTogetherSignal.connect(self.slide_viewer_pair.scale_together)
+            self.slide_viewer_pair.scaleTogetherSignal.connect(self.slide_viewer.scale_together)
+            self.slide_viewer_pair.receive_match(*self.slide_viewer.send_match())
+            QMessageBox.warning(self, "提示", "图像匹配成功！")
+        else:
+            QMessageBox.warning(self, "警告", "没有载入同步窗口！")
+
+    # 取消同步的配对关系
+    def cancel_paired(self):
+        # 如果载入了对比结果
+        if hasattr(self.slide_viewer_pair, "TileLoader"):
+            if not self.splitter_viewer.widget(1).isVisible():
+                self.splitter_viewer.widget(1).show()
+            if self.slide_viewer.Registration:
+                self.slide_viewer.init_Registration(None, Registration=False)
+                self.slide_viewer_pair.init_Registration(None, Registration=False)
+                self.slide_viewer.moveTogetherSignal.disconnect(self.slide_viewer_pair.move_together)
+                self.slide_viewer_pair.moveTogetherSignal.disconnect(self.slide_viewer.move_together)
+                self.slide_viewer.scaleTogetherSignal.disconnect(self.slide_viewer_pair.scale_together)
+                self.slide_viewer_pair.scaleTogetherSignal.disconnect(self.slide_viewer.scale_together)
+            else:
+                QMessageBox.warning(self, "提示", "图像没有进行配准！")
 
     # 快捷键保存标注
     def saveAnnotations(self):

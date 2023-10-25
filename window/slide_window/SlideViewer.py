@@ -6,7 +6,6 @@ import pickle
 import constants
 import numpy as np
 from PyQt5.QtWidgets import *
-from function.shot_screen import build_screenshot_image
 from PyQt5.QtCore import QPoint, Qt, QEvent, pyqtSignal, QPointF, QSize
 from PyQt5.QtGui import QWheelEvent, QMouseEvent,  QPixmap, QColor, QPen
 from function.heatmap_background import get_colormap_background, numpy_to_pixmap
@@ -40,18 +39,8 @@ class SlideViewer(BasicSlideViewer):
     # 发送给PDL1分析面板，设置显示是否要显示表皮细胞，淋巴细胞
     sendNucleiShowTypePDL1Signal = pyqtSignal(list)
 
-    # 当同步功能开启时，将标注工具置为移动
-    setMoveModeSignal = pyqtSignal()
-    # 图像同步信号
-    synchronousSignal = pyqtSignal(object, object)
-    # 同步slider信号
-    synchronousSliderSignal = pyqtSignal(int)
-    # 同步缩略图点击信号
-    synchronousThumSignal = pyqtSignal(QPointF, list)
-
     def __init__(self, paired=False):
         super(SlideViewer, self).__init__()
-
         # 初始化标注工具,同步窗口并不需要标注工具
         self.paired = paired
         self.init_ToolManager()
@@ -131,7 +120,7 @@ class SlideViewer(BasicSlideViewer):
         self.ToolManager = ToolManager(self.view, self.scene)
 
     # 载入slide
-    def load_slide(self, slide_path, zoom_step=1.35):
+    def load_slide(self, slide_path, zoom_step=1.25):
         super(SlideViewer, self).load_slide(slide_path, zoom_step)
         # 设置测量工具的mpp
         self.ToolManager.measure_tool.set_mpp(self.slide_helper.mpp)
@@ -142,36 +131,16 @@ class SlideViewer(BasicSlideViewer):
         # 鼠标事件
         if isinstance(event, QMouseEvent):
             event_porcessed = self.processMouseEvent(event)
-            if self.ToolManager.TOOL_FLAG == 1:
-                self.synchronousSignal.emit(qobj, event)
         elif isinstance(event, QWheelEvent):
             event_porcessed = self.processWheelEvent(event)
-            self.synchronousSignal.emit(qobj, event)
         return event_porcessed
-
-    # 接受来自对比窗口的操作
-    def eventFilter_from_another_window(self, qobj: 'QObject', event: 'QEvent'):
-        # 如果不是鼠标事件或者滚轮事件，则不进行事件的传递
-        event_porcessed = False
-        # 鼠标事件
-        if isinstance(event, QMouseEvent):
-            # 如果当前不为移动模式，则切换为移动模式
-            if self.ToolManager.TOOL_FLAG != 1:
-                self.ToolManager.TOOL_FLAG = 1
-                self.set_Move_Allow(True)
-                self.setCursor(Qt.ArrowCursor)
-                self.setMoveModeSignal.emit()
-            event_porcessed = self.processMouseEvent(event)
-        elif isinstance(event, QWheelEvent):
-            event_porcessed = self.processWheelEvent(event)
-        return True
 
     # 鼠标事件
     def processMouseEvent(self, event: QMouseEvent):
         if self.slide_helper is None:
             return True
         # 获取当前的一个level以及下采样倍数
-        downsample = self.slide_helper.get_downsample_for_level(self.current_level)
+        # downsample = self.slide_helper.get_downsample_for_level(self.current_level)
         # 鼠标左键
         if event.button() == Qt.LeftButton:
             if event.type() == QEvent.MouseButtonPress:
@@ -180,18 +149,21 @@ class SlideViewer(BasicSlideViewer):
                 self.start_mouse_pos_x = event.pos().x()
                 self.start_mouse_pos_y = event.pos().y()
                 # 标注的绘制
-                self.ToolManager.mousePressEvent(event, downsample)
+                self.ToolManager.mousePressEvent(event, self.current_downsample)
 
             elif event.type() == QEvent.MouseButtonRelease:
                 self.move_flag = False
                 # 标注的绘制
-                self.ToolManager.mouseReleaseEvent(event, downsample)
+                self.ToolManager.mouseReleaseEvent(event, self.current_downsample)
 
             elif event.type() == QEvent.MouseButtonDblClick:
-                print("鼠标双击了")
+                reply = False
                 if hasattr(self, 'ToolManager') and self.show_ann_nuclei_flag:
                     if self.ToolManager.TOOL_FLAG == 1:
-                        self.modify_nuclei(event.pos())
+                        reply = self.modify_nuclei(event.pos())
+                if hasattr(self, "ToolManager"):
+                    if reply is False:
+                        self.ToolManager.mouseDoubleClickEvent(event, self.current_downsample)
 
         elif event.button() == Qt.RightButton:
             # 鼠标右键
@@ -205,13 +177,13 @@ class SlideViewer(BasicSlideViewer):
             if (self.move_flag and self.move_allow_flag):
                 self.responseMouseMove(event)
             else:
-                self.ToolManager.mouseMoveEvent(event, downsample)
-
+                self.ToolManager.mouseMoveEvent(event, self.current_downsample)
         return True
 
     # 鼠标拖动页面
     def responseMouseMove(self, event):
         super().responseMouseMove(event)
+
         # 绘制细胞核分割结果
         self.show_nuclei()
 
@@ -248,73 +220,39 @@ class SlideViewer(BasicSlideViewer):
 
     # 导入标注时重新绘制所有的标注
     def loadAllAnnotation(self):
-        downsample = self.slide_helper.get_downsample_for_level(self.current_level)
-        self.ToolManager.redraw(self.current_level, downsample)
+        # downsample = self.slide_helper.get_downsample_for_level(self.current_level)
+        self.ToolManager.redraw(self.current_level, self.current_downsample)
 
-    # 跳转到当前level下以pos为中心的画面下
-    def switchWindow(self, pos, choosed_idx):
+    # 点击标注，跳转到当前level下以pos为中心的画面下
+    def switch2annotation(self, pos, choosed_idx):
         """
         :param pos: 标注的中心
         :param choosed_idx: 被选中的标注的索引
         :return:
         """
-        downsample = self.slide_helper.get_downsample_for_level(self.current_level)
-        x1 = pos[0] / downsample
-        x2 = pos[2] / downsample
-        y1 = pos[1] / downsample
-        y2 = pos[3] / downsample
+        # downsample = self.slide_helper.get_downsample_for_level(self.current_level)
+        x1 = pos[0] / self.current_downsample
+        x2 = pos[2] / self.current_downsample
+        y1 = pos[1] / self.current_downsample
+        y2 = pos[3] / self.current_downsample
         pos = QPoint((x1 + x2) / 2, (y1 + y2) / 2)
-        self.view.centerOn(pos)
-        self.view.update()
-        # 获取当前视图在场景中的矩形
-        view_scene_rect = self.get_current_view_scene_rect()
-        # 加载当前视图内可见的图块
-        self.TileLoader.load_tiles_in_view(self.current_level, view_scene_rect, self.heatmap,
-                                           self.heatmap_downsample)
-        # 发射FOV更新信号
-        self.updateFOVSignal.emit(view_scene_rect, self.current_level)
-        # 更新状态栏,视图位置
-        self.magnificationSignal.emit(True)
-
+        self.switch2pos(pos)
         # 发送信号，通知ToolManager可以删除上一个激活的item并重画，再重画当前激活的item
-        self.reactivateItemSignal.emit(choosed_idx, downsample)
+        self.reactivateItemSignal.emit(choosed_idx, self.current_downsample)
 
+    # 跳转到当前level下的以pos为中心的区域
+    def switch2pos(self, pos):
+        super().switch2pos(pos)
         self.show_nuclei()
 
     # 点击缩略图，跳转到对应区域
     def showImageAtThumbnailArea(self, pos, thumbnail_dimension):
         super(SlideViewer, self).showImageAtThumbnailArea(pos, thumbnail_dimension)
-        self.show_nuclei()
-        self.synchronousThumSignal.emit(pos, thumbnail_dimension)
-
-    # 同步缩略图跳转功能
-    def showImageAtThumArea_from_annother_window(self, pos, thumbnail_dimension):
-        super(SlideViewer, self).showImageAtThumbnailArea(pos, thumbnail_dimension)
-        self.show_nuclei()
+        # self.show_nuclei()
 
     # 响应slider动作
     def responseSlider(self, value):
         super(SlideViewer, self).responseSlider(value)
-        self.synchronousSliderSignal.emit(value)
-
-    # 同步图像响应slider的调整
-    def responseSlider_from_another_window(self, value):
-        self.slider.slider.blockSignals(True)
-        # 判断当前slider value 是否与改变过的相同
-        if self.slider_value != value:
-            # 计算当前的缩放倍数
-            current_value = self.get_magnification()
-            zoom = value / current_value
-            pos = QPoint(self.size().width() / 2, self.size().height() / 2)
-            self.responseWheelEvent(pos, zoom)
-            self.slider_value = value
-            # self.slider.slider.setValue(value)
-        self.slider.slider.blockSignals(False)
-
-    # 初始化视图位置
-    def init_position(self):
-        self.responseSlider(1)
-        self.showImageAtThumbnailArea(QPointF(0, 0), [self.thumbnail.width(), self.thumbnail.height()])
 
     # TODO：加载诊断模式的结果
     def load_diagnose(self, path):
@@ -324,8 +262,6 @@ class SlideViewer(BasicSlideViewer):
         self.overview_diagnose = numpy_to_pixmap(results['image'])
         self.heatmap_downsample_diagnose = results["preds"]['down']
         self.heatmap_diagnose = results["heatmap"]
-        # self.heatmap_diagnose = cv2.cvtColor(self.heatmap_diagnose, cv2.COLOR_RGB2GRAY)
-        # self.heatmap_diagnose = 255 - self.heatmap_diagnose
         self.heatmap = self.heatmap_diagnose.copy()
         self.heatmap_downsample = self.heatmap_downsample_diagnose
         # 显示热图
@@ -351,16 +287,16 @@ class SlideViewer(BasicSlideViewer):
 
     # 重新绘制诊断的矩形框（当缩放时）
     def redrawDiagnoseRect(self):
-        downsample = self.slide_helper.get_downsample_for_level(self.current_level)
+        # downsample = self.slide_helper.get_downsample_for_level(self.current_level)
         pen = QPen()
         pen.setColor(QColor(Qt.blue))
         pen.setWidth(4)
         self.diagnose_rect_items = []
         for rect in self.diagnose_rects:
-            x = rect[0] / downsample
-            y = rect[1] / downsample
-            width = rect[2] / downsample
-            height = rect[3] / downsample
+            x = rect[0] / self.current_downsample
+            y = rect[1] / self.current_downsample
+            width = rect[2] / self.current_downsample
+            height = rect[3] / self.current_downsample
             rect_item = QGraphicsRectItem()
             rect_item.setPen(pen)
             rect_item.setRect(x, y, width, height)
@@ -389,9 +325,9 @@ class SlideViewer(BasicSlideViewer):
             self.responseSlider(40)
 
             rect = self.diagnose_rects[idx]
-            downsample = self.slide_helper.get_downsample_for_level(self.current_level)
+            # downsample = self.slide_helper.get_downsample_for_level(self.current_level)
             # 要将pos设置为scene的中心
-            pos = QPointF(rect[0] / downsample + rect[2] / 2 / downsample, rect[1] / downsample + rect[3] / 2 / downsample)
+            pos = QPointF(rect[0] / self.current_downsample + rect[2] / 2 / self.current_downsample, rect[1] / self.current_downsample + rect[3] / 2 / self.current_downsample)
             self.view.centerOn(pos)
             self.view.update()
 
@@ -817,8 +753,8 @@ class SlideViewer(BasicSlideViewer):
     # 修改细胞核的类型
     def modify_nuclei(self, event_point):
         point = self.view.mapToScene(event_point)
-        downsample = self.slide_helper.get_downsample_for_level(self.current_level)
-        print(point.x() * downsample, point.y() * downsample)
+        # downsample = self.slide_helper.get_downsample_for_level(self.current_level)
+        # print(point.x() * self.current_downsample, point.y() * self.current_downsample)
         if self.cell_contour_ann is not None and self.current_level < 1:
             distance = np.square(np.array([point.x()]) - self.cell_centers_ann[:, 0]) +\
                 np.square(np.array([point.y()]) - self.cell_centers_ann[:, 1])
@@ -851,7 +787,7 @@ class SlideViewer(BasicSlideViewer):
                     # 绘制标注
                     annotation_item, control_point_items, text_item = \
                         self.ToolManager.draw_polygon.draw(this_contour, QColor(*type_dict[type_name]),
-                                                       4, downsample, True)
+                                                       4, self.current_downsample, True)
                     annotation = {"location": this_contour,
                                   "color": type_dict[type_name],
                                   'tool': "多边形",
@@ -859,11 +795,13 @@ class SlideViewer(BasicSlideViewer):
                                   "annotation_item": annotation_item,
                                   'control_point_items': control_point_items,
                                   'text_item': text_item}
-                    self.ToolManager.addAnnotation(annotation, downsample)
+                    self.ToolManager.addAnnotation(annotation, self.current_downsample)
                     # 删除绘制的细胞核
                     if hasattr(item, 'category') and hasattr(item, 'is_region'):
                         if item.category == this_type and item.is_region == False:
                             self.scene.removeItem(item)
+                return True
+        return False
 
     # 保存修改后的细胞核pkl结果
     def saveNucleiAnn(self, path):

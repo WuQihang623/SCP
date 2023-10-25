@@ -17,6 +17,9 @@ class BasicSlideViewer(QFrame):
     updateFOVSignal = pyqtSignal(QRectF, int) # 更新缩略图的矩形框信号
     mousePosSignal = pyqtSignal(QPointF)      # 鼠标位置更新信号
     magnificationSignal = pyqtSignal(bool)   # 视图放大倍数更新信号
+    # 同步图像移动发送信号
+    moveTogetherSignal = pyqtSignal(list)
+    scaleTogetherSignal = pyqtSignal(QPoint, float)
     def __init__(self):
         super(BasicSlideViewer, self).__init__()
         self.init_UI()
@@ -65,6 +68,12 @@ class BasicSlideViewer(QFrame):
         # 初始的slider的值
         self.slider_value = -1
 
+        # 初始化配准信息
+        transform_matrix = np.array([[1, 0, 0],
+                                      [0, 1, 0],
+                                      [0, 0, 1]])
+        self.init_Registration(transform_matrix)
+
     # 设置右键的菜单栏
     def addAction2Menu(self, action_list):
         for action in action_list:
@@ -95,6 +104,7 @@ class BasicSlideViewer(QFrame):
         rect = self.get_current_view_scene_rect()
         self.TileLoader.load_tiles_in_view(level, rect, self.heatmap, self.heatmap_downsample)
         self.current_level = level
+        self.current_downsample = self.slide_helper.get_downsample_for_level(self.current_level)
         # 设置右下角的缩略图
         self.thumbnail.load_thumbnail(self.slide_helper)
         self.updateFOVSignal.connect(self.thumbnail.update_FOV)
@@ -119,6 +129,7 @@ class BasicSlideViewer(QFrame):
         return view_scene_rect
 
     # 当前窗口的缩放倍率
+    # 放大倍数为 40 / (downsample / scale)
     def get_current_view_scale(self):
         return self.view.transform().m11()
 
@@ -191,14 +202,26 @@ class BasicSlideViewer(QFrame):
         # TODO:更新状态栏,视图位置
         self.magnificationSignal.emit(True)
 
+        # 如果需要配准的话，计算当前视图的中心点，让同步图像通过中心点进行配准
+        if self.Registration:
+            current_center = QPoint(self.size().width() / 2, self.size().height() / 2)
+            current_center = self.view.mapToScene(current_center)
+            current_center = [current_center.x() * self.current_downsample,
+                              current_center.y() * self.current_downsample]
+            self.moveTogetherSignal.emit(current_center)
+
     # TODO:鼠标滚轮事件
     def processWheelEvent(self, event: QWheelEvent):
         # 计算放大与缩小的比例
         zoom_in = self.zoom_step
         zoom_out = 1 / zoom_in
         zoom = zoom_in if event.angleDelta().y() > 0 else zoom_out
-
         self.responseWheelEvent(event.pos(), zoom)
+        # 图像同步缩放
+        if self.Registration:
+            pos = self.view.mapToScene(event.pos())
+            pos = QPoint(pos.x() * self.current_downsample, pos.y() * self.current_downsample)
+            self.scaleTogetherSignal.emit(pos, zoom)
 
         event.accept()
         return True
@@ -224,14 +247,15 @@ class BasicSlideViewer(QFrame):
         old_view_scene_rect = self.get_current_view_scene_rect()
 
         self.current_level = self.get_best_level_for_scale(self.get_current_view_scale() * zoom)
-        new_level_downsample = self.slide_helper.get_downsample_for_level(self.current_level)
+
+        self.current_downsample = self.slide_helper.get_downsample_for_level(self.current_level)
 
         if self.current_level != old_level:
             clear_scene_flag = True
         else:
             clear_scene_flag = False
 
-        level_scale_delta = 1 / (new_level_downsample / old_level_downsample)
+        level_scale_delta = 1 / (self.current_downsample / old_level_downsample)
 
         # 获取放大后的rect
         r = old_view_scene_rect.topLeft()
@@ -240,7 +264,7 @@ class BasicSlideViewer(QFrame):
         new_view_scene_rect = QRectF(new_view_scene_rect_top_left,
                                      old_view_scene_rect.size() * level_scale_delta / zoom)
 
-        new_scale = self.get_current_view_scale() * zoom * new_level_downsample / old_level_downsample
+        new_scale = self.get_current_view_scale() * zoom * self.current_downsample / old_level_downsample
 
         transform = QTransform().scale(new_scale, new_scale).translate(-new_view_scene_rect.x(),
                                                                        -new_view_scene_rect.y())
@@ -249,8 +273,6 @@ class BasicSlideViewer(QFrame):
         self.updateFOVSignal.emit(new_view_scene_rect, self.current_level)
         self.reset_view_transform()
         self.view.setTransform(transform, False)
-
-        # TODO:更新状态栏，放大倍数，视图位置
         self.magnificationSignal.emit(True)
         # 更新slider
         self.update_slider()
@@ -301,21 +323,28 @@ class BasicSlideViewer(QFrame):
         level = np.argmin(np.abs(slide_dimensions[:, 0] - scene_width))
         return level
 
+    # 跳转到当前level下的以pos为中心的区域
+    def switch2pos(self, pos):
+        self.view.centerOn(pos)
+        self.view.update()
+        # 获取当前视图在场景中的矩形
+        view_scene_rect = self.get_current_view_scene_rect()
+        # 加载当前视图内可见的图块
+        self.TileLoader.load_tiles_in_view(self.current_level, view_scene_rect, self.heatmap,
+                                           self.heatmap_downsample)
+        # 发射FOV更新信号
+        self.updateFOVSignal.emit(view_scene_rect, self.current_level)
+        # 更新状态栏,视图位置
+        self.magnificationSignal.emit(True)
+
     # 用于链接点击缩略图跳转的信号
     def showImageAtThumbnailArea(self, pos, thumbnail_dimension):
         current_dimension = self.slide_helper.get_level_dimension(self.current_level)
         scale = current_dimension[0] / thumbnail_dimension[0]
         pos = QPointF(pos.x() * scale, pos.y() * scale)
-
-        self.view.centerOn(pos)
-        self.view.update()
-
-        rect = self.get_current_view_scene_rect()
-        self.TileLoader.load_tiles_in_view(self.current_level, rect, self.heatmap, self.heatmap_downsample)
-        # 更新缩略图上的区域框
-        self.updateFOVSignal.emit(rect, self.current_level)
-        # 更新状态栏上的信息
-        self.magnificationSignal.emit(True)
+        self.switch2pos(pos)
+        if self.Registration:
+            self.moveTogetherSignal.emit([pos.x() * self.current_downsample, pos.y() * self.current_downsample])
 
     # 调整slider，响应图像缩放
     def responseSlider(self, value):
@@ -328,12 +357,18 @@ class BasicSlideViewer(QFrame):
             self.responseWheelEvent(pos, zoom)
             self.slider_value = value
 
+            # 图像同步缩放
+            if self.Registration:
+                pos = self.view.mapToScene(pos)
+                pos = QPoint(pos.x() * self.current_downsample, pos.y() * self.current_downsample)
+                self.scaleTogetherSignal.emit(pos, zoom)
+
 
     # 计算放大倍数
     def get_magnification(self):
         current_scale = self.get_current_view_scale()
-        downsample = self.slide_helper.get_downsample_for_level(self.current_level)
-        magnification = 40 / (downsample * 1.0 / current_scale)
+        # downsample = self.slide_helper.get_downsample_for_level(self.current_level)
+        magnification = 40 / (self.current_downsample * 1.0 / current_scale)
         return magnification
 
     # 设置move allow标志,
@@ -363,6 +398,58 @@ class BasicSlideViewer(QFrame):
                                                    'jpg Files(*.jpg)', options=options)
         image = build_screenshot_image(self.scene, QSize(1024, 1024), self.get_current_view_scene_rect())
         image.save(file_path)
+
+    # 初始化配准信息
+    def init_Registration(self, transform_matrix, match_downsample=1, Registration=False):
+        if transform_matrix is not None:
+            self.transform_matrix = transform_matrix
+        self.match_downsample = match_downsample
+        self.Registration = Registration
+
+    # 根据放射变换矩阵，当平移时进行调用
+    # 如果只是平移的话，并不需要考虑缩放的问题，因为在一开始的时候就已经进行过了缩放维度的对其
+    def move_together(self, center_pos):
+        """
+        :param center_pos: 在level=0下的要跟随的视图中心点的坐标，除以self.match_downsample
+        :return:
+        """
+        source_points_matrix = np.array([[center_pos[0]], [center_pos[1]], [1]])
+        target_points_matrix = np.linalg.inv(self.transform_matrix) @ source_points_matrix
+        # 将在levle=0下的坐标转换到当前的level下面
+        target_points_matrix = target_points_matrix / self.current_downsample
+        pos = QPoint(target_points_matrix[0][0], target_points_matrix[1, 0])
+        self.switch2pos(pos)
+
+    # 根据放射变换矩阵，当滚动滚轮时调用, 默认之前二者处于同样的放大倍数下面
+    def scale_together(self, pos: QPoint, zoom):
+        """
+        :param pos: 缩放时鼠标的位置
+        :param zoom: 要缩放的背书
+        :return:
+        """
+        source_points_matrix = np.array([[pos.x()], [pos.y()], [1]])
+        target_points_matrix = np.linalg.inv(self.transform_matrix) @ source_points_matrix
+        pos = QPoint(target_points_matrix[0][0] / self.current_downsample, target_points_matrix[1, 0] / self.current_downsample)
+        pos = self.view.mapFromScene(pos)
+        self.responseWheelEvent(pos, zoom)
+
+    def send_match(self):
+        main_scale = self.get_current_view_scale() / self.current_downsample
+        current_center = QPoint(self.size().width() / 2, self.size().height() / 2)
+        current_center = self.view.mapToScene(current_center)
+        current_center = [current_center.x() * self.current_downsample,
+                          current_center.y() * self.current_downsample]
+        return main_scale, current_center
+
+    # 第一次匹配时，将同步图像与主窗口对其
+    def receive_match(self, main_scale, main_center):
+        # 先进行缩放，再
+        pair_scale = self.get_current_view_scale() / self.current_downsample
+        zoom = main_scale / pair_scale
+        pos = QPoint(self.size().width() / 2, self.size().height() / 2)
+        self.responseWheelEvent(pos, zoom)
+        self.move_together(main_center)
+
 
     def closeEvent(self):
         if hasattr(self, "TileLoader"):

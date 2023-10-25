@@ -11,7 +11,7 @@ from PyQt5.QtCore import Qt, pyqtSignal, QPointF, QObject
 from PyQt5.QtGui import QPainterPath, QColor
 from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsEllipseItem
 
-from window.slide_window.Tools import DrawFixedRect, DrawRect, DrawPolygon, MeasureTool
+from window.slide_window.Tools import DrawFixedRect, DrawRect, DrawPolygon, MeasureTool, DrawPoint
 from function.delDictItem import delDictItem
 
 class ToolManager(QObject):
@@ -27,8 +27,10 @@ class ToolManager(QObject):
         super(ToolManager, self).__init__()
         self.view = view
         self.scene = scene
-
+        # 标注工具的标志
         self.TOOL_FLAG = 1
+        # 手动配准时双击能够设定位置的标志
+        self.registration_flag = False
         # 设置移动控制点的标志
         self.modifyAnnotationFlag = False
         """
@@ -41,12 +43,12 @@ class ToolManager(QObject):
         """
         # 所有的标注信息存储
         self.Annotations = OrderedDict()
-
         # 初始化标注工具
         self.draw_fixedRect = DrawFixedRect(self.scene, self.view)
         self.draw_Rect = DrawRect(self.scene, self.view)
         self.draw_polygon = DrawPolygon(self.scene, self.view)
         self.measure_tool = MeasureTool(self.scene, self.view)
+        self.draw_point = DrawPoint(self.scene, self.view)
         # 当闭合多边形时，发送信号，将标注添加到self.Annotation与annotation中
         self.draw_polygon.PolygonClosureSignal.connect(self.addAnnotation)
 
@@ -63,6 +65,15 @@ class ToolManager(QObject):
             self.draw_Rect.stopDraw()
             self.draw_polygon.stopDraw()
             self.measure_tool.stopDraw()
+
+    # 当手动进行配准时切换标志位
+    def set_registration_flag(self, flag: bool):
+        print("设置标志位",flag)
+        self.registration_flag = flag
+        if flag is False:
+            self.draw_point.deleteItem()
+        else:
+            self.draw_point.restart()
 
     # 取消当前标注时，将当前的绘制过程取消
     def cancel_drawing(self):
@@ -194,6 +205,10 @@ class ToolManager(QObject):
             self.addAnnotation(annotaion_info, downsample)
         return annotaion_info
 
+    def mouseDoubleClickEvent(self, event, downsample):
+        if self.registration_flag and self.TOOL_FLAG==1:
+            self.draw_point.mouseDoubleClickEvent(event, downsample)
+
     # 当scene改变后，需要重新绘制当前绘制的这个形状
     def redraw(self, level, downsample):
         width = int(4 / self.view.transform().m11())
@@ -206,6 +221,8 @@ class ToolManager(QObject):
             self.draw_polygon.redraw(downsample, width)
         elif self.TOOL_FLAG == 5:
             self.measure_tool.redraw(downsample, width)
+        if self.registration_flag:
+            self.draw_point.redraw(downsample)
 
         # 重新绘制绘制好的标注
         for idx, (name, annotation) in enumerate(self.Annotations.items()):

@@ -61,6 +61,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.open_paired_action.triggered.connect(self.open_paired_slide_window)
         self.open_paired_win_action.triggered.connect(self.show_paired_slide_window)
         self.close_paired_win_action.triggered.connect(self.hide_paired_slide_window)
+        self.synchronization_action.triggered.connect(self.Registration_match)
+        self.cancel_synchronization_action.triggered.connect(self.cancel_registration_match)
 
         self.annotation_action.triggered.connect(self.onTriggered)
         self.diagnose_action.triggered.connect(self.onTriggered)
@@ -136,6 +138,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 slide_window = SlideWindow(file_path)
                 slide_window.annotation.AnnotationTypeChangeSignal.connect(self.bindAnnotationColor)
                 slide_window.annotation.annotationActionCheckSignal.connect(self.set_color_action_checked)
+                slide_window.lockModeSignal.connect(self.lock_mode)
                 self.mdiArea.addSubWindow(slide_window)
                 slide_window.show()
                 slide_window.setWindowTitle(os.path.basename(file_path))
@@ -164,7 +167,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         except Exception as e:
             QMessageBox.warning(self, '警告', str(e))
 
-
     def add_recent_path(self, file_path):
         # 添加到最近文件中
         if file_path in self.recent_file:
@@ -182,29 +184,26 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def open_paired_slide_window(self):
         sub_active = self.mdiArea.activeSubWindow()
-        # try:
-        if hasattr(sub_active.widget(), 'slide_viewer_pair'):
-            options = QFileDialog.Options()
-            file_path, _ = QFileDialog.getOpenFileName(self, "选择WSI文件", self.slide_file_dir,
-                                                       "WSI ({});".format(get_file_option()), options=options)
-            # 判断文件是否可以打开
-            waning_text = judge_slide_path(file_path)
-            if waning_text == True:
-                self.slide_file_dir = os.path.dirname(file_path)
-                slide_viewer_pair = sub_active.widget().slide_viewer_pair
-                slide_viewer_pair.load_slide(file_path)
-                splitter_viewer = sub_active.widget().splitter_viewer
-                splitter_viewer.widget(1).show()
-            else:
-                if waning_text is None:
-                    return
-                else:
-                    QMessageBox.warning(self, '警告', waning_text)
-            return
+        options = QFileDialog.Options()
+        file_path, _ = QFileDialog.getOpenFileName(self, "选择WSI文件", self.slide_file_dir,
+                                                   "WSI ({});".format(get_file_option()), options=options)
+        # 判断文件是否可以打开
+        waning_text = judge_slide_path(file_path)
+        if waning_text == True:
+            self.slide_file_dir = os.path.dirname(file_path)
+            slide_viewer_pair = sub_active.widget().slide_viewer_pair
+            slide_viewer_pair.load_slide(file_path)
+            splitter_viewer = sub_active.widget().splitter_viewer
+            splitter_viewer.widget(1).show()
         else:
-            QMessageBox.warning(self, '警告', "没有打开图像子窗口")
+            if waning_text is None:
+                return
+            else:
+                QMessageBox.warning(self, '警告', waning_text)
+        return
 
-    # 打开同步图片
+
+    # 如果导入了同步图片，则进行显示
     def show_paired_slide_window(self):
         sub_active = self.mdiArea.activeSubWindow()
         try:
@@ -213,14 +212,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 if hasattr(slide_viewer_pair, 'TileLoader'):
                     splitter_viewer = sub_active.widget().splitter_viewer
                     splitter_viewer.widget(1).show()
-                    sub_active.widget().slide_viewer.init_position()
-                    sub_active.widget().slide_viewer_pair.init_position()
                 else:
                     QMessageBox.warning(self, '警告', "没有载入同步图像")
         except:
             QMessageBox.warning(self, '警告', "没有打开图像子窗口")
 
-    # 关闭同步图片
+    # 如果导入了同步图片，则隐藏同步图片
     def hide_paired_slide_window(self):
         sub_active = self.mdiArea.activeSubWindow()
         try:
@@ -233,6 +230,25 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     QMessageBox.warning(self, '警告', "没有载入同步图像")
         except:
             QMessageBox.warning(self, '警告', "没有打开图像子窗口")
+
+    # 设置图像配准
+    def Registration_match(self):
+        sub_active = self.mdiArea.activeSubWindow()
+        # 如果时图像显示窗口
+        if hasattr(sub_active.widget(), 'slide_viewer'):
+            slide_window = sub_active.widget()
+            slide_window.hook_slide_viewers()
+        else:
+            QMessageBox.warning(self, "警告", "请打开图像！")
+
+    def cancel_registration_match(self):
+        sub_active = self.mdiArea.activeSubWindow()
+        # 如果时图像显示窗口
+        if hasattr(sub_active.widget(), 'slide_viewer'):
+            slide_window = sub_active.widget()
+            slide_window.cancel_paired()
+        else:
+            QMessageBox.warning(self, "警告", "请打开图像！")
 
     # 打开文件监控目录
     def open_file_watcher(self):           # 链接open_file_manager_action
@@ -334,6 +350,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                         self.annotation_action_enable(True)
         except:
             QMessageBox.warning(self, '警告', "没有打开图像子窗口")
+
+    # 当手动进行配准时，要将模式切换到标注模式，同时不能够更换模式，将标注工具切换成移动工具
+    def lock_mode(self, lock=True):
+        if lock:
+            # 切换为标注模式
+            self.mode_switching(0)
+            # 切换为移动模式
+            self.tools_toggle(1)
+            # 锁住模式切换
+            self.action_enabel(False)
+        else:
+            self.action_enabel(True)
 
     def colorspace_transform(self):
         sub_active = self.mdiArea.activeSubWindow()
