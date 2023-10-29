@@ -2,7 +2,6 @@ from PyQt5.QtWidgets import (QFrame, QVBoxLayout, QLabel, QSpacerItem, QSizePoli
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import  Qt
 
-
 class PDF(QFrame):
     def __init__(self,
                  patient_ID,

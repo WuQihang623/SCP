@@ -215,6 +215,10 @@ class AnnotationWidget(UI_Annotation):
                             self.Annotations[f'标注{row}']['color'] = list(new_color.getRgb())
                             self.changeAnnotaionSignal.emit(row, current_type, list(new_color.getRgb()))
                     self.showAnnotationSignal.emit(True)
+                    self.set_activate_color_action()
+                    if current_color == self.annotation_color:
+                        self.annotation_color = list(new_color.getRgb())
+                        self.annotationTypeChooseSignal.emit(self.annotation_type, self.annotation_color)
             else:
                 QMessageBox.warning(self, "警告", "该颜色已被使用！")
 

@@ -1,6 +1,6 @@
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import *
-from PyQt5.QtWidgets import QDialog, QVBoxLayout, QLabel, QPushButton
+from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import QDialog, QVBoxLayout, QLabel, QPushButton, QApplication
 
 
 class CustomMessageBox(QDialog):
@@ -8,6 +8,8 @@ class CustomMessageBox(QDialog):
         super().__init__()
         # 设置窗口标题
         self.setWindowTitle(title)
+        ico = QIcon("logo/logo.ico")
+        self.setWindowIcon(ico)
 
         # 创建垂直布局
         layout = QVBoxLayout(self)

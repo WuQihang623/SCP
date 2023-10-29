@@ -1,10 +1,15 @@
 from PyQt5.QtWidgets import QDialog, QLabel, QLineEdit, QDialogButtonBox, QVBoxLayout
+from PyQt5.QtGui import QIcon
+from PyQt5.QtCore import Qt
 
 
 class SizeInputDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("ROI的尺寸设置")
+        icon = QIcon("logo/logo.ico")
+        self.setWindowIcon(icon)
+        self.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
 
         # 创建标签和文本框用于输入宽度
         self.width_label = QLabel("宽度:")

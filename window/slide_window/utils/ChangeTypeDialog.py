@@ -2,11 +2,16 @@
 
 from PyQt5.QtWidgets import QDialog, QGridLayout, QLineEdit, QPushButton, QColorDialog, QLabel
 from PyQt5.QtGui import QColor
+from PyQt5.QtGui import QIcon
+from PyQt5.QtCore import Qt
 
 class ChangeTypeDialog(QDialog):
     def __init__(self):
         super(ChangeTypeDialog, self).__init__()
+        icon = QIcon("logo/logo.ico")
+        self.setWindowIcon(icon)
         self.setWindowTitle('修改类别')
+        self.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
         self.label = QLabel('请输入类别:')
         self.edit = QLineEdit(self)
         btn_ok = QPushButton(self)

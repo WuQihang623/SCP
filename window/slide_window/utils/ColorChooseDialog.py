@@ -1,7 +1,8 @@
 # 增加类别时的对话框
 
 from PyQt5.QtWidgets import QDialog, QGridLayout, QLineEdit, QPushButton, QColorDialog, QLabel
-from PyQt5.QtGui import QColor
+from PyQt5.QtGui import QColor, QIcon
+from PyQt5.QtCore import Qt
 
 class ColorChooseDialog(QDialog):
     def __init__(self, parent=None):
@@ -10,6 +11,9 @@ class ColorChooseDialog(QDialog):
 
     def init_UI(self):
         self.setWindowTitle("设置类别以及颜色")
+        icon = QIcon("logo/logo.ico")
+        self.setWindowIcon(icon)
+        self.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
         main_layout = QGridLayout(self)
         main_layout.setSpacing(25)
         self.textbox = QLineEdit()

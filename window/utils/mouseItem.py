@@ -12,7 +12,7 @@ class MouseItem(QGraphicsItem):
 
     def paint(self, painter, option, widget):
         painter.setRenderHint(QPainter.Antialiasing)
-        painter.setPen(QColor(255, 0, 0))  # 红色
+        painter.setPen(QColor(255, 255, 0))  # 红色
         painter.drawLine(-self.crosshairSize / 2, 0, self.crosshairSize / 2, 0)
         painter.drawLine(0, -self.crosshairSize / 2, 0, self.crosshairSize / 2)
 
