@@ -5,10 +5,11 @@ import openslide
 import numpy as np
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import QPoint, Qt, QEvent, QRectF, pyqtSignal, QPointF, QObject, QSize
-from PyQt5.QtGui import QWheelEvent, QMouseEvent, QTransform, QPainter
+from PyQt5.QtGui import QWheelEvent, QMouseEvent, QTransform, QPainter, QPen, QColor, QBrush
 from window.slide_window.utils.thumbnail import Thumbnail
 from window.slide_window.slider import ZoomSlider
 
+from window.utils.mouseItem import MouseItem
 from function.shot_screen import build_screenshot_image
 from window.slide_window.utils.SlideHelper import SlideHelper
 from window.slide_window.TileLoader.TileLoader import TileManager
@@ -20,6 +21,9 @@ class BasicSlideViewer(QFrame):
     # 同步图像移动发送信号
     moveTogetherSignal = pyqtSignal(list)
     scaleTogetherSignal = pyqtSignal(QPoint, float)
+    # 同步图像鼠标信号
+    pairMouseSignal = pyqtSignal(QPointF)
+    clearMouseSignal = pyqtSignal(bool)
     def __init__(self):
         super(BasicSlideViewer, self).__init__()
         self.init_UI()
@@ -28,6 +32,7 @@ class BasicSlideViewer(QFrame):
     def init_UI(self):
         self.scene = QGraphicsScene()
         self.scene.clear_flag = False
+        self.scene.clear_mouse = False
         self.view = QGraphicsView()
         self.view.setScene(self.scene)
         self.thumbnail = Thumbnail()
@@ -59,6 +64,9 @@ class BasicSlideViewer(QFrame):
         self.main_layout.addWidget(self.view, 1, 1)
         self.main_layout.setContentsMargins(0, 0, 0, 0)
 
+        self.mouseItem = MouseItem()
+        self.scene.addItem(self.mouseItem)
+
     def init_variable(self):
         # 鼠标拖动标志，当鼠标点击左键时该标志置为True
         self.move_flag = False
@@ -73,6 +81,9 @@ class BasicSlideViewer(QFrame):
                                       [0, 1, 0],
                                       [0, 0, 1]])
         self.init_Registration(transform_matrix)
+        # 同步鼠标的信息
+        self.mouse_x = 0
+        self.mouse_y = 0
 
     # 设置右键的菜单栏
     def addAction2Menu(self, action_list):
@@ -142,7 +153,13 @@ class BasicSlideViewer(QFrame):
             event_porcessed = self.processMouseEvent(event)
         elif isinstance(event, QWheelEvent):
             event_porcessed = self.processWheelEvent(event)
+        # 当鼠标离开视图时，需要将同步的鼠标清除掉
+        elif isinstance(event, QEvent.Leave):
+            self.leaveEvent(event)
         return event_porcessed
+
+    def leaveEvent(self, event):
+        self.clearMouseSignal.emit(True)
 
     # TODO: 鼠标事件
     def processMouseEvent(self, event: QMouseEvent):
@@ -222,6 +239,9 @@ class BasicSlideViewer(QFrame):
             pos = self.view.mapToScene(event.pos())
             pos = QPoint(pos.x() * self.current_downsample, pos.y() * self.current_downsample)
             self.scaleTogetherSignal.emit(pos, zoom)
+            if self.scene.clear_mouse:
+                # 发送鼠标同步信号
+                self.pairMouseSignal.emit(self.view.mapToScene(event.pos()))
 
         event.accept()
         return True
@@ -289,6 +309,7 @@ class BasicSlideViewer(QFrame):
         if clear_scene_flag:
             self.scene.clear()
             self.scene.clear_flag = True
+            self.scene.clear_mouse = True
             self.scene.setSceneRect(new_rect)
             self.scene.addRect(new_rect, pen=Qt.white, brush=Qt.white)
             # 清除缓存
@@ -297,7 +318,6 @@ class BasicSlideViewer(QFrame):
             self.TileLoader.load_tiles_in_view(level, scene_view_rect, self.heatmap, self.heatmap_downsample)
         else:
             self.TileLoader.load_tiles_in_view(level, scene_view_rect, self.heatmap, self.heatmap_downsample)
-
 
     # 更新slider的值
     def update_slider(self):
@@ -382,6 +402,7 @@ class BasicSlideViewer(QFrame):
             scene_view_rect = self.get_current_view_scene_rect()
             self.scene.clear()
             self.scene.clear_flag = True
+            self.scene.clear_mouse = True
             self.scene.setSceneRect(new_rect)
             self.scene.addRect(new_rect, pen=Qt.white, brush=Qt.white)
             # 清除缓存
@@ -449,6 +470,22 @@ class BasicSlideViewer(QFrame):
         pos = QPoint(self.size().width() / 2, self.size().height() / 2)
         self.responseWheelEvent(pos, zoom)
         self.move_together(main_center)
+
+    # 鼠标移动时，在另一个窗口绘制对应的鼠标
+    def draw_mouse(self, pos):
+        self.mouse_x = pos.x()
+        self.mouse_y = pos.y()
+        if self.scene.clear_mouse:
+            self.mouseItem = MouseItem()
+            self.scene.addItem(self.mouseItem)
+            self.scene.clear_mouse = False
+        self.mouseItem.setPos(self.mouse_x, self.mouse_y)
+        self.mouseItem.setZValue(40)
+
+    def remove_mouse(self, *args):
+        if self.scene.clear_mouse is False:
+            self.mouseItem.clearItem()
+            self.scene.clear_mouse = True
 
 
     def closeEvent(self):

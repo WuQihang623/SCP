@@ -218,16 +218,22 @@ class SlideWindow(QFrame):
         # 将slide_viewer_pair的colorspace与主窗口对齐
         self.slide_viewer_pair.TileLoader.change_colorspace(self.slide_viewer.TileLoader.colorspace)
 
+        registration = self.slide_viewer.Registration
         transform_matrix = np.array([[1, 0, 0],
                                      [0, 1, 0],
                                      [0, 0, 1]])
         self.slide_viewer.init_Registration(transform_matrix, Registration=True)
         self.slide_viewer_pair.init_Registration(np.linalg.inv(transform_matrix), Registration=True)
-        self.slide_viewer.moveTogetherSignal.connect(self.slide_viewer_pair.move_together)
-        self.slide_viewer_pair.moveTogetherSignal.connect(self.slide_viewer.move_together)
-        self.slide_viewer.scaleTogetherSignal.connect(self.slide_viewer_pair.scale_together)
-        self.slide_viewer_pair.scaleTogetherSignal.connect(self.slide_viewer.scale_together)
-        self.slide_viewer_pair.receive_match(*self.slide_viewer.send_match())
+        if registration is False:
+            self.slide_viewer.moveTogetherSignal.connect(self.slide_viewer_pair.move_together)
+            self.slide_viewer_pair.moveTogetherSignal.connect(self.slide_viewer.move_together)
+            self.slide_viewer.scaleTogetherSignal.connect(self.slide_viewer_pair.scale_together)
+            self.slide_viewer_pair.scaleTogetherSignal.connect(self.slide_viewer.scale_together)
+            self.slide_viewer_pair.receive_match(*self.slide_viewer.send_match())
+            self.slide_viewer.pairMouseSignal.connect(self.slide_viewer_pair.draw_mouse)
+            self.slide_viewer_pair.pairMouseSignal.connect(self.slide_viewer.draw_mouse)
+            self.slide_viewer.clearMouseSignal.connect(self.slide_viewer_pair.remove_mouse)
+            self.slide_viewer_pair.clearMouseSignal.connect(self.slide_viewer.remove_mouse)
 
     # 将配对窗口与主窗口配对上
     def hook_slide_viewers(self):
@@ -281,6 +287,12 @@ class SlideWindow(QFrame):
             self.slide_viewer.scaleTogetherSignal.connect(self.slide_viewer_pair.scale_together)
             self.slide_viewer_pair.scaleTogetherSignal.connect(self.slide_viewer.scale_together)
             self.slide_viewer_pair.receive_match(*self.slide_viewer.send_match())
+            self.slide_viewer.pairMouseSignal.connect(self.slide_viewer_pair.draw_mouse)
+            self.slide_viewer_pair.pairMouseSignal.connect(self.slide_viewer.draw_mouse)
+            self.slide_viewer.clearMouseSignal.connect(self.slide_viewer_pair.remove_mouse)
+            self.slide_viewer_pair.clearMouseSignal.connect(self.slide_viewer.remove_mouse)
+
+
             QMessageBox.warning(self, "提示", "图像匹配成功！")
         else:
             QMessageBox.warning(self, "警告", "没有载入同步窗口！")
@@ -298,6 +310,10 @@ class SlideWindow(QFrame):
                 self.slide_viewer_pair.moveTogetherSignal.disconnect(self.slide_viewer.move_together)
                 self.slide_viewer.scaleTogetherSignal.disconnect(self.slide_viewer_pair.scale_together)
                 self.slide_viewer_pair.scaleTogetherSignal.disconnect(self.slide_viewer.scale_together)
+                self.slide_viewer.pairMouseSignal.disconnect(self.slide_viewer_pair.draw_mouse)
+                self.slide_viewer_pair.pairMouseSignal.disconnect(self.slide_viewer.draw_mouse)
+                self.slide_viewer.clearMouseSignal.disconnect(self.slide_viewer_pair.remove_mouse)
+                self.slide_viewer_pair.clearMouseSignal.disconnect(self.slide_viewer.remove_mouse)
             else:
                 QMessageBox.warning(self, "提示", "图像没有进行配准！")
 

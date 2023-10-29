@@ -178,6 +178,10 @@ class SlideViewer(BasicSlideViewer):
                 self.responseMouseMove(event)
             else:
                 self.ToolManager.mouseMoveEvent(event, self.current_downsample)
+            # 同步图像的鼠标绘制
+            if self.Registration:
+                pos = self.view.mapToScene(event.pos())
+                self.pairMouseSignal.emit(pos)
         return True
 
     # 鼠标拖动页面
