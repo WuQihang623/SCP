@@ -59,7 +59,7 @@ class MeasureTool(BaseTool):
     def showText(self, distance, start_x, start_y, scene_pos):
         # 显示长度
         self.text_item.setPlainText(f"{distance:.2f}μm")
-        self.text_item.setFont(QFont(" ", 15))
+        self.text_item.setFont(QFont(" ", 12))
         self.text_item.setDefaultTextColor(Qt.black)
         # 设置文本位置
         self.text_item.setPos((start_x + scene_pos.x()) / 2,
@@ -171,7 +171,7 @@ class MeasureTool(BaseTool):
         text_item = TranslucentTextItem()
         self.scene.addItem(text_item)
         text_item.setPlainText(f"{distance:.2f}μm")
-        text_item.setFont(QFont(" ", text_width))
+        text_item.setFont(QFont("宋体", text_width))
         text_item.setDefaultTextColor(Qt.black)
         # 设置文本位置
         text_item.setPos((start_x + end_x) / 2,

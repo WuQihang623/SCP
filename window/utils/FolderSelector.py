@@ -14,7 +14,7 @@ class FolderSelector(QWidget):
         # Create text box to display folder path
         font = QFont()
         font.setBold(True)
-        font.setPointSize(16)
+        font.setPointSize(14)
         self.text_box = QLineEdit(self)
         self.text_box.setFont(font)
         self.text_box.setReadOnly(True)

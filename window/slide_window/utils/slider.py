@@ -49,4 +49,4 @@ class ZoomSlider(QWidget):
         self.set_style()
 
     def set_style(self):
-        self.setStyleSheet("QLabel{font-family:微软雅黑; font: bold 12px;}")
+        self.setStyleSheet("QLabel{font-family:宋体; font: bold 12px;}")

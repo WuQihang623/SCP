@@ -50,7 +50,7 @@ class UI_Microenv(QFrame):
         line2.setFrameShape(QFrame.HLine)
         line2.setFrameShadow(QFrame.Sunken)
         label = QLabel("肿瘤微环境分析结果")
-        label.setStyleSheet("font-weight: bold;")
+        # label.setStyleSheet("font-weight: bold;")
         label.setAlignment(Qt.AlignCenter)
         self.tumorNum_label = QLabel("肿瘤细胞数量：")
         self.lymphNum_label = QLabel("淋巴细胞数量：")

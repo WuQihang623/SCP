@@ -29,9 +29,9 @@ class UI_Diagnose(QWidget):
         self.showHeatmap_btn.setCheckable(True)
         self.showHeatmap_btn.setChecked(False)
         self.diagnoseConclusion_label = QLabel("诊断结果：")
-        self.diagnoseConclusion_label.setStyleSheet("font-weight: bold;")
+        # self.diagnoseConclusion_label.setStyleSheet("font-weight: bold;")
         self.diagnoseProb_label = QLabel("置信度：")
-        self.diagnoseProb_label.setStyleSheet("font-weight: bold;")
+        # self.diagnoseProb_label.setStyleSheet("font-weight: bold;")
 
 
         # 用于显示置信度高的区域patch的图像
@@ -58,7 +58,7 @@ class UI_Diagnose(QWidget):
         btn_layout.addWidget(line, 6, 0, 1, 1)
 
         view_label = QLabel("疑似转移区域：")
-        view_label.setStyleSheet("font-weight: bold;")
+        # view_label.setStyleSheet("font-weight: bold;")
         btn_layout.addWidget(view_label, 7, 0, 1, 1)
 
         diagnoseBox.setLayout(btn_layout)

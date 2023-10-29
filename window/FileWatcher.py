@@ -313,7 +313,7 @@ class FileWatcher(QWidget):
             self.t.batch_flag = False
 
     def set_style(self):
-        self.setStyleSheet("QLabel{font-family:微软雅黑; font: bold 14px;}")
+        self.setStyleSheet("QLabel{font-family:宋体; font: bold 14px;}")
 
     def closeEvent(self, event):
         if hasattr(self, 't'):
