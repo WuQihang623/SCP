@@ -473,8 +473,12 @@ class BasicSlideViewer(QFrame):
 
     # 鼠标移动时，在另一个窗口绘制对应的鼠标
     def draw_mouse(self, pos):
-        self.mouse_x = pos.x()
-        self.mouse_y = pos.y()
+        source_points_matrix = np.array([[pos.x() * self.current_downsample], [pos.y() * self.current_downsample], [1]])
+        target_points_matrix = np.linalg.inv(self.transform_matrix) @ source_points_matrix
+        self.mouse_x = target_points_matrix[0][0] / self.current_downsample
+        # self.mouse_x = pos.x()
+        self.mouse_y = target_points_matrix[1][0] / self.current_downsample
+        print(self.mouse_x, self.mouse_y)
         if self.scene.clear_mouse:
             self.mouseItem = MouseItem()
             self.scene.addItem(self.mouseItem)

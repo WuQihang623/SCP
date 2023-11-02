@@ -243,6 +243,9 @@ class SlideWindow(QFrame):
                 self.splitter_viewer.widget(1).show()
             dialog = RegistrationDialog()
             if dialog.exec_() == QDialog.Accepted:
+                # 如果已配准就取消配准
+                if self.slide_viewer.Registration:
+                    self.cancel_paired()
                 if dialog.get_flag() is False:
                     transform_matrix = np.array([[1, 0, 0],
                                                  [0, 1, 0],
@@ -261,13 +264,21 @@ class SlideWindow(QFrame):
                         if reply == QDialog.Accepted:
                             points1 = self.slide_viewer.ToolManager.draw_point.get_registration_points()
                             points2 = self.slide_viewer_pair.ToolManager.draw_point.get_registration_points()
-                            if points1 is None or points2 is None:
-                                QMessageBox.warning(self, "警告", "要求在图中各选择4个点位！")
+                            if len(points1) < 4 or len(points2) < 4:
+                                QMessageBox.warning(self, "警告", "要求至少在图中各选择4个点位！")
+                            elif len(points1) != len(points2):
+                                if len(points1) < len(points2):
+                                    QMessageBox.warning(self, "警告", f"请在左边再选{len(points2)-len(points1)}个点")
+                                else:
+                                    QMessageBox.warning(self, "警告", f"请在右边再选{len(points1) - len(points2)}个点")
                             else:
                                 # 计算仿射变换矩阵
                                 points1 = np.array(points1)
                                 points2 = np.array(points2)
-                                transform_matrix = estimate_transform('similarity', points2, points1)
+                                transform_matrix = estimate_transform('affine', points2, points1)
+                                print("point1", points1)
+                                print("point2", points2)
+                                print("transform matrix", transform_matrix)
                                 break
                         else:
                             break
@@ -280,8 +291,8 @@ class SlideWindow(QFrame):
                         return
             else:
                 return
-            self.slide_viewer.init_Registration(transform_matrix, Registration=True)
-            self.slide_viewer_pair.init_Registration(np.linalg.inv(transform_matrix), Registration=True)
+            self.slide_viewer.init_Registration(np.linalg.inv(transform_matrix), Registration=True)
+            self.slide_viewer_pair.init_Registration(transform_matrix, Registration=True)
             self.slide_viewer.moveTogetherSignal.connect(self.slide_viewer_pair.move_together)
             self.slide_viewer_pair.moveTogetherSignal.connect(self.slide_viewer.move_together)
             self.slide_viewer.scaleTogetherSignal.connect(self.slide_viewer_pair.scale_together)
@@ -292,7 +303,6 @@ class SlideWindow(QFrame):
             self.slide_viewer.clearMouseSignal.connect(self.slide_viewer_pair.remove_mouse)
             self.slide_viewer_pair.clearMouseSignal.connect(self.slide_viewer.remove_mouse)
 
-
             QMessageBox.warning(self, "提示", "图像匹配成功！")
         else:
             QMessageBox.warning(self, "警告", "没有载入同步窗口！")
@@ -301,8 +311,8 @@ class SlideWindow(QFrame):
     def cancel_paired(self):
         # 如果载入了对比结果
         if hasattr(self.slide_viewer_pair, "TileLoader"):
-            if not self.splitter_viewer.widget(1).isVisible():
-                self.splitter_viewer.widget(1).show()
+            # if not self.splitter_viewer.widget(1).isVisible():
+            #     self.splitter_viewer.widget(1).show()
             if self.slide_viewer.Registration:
                 self.slide_viewer.init_Registration(None, Registration=False)
                 self.slide_viewer_pair.init_Registration(None, Registration=False)

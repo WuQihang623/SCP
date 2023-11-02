@@ -13,6 +13,15 @@ class DrawPoint(QObject):
         self.colors = [[255, 0, 0],
                        [0, 255, 0],
                        [0, 0, 255],
+                       [255, 255, 0],
+                       [0, 255, 255],
+                       [255, 0, 255],
+                       [128, 0, 0],
+                       [0, 128, 0],
+                       [0, 0, 128],
+                       [128, 128, 0],
+                       [0, 128, 128],
+                       [128, 0, 128],
                        [0, 0, 0]]
 
     def restart(self):
@@ -20,14 +29,14 @@ class DrawPoint(QObject):
         self.point_items = []
 
     def mouseDoubleClickEvent(self, event, downsample):
-        if len(self.points) < 4:
+        if len(self.points) < 13:
             # 确认最终的位置
             scene_pos = self.view.mapToScene(event.pos())
             self.points.append([scene_pos.x() * downsample, scene_pos.y() * downsample])
             self.draw([scene_pos.x(), scene_pos.y()], len(self.points)-1)
 
         else:
-            QMessageBox.warning(self, "警告", "最多只能设置4个点！")
+            QMessageBox.warning(self, "警告", "最多只能设置13个点！")
 
     def draw(self, point, idx):
         cycle = self.scene.addEllipse(0, 0, 8, 8)
@@ -52,9 +61,6 @@ class DrawPoint(QObject):
             return
 
     def get_registration_points(self):
-        if len(self.points) == 4:
-            return self.points
-        else:
-            return None
+        return self.points
 
 
