@@ -252,11 +252,11 @@ class BasicSlideViewer(QFrame):
         old_level_downsample = self.slide_helper.get_downsample_for_level(old_level)
 
         # 放大倍数太大与太小都不进行操作
-        if old_level == 0:
+        if old_level_downsample == 1:
             scale = self.get_current_view_scale() * zoom
             if 40 / (old_level_downsample / scale) > 120:
                 return
-        elif old_level == self.slide_helper.get_max_level():
+        elif old_level_downsample == self.slide_helper.downsamples[-1]:
             lowest = 40 / old_level_downsample
             scale = self.get_current_view_scale() * zoom
             if 40 / (old_level_downsample / scale) < 0.2 * lowest:
