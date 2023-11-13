@@ -229,14 +229,15 @@ class TileManager(QThread):
         return tile_rects
 
     def color_transform(self, colorspace):
-        if colorspace == 1:
-            if self.background_image_h is None or not isinstance(self.background_image_h, QPixmap):
-                self.background_image_h = colordeconvolution(self.background_image_pil, colorspace)
-                self.background_image_h = ndarray_to_pixmap(self.background_image_h)
-        if colorspace == 2:
-            if self.background_image_d is None or not isinstance(self.background_image_d, QPixmap):
-                self.background_image_d = colordeconvolution(self.background_image_pil, colorspace)
-                self.background_image_d = ndarray_to_pixmap(self.background_image_d)
+        if self.slide_helper.is_fluorescene is False:
+            if colorspace == 1:
+                if self.background_image_h is None or not isinstance(self.background_image_h, QPixmap):
+                    self.background_image_h = colordeconvolution(self.background_image_pil, colorspace)
+                    self.background_image_h = ndarray_to_pixmap(self.background_image_h)
+            if colorspace == 2:
+                if self.background_image_d is None or not isinstance(self.background_image_d, QPixmap):
+                    self.background_image_d = colordeconvolution(self.background_image_pil, colorspace)
+                    self.background_image_d = ndarray_to_pixmap(self.background_image_d)
 
     # 该操作只有在非热图显示下才会进行
     def change_colorspace(self, colorspace):

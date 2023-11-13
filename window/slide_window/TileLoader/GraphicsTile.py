@@ -71,7 +71,7 @@ class GraphicsTile(QGraphicsItem):
                 else:
                     show_num_markers = slide_helper.level_downsamples.count(self.downsample)
                     tile_image_list = []
-                    for markers_idx in range(1, show_num_markers+1):
+                    for markers_idx in range(0, show_num_markers):
                         level_i = slide_helper.get_markers_downsample_level(markers_idx, self.downsample)
                         tile_image = np.array(slide_helper.slide.read_region((self.slide_rect_0.x(), self.slide_rect_0.y()),
                                                       level_i, (self.slide_rect_0.width(), self.slide_rect_0.height())).convert('L'), dtype=np.uint8)

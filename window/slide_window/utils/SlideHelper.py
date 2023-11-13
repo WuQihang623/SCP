@@ -46,7 +46,7 @@ class SlideHelper():
             downsample = self.level_downsamples[level]
             show_num_markers = self.level_downsamples.count(downsample)
             slide_list = []
-            for markers_idx in range(1, show_num_markers + 1):
+            for markers_idx in range(0, show_num_markers):
                 level_i = self.get_markers_downsample_level(markers_idx, downsample)
                 slide_image = self.slide.read_region((0, 0), level_i, size).convert('L')
                 slide_list.append(np.array(slide_image, dtype=np.uint8))
@@ -68,9 +68,6 @@ class SlideHelper():
             self.num_markers = (len(self.level_downsamples) - 1) // (len(self.downsamples) - 1)
 
     def get_markers_downsample_level(self, marker_idx, downsample):
-        level = self.downsamples.index(downsample)
-        # TODO: 这种只适用于level=0时没有多重荧光的情况
-        if level == 0:
-            return level
-        else:
-            return (level - 1) * self.num_markers + marker_idx
+        # marker_idx 只会是存在的
+        level = self.level_downsamples.index(downsample)
+        return level + marker_idx
