@@ -1,6 +1,8 @@
 import os
 
+import pickle
 import numpy as np
+import constants
 from skimage.transform import estimate_transform
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import QKeySequence, QCursor, QScreen
@@ -303,7 +305,13 @@ class SlideWindow(QFrame):
             self.slide_viewer.clearMouseSignal.connect(self.slide_viewer_pair.remove_mouse)
             self.slide_viewer_pair.clearMouseSignal.connect(self.slide_viewer.remove_mouse)
 
-            QMessageBox.warning(self, "提示", "图像匹配成功！")
+            info_dialog = QMessageBox()
+            info_dialog.setWindowTitle("仿射变换矩阵")
+            info_dialog.setText(f"图像配准成功\n仿射变换矩阵为:\n{np.linalg.inv(transform_matrix)}")
+            info_dialog.exec_()
+            slide_name = os.path.splitext(os.path.basename(self.slide_viewer.slide_helper.slide_path))[0]
+            np.save(f"{constants.cache_path}/{slide_name}.npy", np.linalg.inv(transform_matrix))
+
         else:
             QMessageBox.warning(self, "警告", "没有载入同步窗口！")
 
