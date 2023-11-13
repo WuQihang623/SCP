@@ -115,7 +115,7 @@ class TileManager(QThread):
 
     # 将item读出来并添加到视图中,并且加到缓存池中
     def addTileItem(self, tile_rect, level, downsample, heatmap, heatmap_downsample, colorspace):
-        item = GraphicsTile(self.slide_helper.slide, tile_rect, self.slide_helper.get_slide_path(),
+        item = GraphicsTile(self.slide_helper, tile_rect, self.slide_helper.get_slide_path(),
                             level, downsample, heatmap, heatmap_downsample, colorspace)
         if heatmap is None:
             self.loaded_tileItem.append([item.level, item.x_y_w_h, item.pixmap])

@@ -1,11 +1,9 @@
 import os
-
 import qdarkstyle
+from PyQt5 import QtCore
 from qdarkstyle.light.palette import LightPalette
 import warnings
-
 import constants
-from PyQt5 import QtCore
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication
 from window.MainWindow import MainWindow

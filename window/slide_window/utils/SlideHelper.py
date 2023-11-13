@@ -1,5 +1,7 @@
 import openslide
+import numpy as np
 from PyQt5.QtCore import QRectF
+from function.vis_multi_channel import display_composite
 
 class SlideHelper():
     def __init__(self, slide_path: str):
@@ -12,6 +14,7 @@ class SlideHelper():
             self.mpp = float(self.slide.properties['openslide.mpp-x'])
         except:
             self.mpp = 0.25
+        self.init_fluorescene()
 
     def get_slide_path(self):
         return self.slide_path
@@ -37,10 +40,37 @@ class SlideHelper():
         return self.slide.get_best_level_for_downsample(downsample)
 
     def get_overview(self, level, size):
-        return self.slide.read_region((0, 0), level, size)
+        if self.is_fluorescene is False:
+            return self.slide.read_region((0, 0), level, size)
+        else:
+            downsample = self.level_downsamples[level]
+            show_num_markers = self.level_downsamples.count(downsample)
+            slide_list = []
+            for markers_idx in range(1, show_num_markers + 1):
+                level_i = self.get_markers_downsample_level(markers_idx, downsample)
+                slide_image = self.slide.read_region((0, 0), level_i, size).convert('L')
+                slide_list.append(np.array(slide_image, dtype=np.uint8))
+            slide_image = np.stack(slide_list, axis=0)
+            slide_image = display_composite(slide_image)
+            return slide_image
 
     def read_region(self, location, level, size):
         return self.slide.read_region(location=location, level=level, size=size)
 
     def get_thumbnail(self, size):
         return self.slide.get_thumbnail(size)
+
+    # 一下的内容为荧光图像添加
+    def init_fluorescene(self):
+        self.downsamples = list(set(self.level_downsamples))
+        self.is_fluorescene = True if len(self.level_downsamples) > len(self.downsamples) else False
+        if self.is_fluorescene:
+            self.num_markers = (len(self.level_downsamples) - 1) // (len(self.downsamples) - 1)
+
+    def get_markers_downsample_level(self, marker_idx, downsample):
+        level = self.downsamples.index(downsample)
+        # TODO: 这种只适用于level=0时没有多重荧光的情况
+        if level == 0:
+            return level
+        else:
+            return (level - 1) * self.num_markers + marker_idx

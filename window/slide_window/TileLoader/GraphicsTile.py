@@ -1,17 +1,21 @@
 import typing
 
+import cv2
+from PIL import Image
+import numpy as np
 from PIL.ImageQt import ImageQt
 from PyQt5 import QtGui
 from PyQt5.QtGui import QPixmapCache
 from PyQt5.QtCore import QRectF, QRect, Qt
 from PyQt5.QtWidgets import QGraphicsItem, QWidget, QStyleOptionGraphicsItem
 
+from function.vis_multi_channel import  display_composite
 from function.heatmap import viz_tile_heatmap, viz_tile_colormap
 from function.colorspace_transform import colordeconvolution, ndarray_to_pixmap
 
 
 class GraphicsTile(QGraphicsItem):
-    def __init__(self, slide, x_y_w_h, slide_path, level, downsample, heatmap=None, heatmap_downsample=None, colorspace=0):
+    def __init__(self, slide_helper, x_y_w_h, slide_path, level, downsample, heatmap=None, heatmap_downsample=None, colorspace=0):
         super(GraphicsTile, self).__init__()
         """
         :param slide: 要显示的WSI
@@ -38,27 +42,43 @@ class GraphicsTile(QGraphicsItem):
         else:
             self.cache_key = slide_path + str(level) + str(self.slide_rect_0) + str(11)
         self.pixmap = QPixmapCache.find(self.cache_key)
+        # TODO: 显示多重荧光的热图
         if not self.pixmap:
             if self.heatmap is not None:
                 if len(self.heatmap.shape) == 3:
-                    tile_image = viz_tile_colormap(slide, self.heatmap, window_box=x_y_w_h, level=level,
+                    tile_image = viz_tile_colormap(slide_helper.slide, self.heatmap, window_box=x_y_w_h, level=level,
                                                   mask_downsample=self.heatmap_downsample)
                 elif len(self.heatmap.shape) == 2:
-                    tile_image = viz_tile_heatmap(slide, self.heatmap, window_box=x_y_w_h, level=level,
+                    tile_image = viz_tile_heatmap(slide_helper.slide, self.heatmap, window_box=x_y_w_h, level=level,
                                                    mask_downsample=self.heatmap_downsample)
+                else:
+                    assert False
                 self.pixmap = ndarray_to_pixmap(tile_image)
 
             else:
-                tile_pilimage = slide.read_region((self.slide_rect_0.x(), self.slide_rect_0.y()),
-                                                  self.level, (self.slide_rect_0.width(), self.slide_rect_0.height()))
-                if colorspace == 1:
-                    tile_ndarray = colordeconvolution(tile_pilimage, 1)
-                    self.pixmap = ndarray_to_pixmap(tile_ndarray)
-                elif colorspace == 2:
-                    tile_ndarray = colordeconvolution(tile_pilimage, 2)
-                    self.pixmap = ndarray_to_pixmap(tile_ndarray)
+                if slide_helper.is_fluorescene is False:
+                    tile_pilimage = slide_helper.slide.read_region((self.slide_rect_0.x(), self.slide_rect_0.y()),
+                                                      self.level, (self.slide_rect_0.width(), self.slide_rect_0.height()))
+                    if colorspace == 1:
+                        tile_ndarray = colordeconvolution(tile_pilimage, 1)
+                        self.pixmap = ndarray_to_pixmap(tile_ndarray)
+                    elif colorspace == 2:
+                        tile_ndarray = colordeconvolution(tile_pilimage, 2)
+                        self.pixmap = ndarray_to_pixmap(tile_ndarray)
+                    else:
+                        self.pixmap = self.pilimage_to_pixmap(tile_pilimage)
+                # 显示荧光图像
                 else:
-                    self.pixmap = self.pilimage_to_pixmap(tile_pilimage)
+                    show_num_markers = slide_helper.level_downsamples.count(self.downsample)
+                    tile_image_list = []
+                    for markers_idx in range(1, show_num_markers+1):
+                        level_i = slide_helper.get_markers_downsample_level(markers_idx, self.downsample)
+                        tile_image = np.array(slide_helper.slide.read_region((self.slide_rect_0.x(), self.slide_rect_0.y()),
+                                                      level_i, (self.slide_rect_0.width(), self.slide_rect_0.height())).convert('L'), dtype=np.uint8)
+                        tile_image_list.append(tile_image)
+                    tile_image = np.stack(tile_image_list, axis=0)
+                    tile_image = display_composite(tile_image)
+                    self.pixmap = self.pilimage_to_pixmap(tile_image)
 
             QPixmapCache.insert(self.cache_key, self.pixmap)
 
