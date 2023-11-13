@@ -1,12 +1,13 @@
 import sys
-from PyQt5.QtWidgets import QApplication, QDialog, QRadioButton, QVBoxLayout, QDialogButtonBox
+from PyQt5.QtWidgets import QApplication, QDialog, QRadioButton, QVBoxLayout, QDialogButtonBox, QCheckBox
 
 class ColorSpaceDialog(QDialog):
     def __init__(self, colorspace):
+        '''
+        :param colorspace: int 当前选择的颜色空间
+        '''
         super().__init__()
-
         self.setWindowTitle("颜色空间选择")
-
         # 创建选择框
         self.radio1 = QRadioButton("RGB颜色空间")
         self.radio2 = QRadioButton("Hematoxylin颜色空间")
@@ -44,12 +45,45 @@ class ColorSpaceDialog(QDialog):
             return None
 
 
+class Channel_Dialog(QDialog):
+    def __init__(self, selected_channels, num_markers):
+        super().__init__()
+        self.selected_channels = selected_channels
+        self.num_check_boxes = num_markers
+        self.result_channels = []
+        self.init_UI()
+
+    def init_UI(self):
+        self.setWindowTitle("荧光通道选择")
+        layout = QVBoxLayout(self)
+        for i in range(self.num_check_boxes):
+            check_box = QCheckBox(f"荧光通道{i}")
+            layout.addWidget(check_box)
+            if i in self.selected_channels:
+                check_box.setChecked(True)
+        # 创建按钮组
+        self.button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        layout.addWidget(self.button_box)
+        # 连接按钮的点击事件
+        self.button_box.accepted.connect(self.accept)
+        self.button_box.rejected.connect(self.reject)
+
+    def get_selected_option(self):
+        return self.result_channels
+
+    def exec_(self):
+        super_result = super().exec_()
+        for i in range(self.num_check_boxes):
+            if self.layout().itemAt(i).widget().isChecked():
+                self.result_channels.append(i)
+        return super_result
+
 if __name__ == '__main__':
     app = QApplication(sys.argv)
 
-    dialog = ColorSpaceDialog(0)
+    dialog = Channel_Dialog([1, 2, 3, 4], 7)
     if dialog.exec_() == QDialog.Accepted:
-        selected_option = dialog.get_selected_option()
+        selected_option = dialog.result_channels
         print("选择的选项:", selected_option)
 
     sys.exit(app.exec_())

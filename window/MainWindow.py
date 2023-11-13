@@ -10,7 +10,7 @@ from window.FileWatcher import FileWatcher
 from window.slide_window import SlideWindow
 from window.UI.UI_mainwindow import Ui_MainWindow
 from window import StatusBar
-from window.slide_window.utils.colorspace_choose_Dialog import ColorSpaceDialog
+from window.slide_window.utils.colorspace_choose_Dialog import ColorSpaceDialog, Channel_Dialog
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
@@ -367,14 +367,25 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         sub_active = self.mdiArea.activeSubWindow()
         if hasattr(sub_active.widget(), 'slide_viewer'):
             slide_viewer = sub_active.widget().slide_viewer
-            colorspace_dialog = ColorSpaceDialog(slide_viewer.TileLoader.colorspace)
-            if colorspace_dialog.exec_() == QDialog.Accepted:
-                selected_option = colorspace_dialog.get_selected_option()
-                print("选择的颜色空间:", selected_option)
-                slide_viewer.TileLoader.change_colorspace(selected_option)
-                slide_viewer_pair = sub_active.widget().slide_viewer_pair
-                if hasattr(slide_viewer_pair, "TileLoader"):
-                    sub_active.widget().slide_viewer_pair.TileLoader.change_colorspace(selected_option)
+            if hasattr(slide_viewer, "slide_helper"):
+                is_fluorescene = slide_viewer.slide_helper.is_fluorescene
+                num_markers = 0 if is_fluorescene is False else slide_viewer.slide_helper.num_markers
+                if num_markers == 0:
+                    colorspace_dialog = ColorSpaceDialog(slide_viewer.TileLoader.colorspace)
+                else:
+                    colorspace_dialog = Channel_Dialog(slide_viewer.TileLoader.colorspace, num_markers)
+                if colorspace_dialog.exec_() == QDialog.Accepted:
+                    selected_option = colorspace_dialog.get_selected_option()
+                    if selected_option == []:
+                        QMessageBox.warning(self, '警告', "至少选择一个颜色通道！")
+                        return
+                    print("选择的颜色空间:", selected_option)
+                    slide_viewer.TileLoader.change_colorspace(selected_option)
+
+                    # TODO: 子窗口同步转换颜色空间
+                    # slide_viewer_pair = sub_active.widget().slide_viewer_pair
+                    # if hasattr(slide_viewer_pair, "TileLoader"):
+                    #     sub_active.widget().slide_viewer_pair.TileLoader.change_colorspace(selected_option)
 
     # 标注工具切换
     def tools_toggle(self, mode2switch):

@@ -47,7 +47,7 @@ class Thumbnail(QFrame):
             self.slide_helper = slide_helper
             thumbnail_level = self.slide_helper.level_count - 1
             thumbnail_dimension = self.slide_helper.get_level_dimension(-1)
-            thumbnail = self.slide_helper.get_overview(thumbnail_level, thumbnail_dimension)
+            thumbnail = self.slide_helper.get_overview(thumbnail_level, thumbnail_dimension, )
             self.aspectRatio = thumbnail_dimension[0] / thumbnail_dimension[1]
             if self.aspectRatio < 1:
                 self.thumbnail_dimension = [int(self.base_size * self.aspectRatio), self.base_size]

@@ -1,5 +1,6 @@
 import openslide
 import numpy as np
+from collections import Counter
 from PyQt5.QtCore import QRectF
 from function.vis_multi_channel import display_composite
 
@@ -39,19 +40,22 @@ class SlideHelper():
     def get_best_level_for_downsample(self, downsample):
         return self.slide.get_best_level_for_downsample(downsample)
 
-    def get_overview(self, level, size):
+    def get_overview(self, level, size, seleted_channels=None):
         if self.is_fluorescene is False:
             return self.slide.read_region((0, 0), level, size)
         else:
             downsample = self.level_downsamples[level]
             show_num_markers = self.level_downsamples.count(downsample)
+            show_num_markers = list(i for i in range(show_num_markers))
+            if seleted_channels is not None:
+                show_num_markers = list(set(show_num_markers) & set(seleted_channels))
             slide_list = []
-            for markers_idx in range(0, show_num_markers):
+            for markers_idx in show_num_markers:
                 level_i = self.get_markers_downsample_level(markers_idx, downsample)
                 slide_image = self.slide.read_region((0, 0), level_i, size).convert('L')
                 slide_list.append(np.array(slide_image, dtype=np.uint8))
             slide_image = np.stack(slide_list, axis=0)
-            slide_image = display_composite(slide_image)
+            slide_image = display_composite(slide_image, show_num_markers)
             return slide_image
 
     def read_region(self, location, level, size):
@@ -65,7 +69,8 @@ class SlideHelper():
         self.downsamples = list(set(self.level_downsamples))
         self.is_fluorescene = True if len(self.level_downsamples) > len(self.downsamples) else False
         if self.is_fluorescene:
-            self.num_markers = (len(self.level_downsamples) - 1) // (len(self.downsamples) - 1)
+            element_counts = Counter(self.level_downsamples)
+            self.num_markers = max(element_counts.values())
 
     def get_markers_downsample_level(self, marker_idx, downsample):
         # marker_idx 只会是存在的

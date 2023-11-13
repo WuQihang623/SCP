@@ -70,14 +70,19 @@ class GraphicsTile(QGraphicsItem):
                 # 显示荧光图像
                 else:
                     show_num_markers = slide_helper.level_downsamples.count(self.downsample)
+                    show_num_markers = list(i for i in range(show_num_markers))
+                    show_num_markers = list(set(show_num_markers) & set(colorspace))
                     tile_image_list = []
-                    for markers_idx in range(0, show_num_markers):
+                    for markers_idx in show_num_markers:
                         level_i = slide_helper.get_markers_downsample_level(markers_idx, self.downsample)
                         tile_image = np.array(slide_helper.slide.read_region((self.slide_rect_0.x(), self.slide_rect_0.y()),
                                                       level_i, (self.slide_rect_0.width(), self.slide_rect_0.height())).convert('L'), dtype=np.uint8)
                         tile_image_list.append(tile_image)
-                    tile_image = np.stack(tile_image_list, axis=0)
-                    tile_image = display_composite(tile_image)
+                    if tile_image_list == []:
+                        tile_image = np.zeros((1, self.slide_rect_0.width(), self.slide_rect_0.height()))
+                    else:
+                        tile_image = np.stack(tile_image_list, axis=0)
+                    tile_image = display_composite(tile_image, show_num_markers)
                     self.pixmap = self.pilimage_to_pixmap(tile_image)
             QPixmapCache.insert(self.cache_key, self.pixmap)
 

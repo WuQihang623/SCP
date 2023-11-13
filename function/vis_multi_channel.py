@@ -1,7 +1,7 @@
 import numpy as np
 from PIL import Image
 
-def display_composite(img, colours=None):
+def display_composite(img, choosed_channel: list = None):
     """
     Display composite view of multi-channel image.
     Background is black. Each stain is rendered with a different colour.
@@ -19,27 +19,30 @@ def display_composite(img, colours=None):
     --------
     composite_image: PIL Image
     """
-    if colours is None:
-        colours = np.array([
-            [0, 0, 255],  # blue (usually DAPI)
-            [255, 51, 153],  # magenta
-            [255, 0, 0],  # red
-            [255, 255, 0],  # yellow
-            [51, 153, 255],  # cyan
-            [255, 128, 0],  # orange
-            [0, 204, 0]  # green
-        ])
-
+    colours = np.array([
+        [0, 0, 255],  # blue (usually DAPI)
+        [255, 51, 153],  # magenta
+        [255, 0, 0],  # red
+        [255, 255, 0],  # yellow
+        [51, 153, 255],  # cyan
+        [255, 128, 0],  # orange
+        [0, 204, 0]  # green
+    ])
+    if choosed_channel is None:
+        choosed_channel = [i for i in range(img.shape[0])]
+    colours = colours[choosed_channel]
     back = np.zeros((img.shape[1], img.shape[2], 4)).astype(np.uint8)
     composite = Image.fromarray(back, 'RGBA')
     back_alpha = Image.new('L', (img.shape[2], img.shape[1]), 255)
     composite.putalpha(back_alpha)
-    for i, c in enumerate(img):
+
+    for i in range(len(choosed_channel)):
         channel_image = np.zeros((img.shape[1], img.shape[2], 4))
         channel_image[..., 0:-1] = colours[i]
         channel_image = Image.fromarray(channel_image.astype(np.uint8), 'RGBA')
-        c = Image.fromarray(c.astype(np.uint8))
+        c = Image.fromarray(img[i].astype(np.uint8))
         c.convert('L')
         channel_image.putalpha(c)
         composite = Image.alpha_composite(composite, channel_image)
+
     return composite

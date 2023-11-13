@@ -44,7 +44,10 @@ class TileManager(QThread):
         self.heatmap_downsample = None
 
         # 图像颜色空间
-        self.colorspace = 0
+        if self.slide_helper.is_fluorescene is False:
+            self.colorspace = 0
+        else:
+            self.colorspace = [i for i in range(self.slide_helper.num_markers)]
 
         # 加载背景图像，背景图像用于等待显示，当该区域的tile没加载出来时显示这个背景图像
         expected_bg_area = 2048 * 1080
@@ -52,7 +55,7 @@ class TileManager(QThread):
         downsample = int(math.sqrt(max_slide_area / expected_bg_area))
         self.backgroud_level = self.slide_helper.get_best_level_for_downsample(downsample)
         self.background_dimension = self.slide_helper.get_level_dimension(self.backgroud_level)
-        self.background_image_pil = self.slide_helper.get_overview(self.backgroud_level, self.background_dimension)
+        self.background_image_pil = self.slide_helper.get_overview(self.backgroud_level, self.background_dimension, self.colorspace)
         self.background_image = ImageQt(self.background_image_pil)
         self.background_image = QPixmap.fromImage(self.background_image)
         self.background_image_downsample = self.slide_helper.get_downsample_for_level(self.backgroud_level)
@@ -136,12 +139,15 @@ class TileManager(QThread):
     # 每次缩放场景都会添加这个背景
     def addBackgroundItem(self):
         if self.heatmap is None:
-            if self.colorspace == 0:
-                background = QGraphicsPixmapItem(self.background_image)
-            elif self.colorspace == 1:
-                background = QGraphicsPixmapItem(self.background_image_h)
+            if self.slide_helper.is_fluorescene is False:
+                if self.colorspace == 0:
+                    background = QGraphicsPixmapItem(self.background_image)
+                elif self.colorspace == 1:
+                    background = QGraphicsPixmapItem(self.background_image_h)
+                else:
+                    background = QGraphicsPixmapItem(self.background_image_d)
             else:
-                background = QGraphicsPixmapItem(self.background_image_d)
+                background = QGraphicsPixmapItem(self.background_image)
             scale = self.background_image_downsample / self.slide_helper.get_downsample_for_level(self.level)
         else:
             background = QGraphicsPixmapItem(self.heatmap_background_image)
@@ -228,6 +234,7 @@ class TileManager(QThread):
                     tile_rects[level].append((x, y, w, h))
         return tile_rects
 
+    # 更新background图
     def color_transform(self, colorspace):
         if self.slide_helper.is_fluorescene is False:
             if colorspace == 1:
@@ -238,6 +245,10 @@ class TileManager(QThread):
                 if self.background_image_d is None or not isinstance(self.background_image_d, QPixmap):
                     self.background_image_d = colordeconvolution(self.background_image_pil, colorspace)
                     self.background_image_d = ndarray_to_pixmap(self.background_image_d)
+        else:
+            self.background_image_pil = self.slide_helper.get_overview(self.backgroud_level, self.background_dimension, colorspace)
+            self.background_image = ImageQt(self.background_image_pil)
+            self.background_image = QPixmap.fromImage(self.background_image)
 
     # 该操作只有在非热图显示下才会进行
     def change_colorspace(self, colorspace):
@@ -245,7 +256,6 @@ class TileManager(QThread):
             self.colorspace = colorspace
             # H颜色空间
             self.color_transform(colorspace)
-            # TODO:重新加载tile
             # 若上一个线程还在执行，则停止，重开
             if self.isRunning():
                 self.restart = True
