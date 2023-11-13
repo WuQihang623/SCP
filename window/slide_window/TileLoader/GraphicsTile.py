@@ -79,7 +79,6 @@ class GraphicsTile(QGraphicsItem):
                     tile_image = np.stack(tile_image_list, axis=0)
                     tile_image = display_composite(tile_image)
                     self.pixmap = self.pilimage_to_pixmap(tile_image)
-
             QPixmapCache.insert(self.cache_key, self.pixmap)
 
     # 将PIL的Image对象转换成QPixmap对象
