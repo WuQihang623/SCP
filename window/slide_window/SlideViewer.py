@@ -59,6 +59,7 @@ class SlideViewer(BasicSlideViewer):
         1： 显示诊断结果
         2： 显示微环境分析
         3： 显示PD-L1分析
+        4: 显示多模态分析
         """
         self.SHOW_FLAG = 0
         # 初始化诊断框
@@ -221,6 +222,9 @@ class SlideViewer(BasicSlideViewer):
                                            self.tissue_class_pdl1,
                                            self.show_region_types_pdl1,
                                            Microenv=False)
+            elif self.SHOW_FLAG == 4:
+                # 并不要重新绘制什么上去
+                pass
 
     # 导入标注时重新绘制所有的标注
     def loadAllAnnotation(self):
@@ -911,6 +915,17 @@ class SlideViewer(BasicSlideViewer):
                                           show_types=self.show_nuclei_types_pdl1,
                                           mode=3)
 
+
+    def update_multimodal_show(self, overview, heatmap, downsample, flag):
+        self.show_or_close_heatmap(heatmap, downsample, flag)
+        if overview is not None:
+            overview = numpy_to_pixmap(overview)
+            # 加载背景图
+            self.TileLoader.update_heatmap_background(overview)
+            # 加载缩略图
+            self.thumbnail.load_thumbnail(self.slide_helper, overview)
+        else:
+            self.thumbnail.load_thumbnail(self.slide_helper)
 
     def closeEvent(self, *args, **kwargs):
         super().closeEvent()

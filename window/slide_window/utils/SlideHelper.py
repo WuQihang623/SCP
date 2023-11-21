@@ -66,7 +66,7 @@ class SlideHelper():
 
     # 一下的内容为荧光图像添加
     def init_fluorescene(self):
-        self.downsamples = list(set(self.level_downsamples))
+        self.downsamples = sorted(list(set(self.level_downsamples)))
         self.is_fluorescene = True if len(self.level_downsamples) > len(self.downsamples) else False
         if self.is_fluorescene:
             element_counts = Counter(self.level_downsamples)

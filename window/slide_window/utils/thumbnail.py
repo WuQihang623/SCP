@@ -45,8 +45,8 @@ class Thumbnail(QFrame):
     def load_thumbnail(self, slide_helper: SlideHelper, heatmap: QPixmap=None):
         if heatmap is None:
             self.slide_helper = slide_helper
-            thumbnail_level = self.slide_helper.level_count - 1
-            thumbnail_dimension = self.slide_helper.get_level_dimension(-1)
+            thumbnail_level = self.slide_helper.get_best_level_for_downsample(64)
+            thumbnail_dimension = self.slide_helper.get_level_dimension(thumbnail_level)
             thumbnail = self.slide_helper.get_overview(thumbnail_level, thumbnail_dimension, )
             self.aspectRatio = thumbnail_dimension[0] / thumbnail_dimension[1]
             if self.aspectRatio < 1:

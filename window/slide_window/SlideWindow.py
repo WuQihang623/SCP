@@ -34,6 +34,7 @@ class SlideWindow(QFrame):
         self.diagnose = DiagnoseWidget()
         self.microenv = MicroenvWidget()
         self.pdl1 = PDL1Widget()
+        self.multimodal = MultimodalWidget()
 
         self.splitter_viewer = QSplitter(Qt.Horizontal)
 
@@ -48,13 +49,14 @@ class SlideWindow(QFrame):
         self.splitter.addWidget(self.diagnose)
         self.splitter.addWidget(self.microenv)
         self.splitter.addWidget(self.pdl1)
+        self.splitter.addWidget(self.multimodal)
         self.splitter.addWidget(self.splitter_viewer)
         self.splitter.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.splitter.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
-        self.splitter.setSizes([300, 300, 300, 300, 1000])
+        self.splitter.setSizes([300, 300, 300, 300, 300, 1000])
         self.splitter_viewer.setSizes([1, 1])
-        for i in range(1, 4):
+        for i in range(1, 5):
             self.splitter.widget(i).hide()
         self.splitter_viewer.widget(1).hide()
 
@@ -144,6 +146,9 @@ class SlideWindow(QFrame):
         # 全屏模式链接
         self.slide_viewer.full_screen_action.triggered.connect(self.full_screen)
 
+        """多模态模式"""
+        self.multimodal.heatmapSignal.connect(self.slide_viewer.update_multimodal_show)
+
         """标注模式下导入细胞核分割"""
         self.annotation.loadNucleiAnnSignal.connect(self.slide_viewer.loadNuclei)
         self.annotation.saveNucleiAnnSignal.connect(self.slide_viewer.saveNucleiAnn)
@@ -172,6 +177,7 @@ class SlideWindow(QFrame):
         self.diagnose.set_slide_path(slide_path)
         self.microenv.set_slide_path(slide_path)
         self.pdl1.set_slide_path(slide_path)
+        self.multimodal.set_slide_path(slide_path)
 
     # TODO:将WSI加载到slide_viewer中
     def load_comparison_slide(self, slide_path):

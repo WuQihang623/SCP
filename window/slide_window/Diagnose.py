@@ -83,7 +83,7 @@ class DiagnoseWidget(UI_Diagnose):
             heatmap = results["heatmap"]
             image = results["image"]
         except:
-            QMessageBox.warning(self, '警告', '文件内容确实！')
+            QMessageBox.warning(self, '警告', '文件内容缺失！')
             return
 
         self.loadDiagnoseSignal.emit(path)

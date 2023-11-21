@@ -108,7 +108,7 @@ class BasicSlideViewer(QFrame):
         # 将一个小分辨率的slide载入到window中
         self.TileLoader = TileManager(self.scene, self.slide_helper)
         self.TileLoader.addTileItemSignal.connect(self.addTileItem)
-        level = self.slide_helper.get_max_level()
+        level = self.slide_helper.get_best_level_for_downsample(64)
         scene_rect = self.slide_helper.get_rect_for_level(level)
         self.scene.setSceneRect(scene_rect)
         self.scene.addRect(scene_rect, pen=Qt.white, brush=Qt.white)
@@ -260,6 +260,10 @@ class BasicSlideViewer(QFrame):
             lowest = 40 / old_level_downsample
             scale = self.get_current_view_scale() * zoom
             if 40 / (old_level_downsample / scale) < 0.2 * lowest:
+                return
+        elif 40 / old_level_downsample < 0.3 and zoom < 1:
+            scale = self.get_current_view_scale() * zoom
+            if scale < 0.6:
                 return
 
         # 将在当前视图中的鼠标位置变换到scene下的位置

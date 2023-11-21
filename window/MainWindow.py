@@ -68,6 +68,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.diagnose_action.triggered.connect(self.onTriggered)
         self.microenv_action.triggered.connect(self.onTriggered)
         self.pdl1_action.triggered.connect(self.onTriggered)
+        self.multimodal_action.triggered.connect(self.onTriggered)
         self.move_action.triggered.connect(self.onTriggered)
         self.fixed_rect_action.triggered.connect(self.onTriggered)
         self.rect_action.triggered.connect(self.onTriggered)
@@ -79,6 +80,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.diagnose_action.triggered.connect(lambda: self.mode_switching(1))
         self.microenv_action.triggered.connect(lambda: self.mode_switching(2))
         self.pdl1_action.triggered.connect(lambda: self.mode_switching(3))
+        self.multimodal_action.triggered.connect(lambda : self.mode_switching(4))
         self.move_action.triggered.connect(lambda: self.tools_toggle(1))
         self.fixed_rect_action.triggered.connect(lambda: self.tools_toggle(2))
         self.rect_action.triggered.connect(lambda: self.tools_toggle(3))
@@ -94,6 +96,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.diagnose_action.setActionGroup(self.mode_group)
         self.microenv_action.setActionGroup(self.mode_group)
         self.pdl1_action.setActionGroup(self.mode_group)
+        self.multimodal_action.setActionGroup(self.mode_group)
 
         tool_group = QActionGroup(self)
         tool_group.setExclusive(True)
@@ -152,7 +155,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 slide_window.slide_viewer.addAction2Menu([self.move_action, self.fixed_rect_action, self.rect_action,
                                                           self.polygon_action, self.measure_tool_action, self.modify_action,
                                                           None, self.annotation_action, self.diagnose_action, self.microenv_action,
-                                                          self.pdl1_action, None])
+                                                          self.pdl1_action, self.multimodal_action, None])
                 # 全屏的功能连接
                 self.fill_screen_action.triggered.connect(slide_window.full_screen)
                 if mode == '诊断':
@@ -316,9 +319,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     if current_mode == 1:
                         sub_active.widget().diagnose.showHeatmap_btn.setChecked(False)
                         sub_active.widget().slide_viewer.removeDiagnoseRect()
-                    elif current_mode >= 2:
+                    elif current_mode == 2 or current_mode == 3:
                         sub_active.widget().slide_viewer.show_or_close_heatmap(None, None, False)
                         sub_active.widget().slide_viewer_pair.show_or_close_heatmap(None, None, False)
+                    elif current_mode == 4:
+                        sub_active.widget().multimodal.showHeatmap_btn.setChecked(False)
+                        sub_active.widget().slide_viewer.update_multimodal_show(None, None, None, False)
 
                     # TODO：设置显示标志位
                     if mode2switch == 0:
@@ -343,6 +349,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                         # 重新绘PDL1
                         sub_active.widget().slide_viewer.update_pdl1_show(sub_active.widget().slide_viewer.show_list_pdl1)
                         sub_active.widget().slide_viewer_pair.update_pdl1_show(sub_active.widget().slide_viewer_pair.show_list_pdl1)
+                    elif mode2switch == 4:
+                        sub_active.widget().slide_viewer.SHOW_FLAG = 4
+                        sub_active.widget().slide_viewer_pair.SHOW_FLAG = 4
                     if mode2switch != 0:
                         sub_active.widget().slide_viewer.setCursor(Qt.ArrowCursor)
                         self.annotation_action_enable(False)
