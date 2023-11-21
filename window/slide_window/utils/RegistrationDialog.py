@@ -24,6 +24,10 @@ class RegistrationDialog(QDialog):
         same_image_button.setFont(font)
         layout.addWidget(same_image_button)
         same_image_button.clicked.connect(self.sameImageRegistration)
+        load_matrix_button = QPushButton("载入变换矩阵", self)
+        load_matrix_button.clicked.connect(self.loadMatrix)
+        load_matrix_button.setFont(font)
+        layout.addWidget(load_matrix_button)
         cancel_button = QPushButton("取消", self)
         cancel_button.setFont(font)
         layout.addWidget(cancel_button)
@@ -31,11 +35,14 @@ class RegistrationDialog(QDialog):
         self.setLayout(layout)
 
     def manualRegistration(self):
-        self.match_by_hand = True
+        self.match_by_hand = 1
         self.accept()
 
     def sameImageRegistration(self):
-        self.match_by_hand = False
+        self.match_by_hand = 2
+        self.accept()
+    def loadMatrix(self):
+        self.match_by_hand = 3
         self.accept()
 
     def get_flag(self):

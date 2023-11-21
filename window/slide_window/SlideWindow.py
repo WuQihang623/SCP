@@ -254,11 +254,17 @@ class SlideWindow(QFrame):
                 # 如果已配准就取消配准
                 if self.slide_viewer.Registration:
                     self.cancel_paired()
-                if dialog.get_flag() is False:
+                if dialog.get_flag() == 2:
                     transform_matrix = np.array([[1, 0, 0],
                                                  [0, 1, 0],
                                                  [0, 0, 1]])
-                else:
+                elif dialog.get_flag() == 3:
+                    options = QFileDialog.Options()
+                    path, _ = QFileDialog.getOpenFileName(self, "选择配准矩阵", f"{constants.cache_path}", "*(*.npy)", options=options)
+                    if path == '' or not os.path.exists(path): return
+                    transform_matrix = np.load(path)
+                    transform_matrix = np.linalg.inv(transform_matrix)
+                elif dialog.get_flag() == 1:
                     # 设置为标注模式，不可更改
                     self.lockModeSignal.emit(True)
                     # 设置slide_viewer开启标点模式

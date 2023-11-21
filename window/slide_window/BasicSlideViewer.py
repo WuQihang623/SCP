@@ -480,9 +480,7 @@ class BasicSlideViewer(QFrame):
         source_points_matrix = np.array([[pos.x() * self.current_downsample], [pos.y() * self.current_downsample], [1]])
         target_points_matrix = np.linalg.inv(self.transform_matrix) @ source_points_matrix
         self.mouse_x = target_points_matrix[0][0] / self.current_downsample
-        # self.mouse_x = pos.x()
         self.mouse_y = target_points_matrix[1][0] / self.current_downsample
-        print(self.mouse_x, self.mouse_y)
         if self.scene.clear_mouse:
             self.mouseItem = MouseItem()
             self.scene.addItem(self.mouseItem)
