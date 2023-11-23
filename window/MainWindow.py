@@ -323,8 +323,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                         sub_active.widget().slide_viewer.show_or_close_heatmap(None, None, False)
                         sub_active.widget().slide_viewer_pair.show_or_close_heatmap(None, None, False)
                     elif current_mode == 4:
-                        sub_active.widget().multimodal.showHeatmap_btn.setChecked(False)
-                        sub_active.widget().slide_viewer.update_multimodal_show(None, None, None, False)
+                        sub_active.widget().slide_viewer.update_multimodal_show(None, None, False)
 
                     # TODO：设置显示标志位
                     if mode2switch == 0:
