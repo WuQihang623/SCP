@@ -218,6 +218,7 @@ class TileManager(QThread):
     # TODO:在视图level变更时
     def restart_load_set(self):
         self.loaded_tile_rect = []
+        self.loaded_heatmapItem = []
         # 重新加载缩略图像
         self.background_flag = True
 

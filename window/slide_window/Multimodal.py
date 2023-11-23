@@ -11,35 +11,36 @@ from PyQt5.QtCore import pyqtSignal, QEvent
 from window.UI.UI_Multimodal import UI_Multimodal
 
 class MultimodalWidget(UI_Multimodal):
-    heatmapSignal = pyqtSignal(np.ndarray, np.ndarray, int, bool)
-    comparison_heatmapSignal = pyqtSignal(np.ndarray, np.ndarray, int, bool)
+    heatmapSignal = pyqtSignal(object, object, bool)
+    comparison_heatmapSignal = pyqtSignal(object, object, bool)
+    # 打开同步窗口信号
+    loadPairedWindowSignal = pyqtSignal(str)
     def __init__(self):
         super(UI_Multimodal, self).__init__()
         self.init_UI()
         self.file_dir = self.folderselector.FileDir()
         self.slide_path = None
-        self.heatmap_idx = -1
         self.heatmap_list = []
-        self.overview_list = []
-        self.heatmap_downsamples = []
+        self.heatmap_downsample = None
 
         self.comparison_heatmap_list = []
-        self.comparison_overview_list = []
-        self.comparison_heatmap_downsamples = []
+        self.comparison_heatmap_downsample = None
         # 连接信号
         self.connect_btn()
 
     def connect_btn(self):
-        self.showHeatmap_btn.setChecked(True)
-        self.showHeatmap_btn.setEnabled(False)
-        self.showHeatmap_btn.clicked.connect(self.turn_heatmap)
         self.load_btn.clicked.connect(self.load_result)
+        self.load_comparison_btn.clicked.connect(self.load_comparison_result)
+        self.folderselector.changeFileDirSignal.connect(self.set_file_dir)
+
+    def set_file_dir(self):
+        self.file_dir = self.folderselector.FileDir()
 
     def set_slide_path(self, slide_path):
         self.slide_path = slide_path
 
     def load_result(self):
-        if self.slide_path is None: return
+        if self.slide_path is None or not os.path.exists(self.slide_path): return
         slide_name = os.path.splitext(os.path.basename(self.slide_path))[0]
         path = os.path.join(self.file_dir, slide_name + '.pkl')
         if not os.path.exists(path):
@@ -61,34 +62,38 @@ class MultimodalWidget(UI_Multimodal):
         try:
             """
             data的格式， dict
-            key: 基因 or 临床
-            value: {"colorbar": ndarray, "overview": ndarray, "heatmap": ndarray, "downsample": int}
+            key: heatmap heatmap_downsample
+            heatmap 中存放的也是一个字典，里面的key是模态名，value是heatmap
             """
-            colorbar_list = []
             self.heatmap_list = []
-            self.overview_list = []
-            self.heatmap_downsamples = []
-            for modal, modal_info in data.items():
-                colorbar_list.append(modal_info["colorbar"])
-                self.heatmap_list.append(modal_info["heatmap"])
-                self.overview_list.append(modal_info["overview"])
-                self.heatmap_downsamples.append(modal_info["downsample"])
-            if len(colorbar_list) == 0:
+            modal_list = []
+            heatmap_dict = data["heatmap"]
+            self.heatmap_downsample = data["heatmap_downsample"]
+            for modal_name, heatmap in heatmap_dict.items():
+                modal_list.append(modal_name)
+                self.heatmap_list.append(heatmap)
+            if len(self.heatmap_list) == 0:
+                self.heatmap_list = []
+                self.heatmap_downsample = None
                 QMessageBox.warning(self, "警告", "文件缺失！")
                 return
-            self.load_colorbar(colorbar_list)
-            self.heatmap_idx = 0
-            self.changeHeatmap(self.heatmap_idx)
-            self.showHeatmap_btn.setEnabled(True)
+            self.load_checkbox(modal_list)
+            if self.modal_check is not None:
+                self.modal_check.checkbox_list[0].setChecked(True)
+
         except Exception as e:
             self.heatmap_list = []
-            self.heatmap_downsamples = []
-            self.heatmap_idx = -1
+            self.heatmap_downsample = None
             QMessageBox.warning(self, "警告", str(e))
             return
 
     def load_comparison_result(self):
-        if self.slide_path is None: return
+        if self.slide_path is None or not os.path.exists(self.slide_path): return
+        if os.path.exists(self.slide_path):
+            self.loadPairedWindowSignal.emit(self.slide_path)
+        if len(self.heatmap_list) == 0:
+            QMessageBox.warning(self, "警告", "请先载入结果后再载入对比结果！")
+            return
         slide_name = os.path.splitext(os.path.basename(self.slide_path))[0]
         options = QFileDialog.Options()
         path, _ = QFileDialog.getOpenFileName(self, "选择多模态可视化热图", self.file_dir,
@@ -108,60 +113,46 @@ class MultimodalWidget(UI_Multimodal):
         try:
             """
             data的格式， dict
-            key: 基因 or 临床
-            value: {"colorbar": ndarray, "overview": ndarray, "heatmap": ndarray, "downsample": int}
+            key: heatmap heatmap_downsample
+            heatmap 中存放的也是一个字典，里面的key是模态名，value是heatmap
             """
-            colorbar_list = []
             self.comparison_heatmap_list = []
-            self.comparison_overview_list = []
-            self.comparison_heatmap_downsamples = []
-            for modal, modal_info in data.items():
-                colorbar_list.append(modal_info["colorbar"])
-                self.comparison_heatmap_list.append(modal_info["heatmap"])
-                self.comparison_overview_list.append(modal_info["overview"])
-                self.comparison_heatmap_downsamples.append(modal_info["downsample"])
-            if len(colorbar_list) == 0:
+            modal_list = []
+            heatmap_dict = data["heatmap"]
+            self.comparison_heatmap_downsample = data["heatmap_downsample"]
+            for modal_name, heatmap in heatmap_dict.items():
+                modal_list.append(modal_name)
+                self.comparison_heatmap_list.append(heatmap)
+            if len(self.comparison_heatmap_list) == 0:
+                self.comparison_heatmap_list = []
+                self.comparison_heatmap_downsample = None
                 QMessageBox.warning(self, "警告", "文件缺失！")
                 return
-            self.changeHeatmap(self.heatmap_idx)
-            self.showHeatmap_btn.setEnabled(True)
+            self.changeHeatmap(self.modal_check.last_checked_index)
         except Exception as e:
             self.comparison_heatmap_list = []
-            self.comparison_overview_list = []
-            self.comparison_heatmap_downsamples = []
+            self.comparison_heatmap_downsample = None
             QMessageBox.warning(self, "警告", str(e))
             return
 
-    def turn_heatmap(self, flag):
-        super().turn_heatmap(flag)
-        if flag:
-            self.changeHeatmap(0)
-        else:
-            self.changeHeatmap(-1)
-
     def changeHeatmap(self, index):
-        if self.heatmap_idx != index and len(self.heatmap_list) > 0:
-            self.heatmap_idx = index
-            if self.heatmap_idx < 0:
-                self.heatmapSignal.emit(None, None, None, False)
+        super().changeHeatmap(index)
+        if len(self.heatmap_list) > 0:
+            if index is None:
+                self.heatmapSignal.emit(None, None, False)
             else:
                 try:
-                    overview = self.overview_list[self.heatmap_idx]
-                    heatmap = self.heatmap_list[self.heatmap_idx]
-                    downsample = self.heatmap_downsamples[self.heatmap_idx]
-                    self.heatmapSignal.emit(overview, heatmap, downsample, True)
+                    heatmap = self.heatmap_list[index]
+                    self.heatmapSignal.emit(heatmap, self.heatmap_downsample, True)
                 except Exception as e:
                     QMessageBox.warning(self, "警告", str(e))
 
-            # 显示对比窗口
-            if len(self.comparison_heatmap_list) > 0:
-                if self.heatmap_idx < 0:
-                    self.comparison_heatmapSignal.emit(None, None, None, False)
-                else:
-                    try:
-                        overview = self.comparison_overview_list[self.heatmap_idx]
-                        heatmap = self.comparison_heatmap_list[self.heatmap_idx]
-                        downsample = self.comparison_heatmap_downsamples[self.heatmap_idx]
-                        self.comparison_heatmapSignal.emit(overview, heatmap, downsample, True)
-                    except Exception as e:
-                        QMessageBox.warning(self, "警告", str(e))
+        if len(self.comparison_heatmap_list) > 0:
+            if index is None:
+                self.comparison_heatmapSignal.emit(None, None, False)
+            else:
+                try:
+                    heatmap = self.comparison_heatmap_list[index]
+                    self.comparison_heatmapSignal.emit(heatmap, self.comparison_heatmap_downsample, True)
+                except Exception as e:
+                    QMessageBox.warning(self, "警告", str(e))

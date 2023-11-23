@@ -148,6 +148,7 @@ class SlideWindow(QFrame):
 
         """多模态模式"""
         self.multimodal.heatmapSignal.connect(self.slide_viewer.update_multimodal_show)
+        self.multimodal.comparison_heatmapSignal.connect(self.slide_viewer_pair.update_multimodal_show)
 
         """标注模式下导入细胞核分割"""
         self.annotation.loadNucleiAnnSignal.connect(self.slide_viewer.loadNuclei)
@@ -160,6 +161,7 @@ class SlideWindow(QFrame):
         self.microenv.loadMicroenvComparisonSignal.connect(self.slide_viewer_pair.loadMicroenv)
         self.pdl1.loadPairedWidowSignal.connect(self.load_comparison_slide)
         self.pdl1.loadPDL1ComparisonSignal.connect(self.slide_viewer_pair.loadPDL1)
+        self.multimodal.loadPairedWindowSignal.connect(self.load_comparison_slide)
 
         self.microenv.show_hierarchy_mask_checkbox.stateChanged.connect(self.slide_viewer_pair.change_hierarchy_mask_and_region_mask)
 

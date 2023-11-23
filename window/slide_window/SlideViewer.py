@@ -916,16 +916,19 @@ class SlideViewer(BasicSlideViewer):
                                           mode=3)
 
 
-    def update_multimodal_show(self, overview, heatmap, downsample, flag):
+    def update_multimodal_show(self, heatmap, downsample, flag):
+        if heatmap is not None:
+            self.TileLoader.update_heatmap_background(
+                get_colormap_background(self.slide_helper, heatmap))
         self.show_or_close_heatmap(heatmap, downsample, flag)
-        if overview is not None:
-            overview = numpy_to_pixmap(overview)
-            # 加载背景图
-            self.TileLoader.update_heatmap_background(overview)
-            # 加载缩略图
-            self.thumbnail.load_thumbnail(self.slide_helper, overview)
-        else:
-            self.thumbnail.load_thumbnail(self.slide_helper)
+        # if heatmap is not None:
+        #     overview = numpy_to_pixmap(overview)
+        #     # 加载背景图
+        #     self.TileLoader.update_heatmap_background(overview)
+        #     # 加载缩略图
+        #     self.thumbnail.load_thumbnail(self.slide_helper, overview)
+        # else:
+        #     self.thumbnail.load_thumbnail(self.slide_helper)
 
     def closeEvent(self, *args, **kwargs):
         super().closeEvent()
