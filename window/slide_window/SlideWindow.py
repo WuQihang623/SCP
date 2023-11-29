@@ -164,6 +164,9 @@ class SlideWindow(QFrame):
         self.annotation.toogleNucleusSignal.connect(self.slide_viewer_pair.reverse_nulei)
         self.microenv.show_hierarchy_mask_checkbox.stateChanged.connect(self.slide_viewer_pair.change_hierarchy_mask_and_region_mask)
 
+        '''重染后选取细胞核patch'''
+        self.annotation.syncAnnotationPairSignal.connect(self.slide_viewer_pair.ToolManager.syncAnnotation)
+
         """快捷键"""
         self.saveAnnShortcut.activated.connect(self.saveAnnotations)
         self.stopDrawShortcut.activated.connect(self.stopDraw)
@@ -180,7 +183,7 @@ class SlideWindow(QFrame):
         self.pdl1.set_slide_path(slide_path)
         self.multimodal.set_slide_path(slide_path)
 
-    # TODO:将WSI加载到slide_viewer中
+    # 载入对比结果
     def load_comparison_slide(self, slide_path):
         """
         :param slide_path:

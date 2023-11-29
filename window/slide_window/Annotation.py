@@ -41,6 +41,8 @@ class AnnotationWidget(UI_Annotation):
     clearAnnotationSignal = pyqtSignal(bool)
     # 将导入的标注信息传递给ToolManager
     syncAnnotationSignal = pyqtSignal(dict, int, int)
+    # 将导入的标注信息传递给对比窗口的ToolManager
+    syncAnnotationPairSignal = pyqtSignal(dict, int, int, bool)
     # 将导入的标注显示出来
     showAnnotationSignal = pyqtSignal(bool)
     # 导入细胞核分割结果，传输路径
@@ -307,6 +309,7 @@ class AnnotationWidget(UI_Annotation):
         # 是否要将信息传给ToolManager
         if show:
             self.syncAnnotationSignal.emit(annotation.copy(), idx, self.choosed_idx if self.choosed_idx is not None else -1)
+            self.syncAnnotationPairSignal.emit(annotation.copy(), idx, self.choosed_idx if self.choosed_idx is not None else -1, True)
 
     # 激活当前标注，并且将控制点绘画出来
     def onClickedAnnotationTree(self, item):
@@ -505,7 +508,6 @@ class AnnotationWidget(UI_Annotation):
                     QMessageBox.warning(self, "警告", "该文件夹没有写权限！")
         else:
             QMessageBox.warning(self, '警告', '当前没有标注')
-
 
     def modifyAnnotation(self, annotation, choosed_idx):
         self.Annotations[f"标注{choosed_idx}"] = annotation

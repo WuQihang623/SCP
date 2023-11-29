@@ -390,9 +390,14 @@ class ToolManager(QObject):
         self.choosed_idx = None
 
     # 同步Annotation中的信息
-    def syncAnnotation(self, annotation, idx, choosed_idx):
+    def syncAnnotation(self, annotation, idx, choosed_idx, pair=False):
         self.choosed_idx = choosed_idx if choosed_idx != -1 else None
-        self.Annotations[f'标注{idx}'] = annotation
+        # 如果是对比窗口，那么要判断annotation中是否有对比窗口的结果
+        if pair is False:
+            self.Annotations[f'标注{idx}'] = annotation
+        elif pair is True and annotation.get("pair_location") is not None:
+            annotation["location"] = annotation.pop("pair_location")
+            self.Annotations[f"标注{idx}"] = annotation
 
     # 获取item的索引
     def getAnnotationItemIdx(self, current_item):
