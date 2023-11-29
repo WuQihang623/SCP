@@ -18,8 +18,6 @@ from window.slide_window.utils.ChangeAnnotationDialog import ChangeAnnotationDia
 class SlideViewer(BasicSlideViewer):
     # 发送激活标注的索引信号
     reactivateItemSignal = pyqtSignal(int, float)
-    # 发送给标注窗口，将显示细胞核按钮反转
-    reverseBtnSignal = pyqtSignal()
 
     # 发送给微环境分析面板，细胞个数的信号
     sendNucleiNumMicroenvSignal = pyqtSignal(list)
@@ -125,6 +123,7 @@ class SlideViewer(BasicSlideViewer):
         super(SlideViewer, self).load_slide(slide_path, zoom_step)
         # 设置测量工具的mpp
         self.ToolManager.measure_tool.set_mpp(self.slide_helper.mpp)
+        self.load_nuclues_action.triggered.connect(self.choose_pkl_file)
 
     def eventFilter(self, qobj: 'QObject', event: 'QEvent') -> bool:
         # 如果不是鼠标事件或者滚轮事件，则不进行事件的传递
@@ -247,6 +246,9 @@ class SlideViewer(BasicSlideViewer):
         self.switch2pos(pos)
         # 发送信号，通知ToolManager可以删除上一个激活的item并重画，再重画当前激活的item
         self.reactivateItemSignal.emit(choosed_idx, self.current_downsample)
+        # 如果有同步窗口，跳转到同步窗口的相应位置
+        if self.Registration:
+            self.moveTogetherSignal.emit([pos.x() * self.current_downsample, pos.y() * self.current_downsample])
 
     # 跳转到当前level下的以pos为中心的区域
     def switch2pos(self, pos):
@@ -522,6 +524,17 @@ class SlideViewer(BasicSlideViewer):
         if 2 in sendShowPDL1:
             self.sendNucleiShowTypePDL1Signal.emit([0, 1, 2, 3, 4])
 
+    def choose_pkl_file(self):
+        options = QFileDialog.Options()
+        path, _ = QFileDialog.getOpenFileName(self, "选择模型结果", './',
+                                              "标注 (*.pkl)", options=options)
+        slide_name, _ = os.path.splitext(os.path.basename(self.slide_helper.slide_path))
+        if os.path.exists(path):
+            if slide_name in path:
+                self.loadNuclei(path)
+            else:
+                QMessageBox.warning(self, '警告', '导入文件与当前图片不符')
+
     # TODO: 在标注模式下导入细胞核分割结果
     def loadNuclei(self, path):
         try:
@@ -537,14 +550,14 @@ class SlideViewer(BasicSlideViewer):
             self.cell_centers_ann = nuclei_info['center']
             self.cell_type_ann = nuclei_info['type']
             self.cell_contour_ann = nuclei_info['contour']
-            self.reverse_nulei()
+            self.reverse_nulei(True)
         except:
             QMessageBox.warning(self, '警告', '该文件中没有细胞核分割结果！')
 
     # 显示或关闭标注模式下的细胞核分割结果
-    def reverse_nulei(self):
+    def reverse_nulei(self, flag):
         if self.cell_contour_ann is not None and self.cell_type_ann is not None and self.cell_centers_ann is not None:
-            self.show_ann_nuclei_flag = ~self.show_ann_nuclei_flag
+            self.show_ann_nuclei_flag = flag
             self.show_or_close_nuclei(current_rect=self.get_current_view_scene_rect(),
                                       contours=self.cell_contour_ann,
                                       centers=self.cell_centers_ann,
@@ -552,8 +565,6 @@ class SlideViewer(BasicSlideViewer):
                                       color_dict=self.nuclei_type_dict,
                                       show_types=[0, 1, 2, 3, 4],
                                       mode=0)
-            # 反转Annotation面板中显示细胞核的按钮
-            self.reverseBtnSignal.emit()
 
     # 细胞类型计数
     def count_cells(self, cell_type):

@@ -153,8 +153,7 @@ class SlideWindow(QFrame):
         """标注模式下导入细胞核分割"""
         self.annotation.loadNucleiAnnSignal.connect(self.slide_viewer.loadNuclei)
         self.annotation.saveNucleiAnnSignal.connect(self.slide_viewer.saveNucleiAnn)
-        self.annotation.showNucleiAnn_btn.clicked.connect(self.slide_viewer.reverse_nulei)
-        self.slide_viewer.reverseBtnSignal.connect(self.annotation.reverse_btn)
+        self.annotation.toogleNucleusSignal.connect(self.slide_viewer.reverse_nulei)
 
         '''载入对比结果'''
         self.microenv.loadPairedWindowSignal.connect(self.load_comparison_slide)
@@ -162,7 +161,7 @@ class SlideWindow(QFrame):
         self.pdl1.loadPairedWidowSignal.connect(self.load_comparison_slide)
         self.pdl1.loadPDL1ComparisonSignal.connect(self.slide_viewer_pair.loadPDL1)
         self.multimodal.loadPairedWindowSignal.connect(self.load_comparison_slide)
-
+        self.annotation.toogleNucleusSignal.connect(self.slide_viewer_pair.reverse_nulei)
         self.microenv.show_hierarchy_mask_checkbox.stateChanged.connect(self.slide_viewer_pair.change_hierarchy_mask_and_region_mask)
 
         """快捷键"""

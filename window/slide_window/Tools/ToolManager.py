@@ -333,25 +333,27 @@ class ToolManager(QObject):
     删除item，配合选中标注，删除标注的功能
     """
     def remove_AnnotationItem(self, idx):
-        annotation = self.Annotations[f'标注{idx}']
-        # 删除
-        self.scene.removeItem(annotation['annotation_item'])
-        for item in annotation['control_point_items']:
-            self.scene.removeItem(item)
-        if annotation.get('text_item') is not None:
-            self.scene.removeItem(annotation.get('text_item'))
+        if self.Annotations.get(f"标注{idx}"):
+            annotation = self.Annotations[f'标注{idx}']
+            # 删除
+            self.scene.removeItem(annotation['annotation_item'])
+            for item in annotation['control_point_items']:
+                self.scene.removeItem(item)
+            if annotation.get('text_item') is not None:
+                self.scene.removeItem(annotation.get('text_item'))
 
     # TODO: 跳转到当前标注的视图下
     def switch2choosedItem(self, idx):
         # 计算选中的标注所在的区域，将该标注设置到当前视图的中心位置
-        annotation = self.Annotations[f'标注{idx}']
-        location = np.array(annotation['location'])
-        x1 = location[:, 0].min()
-        x2 = location[:, 0].max()
-        y1 = location[:, 1].min()
-        y2 = location[:, 1].max()
+        if self.Annotations.get(f'标注{idx}') is not None:
+            annotation = self.Annotations[f'标注{idx}']
+            location = np.array(annotation['location'])
+            x1 = location[:, 0].min()
+            x2 = location[:, 0].max()
+            y1 = location[:, 1].min()
+            y2 = location[:, 1].max()
 
-        self.switch2choosedItemSignal.emit([x1, y1, x2, y2], idx)
+            self.switch2choosedItemSignal.emit([x1, y1, x2, y2], idx)
 
     # 删除上一个激活的item并重画，再重画当前激活的item
     def reactivateItem(self, choosed_idx, downsample):

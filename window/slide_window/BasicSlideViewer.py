@@ -49,6 +49,7 @@ class BasicSlideViewer(QFrame):
         icon = QIcon()
         icon.addPixmap(QPixmap("logo/color.ico"), QIcon.Normal, QIcon.Off)
         self.colorspace_transform_action.setIcon(icon)
+        self.load_nuclues_action = QAction("导入细胞核分割结果")
         self.view.setTransformationAnchor(QGraphicsView.NoAnchor)
         self.view.viewport().installEventFilter(self)
         self.view.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -100,6 +101,7 @@ class BasicSlideViewer(QFrame):
         self.menu.addAction(self.full_screen_action)
         self.menu.addAction(self.shot_screen_action)
         self.menu.addAction(self.colorspace_transform_action)
+        self.menu.addAction(self.load_nuclues_action)
 
     # 载入slide,同时初始化缩略图，放大滑块
     def load_slide(self, slide_path, zoom_step=1.25):
@@ -366,9 +368,6 @@ class BasicSlideViewer(QFrame):
         self.updateFOVSignal.emit(view_scene_rect, self.current_level)
         # 更新状态栏,视图位置
         self.magnificationSignal.emit(True)
-
-        # if self.Registration:
-        #     self.moveTogetherSignal.emit([pos.x() * self.current_downsample, pos.y() * self.current_downsample])
 
     # 用于链接点击缩略图跳转的信号
     def showImageAtThumbnailArea(self, pos, thumbnail_dimension):

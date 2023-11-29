@@ -47,6 +47,8 @@ class AnnotationWidget(UI_Annotation):
     loadNucleiAnnSignal = pyqtSignal(str)
     # 保存修改的细胞核pkl结果
     saveNucleiAnnSignal = pyqtSignal(str)
+    # 点击显示或不显示细胞核
+    toogleNucleusSignal = pyqtSignal(bool)
     AnnotationTypesPath = os.path.join(constants.cache_path, "AnnotationTypes.json")
     def __init__(self):
         super(AnnotationWidget, self).__init__()
@@ -107,6 +109,8 @@ class AnnotationWidget(UI_Annotation):
         # 修改标注名称
         self.change_type_name_action.triggered.connect(self.changeCategory)
         self.change_type_color_action.triggered.connect(self.changeAnnotationColor)
+        # 点击显示细胞核分割结果
+        self.showNucleiAnn_btn.clicked.connect(self.toogle_show_nucleus)
 
     def init_AnnotationTypeTree(self):
         for key, rgb in self.AnnotationTypes.items():
@@ -461,15 +465,19 @@ class AnnotationWidget(UI_Annotation):
         if os.path.exists(path):
             if slide_name in path:
                 self.loadNucleiAnnSignal.emit(path)
+                self.showNucleiAnn_btn.setCheckable(True)
+                self.showNucleiAnn_btn.setChecked(True)
+                self.toogle_show_nucleus()
             else:
                 QMessageBox.warning(self, '警告', '导入文件与当前图片不符')
 
-    # 反转细胞核显示按钮
-    def reverse_btn(self):
-        if self.showNucleiAnn_btn.text() == "显示细胞核":
+    def toogle_show_nucleus(self):
+        flag = self.showNucleiAnn_btn.isChecked()
+        if flag == True:
             self.showNucleiAnn_btn.setText("不显示细胞核")
         else:
             self.showNucleiAnn_btn.setText("显示细胞核")
+        self.toogleNucleusSignal.emit(self.showNucleiAnn_btn.isChecked())
 
     # 保存标注
     def saveAnnotations(self):
