@@ -490,14 +490,19 @@ class AnnotationWidget(UI_Annotation):
                                                   f'./annotations/{slide_name}_annotation.json',
                                                   'json Files(*.json)', options=options)
             if path:
-                annotation = {"image_path": self.slide_path,
-                              "color_and_type": self.AnnotationTypes,
-                              "annotation": self.Annotations}
-                with open(path, 'w') as f:
-                    f.write(json.dumps(annotation, indent=2, ensure_ascii=False))
-                    f.close()
-                # 发送细胞核pkl结果要保存的路径
-                self.saveNucleiAnnSignal.emit(path.replace('json', 'pkl'))
+                from function.check_write_permission import check_write_permission
+                permission = check_write_permission(path)
+                if permission:
+                    annotation = {"image_path": self.slide_path,
+                                  "color_and_type": self.AnnotationTypes,
+                                  "annotation": self.Annotations}
+                    with open(path, 'w') as f:
+                        f.write(json.dumps(annotation, indent=2, ensure_ascii=False))
+                        f.close()
+                    # 发送细胞核pkl结果要保存的路径
+                    self.saveNucleiAnnSignal.emit(path.replace('json', 'pkl'))
+                else:
+                    QMessageBox.warning(self, "警告", "该文件夹没有写权限！")
         else:
             QMessageBox.warning(self, '警告', '当前没有标注')
 
