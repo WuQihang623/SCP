@@ -486,7 +486,7 @@ class AnnotationWidget(UI_Annotation):
                               "color_and_type": self.AnnotationTypes,
                               "annotation": self.Annotations}
                 with open(path, 'w') as f:
-                    f.write(json.dumps(annotation, indent=2))
+                    f.write(json.dumps(annotation, indent=2, ensure_ascii=False))
                     f.close()
                 # 发送细胞核pkl结果要保存的路径
                 self.saveNucleiAnnSignal.emit(path.replace('json', 'pkl'))

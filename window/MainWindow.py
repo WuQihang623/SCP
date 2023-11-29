@@ -198,6 +198,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             slide_viewer_pair.load_slide(file_path)
             splitter_viewer = sub_active.widget().splitter_viewer
             splitter_viewer.widget(1).show()
+            # 将菜单栏中的按键连接到Slideviewer中
+            slide_viewer_pair.addAction2Menu([self.move_action, self.fixed_rect_action, self.rect_action,
+                                              self.polygon_action, self.measure_tool_action, self.modify_action,
+                                              None, self.annotation_action, self.diagnose_action,
+                                              self.microenv_action, self.pdl1_action, self.multimodal_action, None])
         else:
             if waning_text is None:
                 return

@@ -5,9 +5,10 @@ import openslide
 import numpy as np
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import QPoint, Qt, QEvent, QRectF, pyqtSignal, QPointF, QObject, QSize
-from PyQt5.QtGui import QWheelEvent, QMouseEvent, QTransform, QPainter, QPen, QColor, QBrush
+from PyQt5.QtGui import QWheelEvent, QMouseEvent, QTransform, QPainter, QPen, QColor, QBrush, QIcon, QPixmap
 from window.slide_window.utils.thumbnail import Thumbnail
 from window.slide_window.slider import ZoomSlider
+from window.slide_window.utils.colorspace_choose_Dialog import ColorSpaceDialog, Channel_Dialog
 
 from window.utils.mouseItem import MouseItem
 from function.shot_screen import build_screenshot_image
@@ -43,7 +44,11 @@ class BasicSlideViewer(QFrame):
         self.full_screen_action.setEnabled(False)
         self.shot_screen_action = QAction("截图")
         self.shot_screen_action.triggered.connect(self.shotScreen)
-
+        self.colorspace_transform_action = QAction("颜色空间变换")
+        self.colorspace_transform_action.triggered.connect(self.colorspace_transform)
+        icon = QIcon()
+        icon.addPixmap(QPixmap("logo/color.ico"), QIcon.Normal, QIcon.Off)
+        self.colorspace_transform_action.setIcon(icon)
         self.view.setTransformationAnchor(QGraphicsView.NoAnchor)
         self.view.viewport().installEventFilter(self)
         self.view.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -94,6 +99,7 @@ class BasicSlideViewer(QFrame):
                 self.menu.addAction(action)
         self.menu.addAction(self.full_screen_action)
         self.menu.addAction(self.shot_screen_action)
+        self.menu.addAction(self.colorspace_transform_action)
 
     # 载入slide,同时初始化缩略图，放大滑块
     def load_slide(self, slide_path, zoom_step=1.25):
@@ -361,6 +367,9 @@ class BasicSlideViewer(QFrame):
         # 更新状态栏,视图位置
         self.magnificationSignal.emit(True)
 
+        # if self.Registration:
+        #     self.moveTogetherSignal.emit([pos.x() * self.current_downsample, pos.y() * self.current_downsample])
+
     # 用于链接点击缩略图跳转的信号
     def showImageAtThumbnailArea(self, pos, thumbnail_dimension):
         current_dimension = self.slide_helper.get_level_dimension(self.current_level)
@@ -493,6 +502,22 @@ class BasicSlideViewer(QFrame):
             self.mouseItem.clearItem()
             self.scene.clear_mouse = True
 
+
+    # 颜色空间变换
+    def colorspace_transform(self):
+        if hasattr(self, 'slide_helper'):
+            is_fluorescene = self.slide_helper.is_fluorescene
+            num_markers = 0 if is_fluorescene is False else self.slide_helper.num_markers
+            if num_markers == 0:
+                colorspace_dialog = ColorSpaceDialog(self.TileLoader.colorspace)
+            else:
+                colorspace_dialog = Channel_Dialog(self.TileLoader.colorspace, num_markers)
+            if colorspace_dialog.exec_() == QDialog.Accepted:
+                selected_option = colorspace_dialog.get_selected_option()
+                if selected_option == []:
+                    QMessageBox.warning(self, '警告', "至少选择一个颜色通道！")
+                    return
+                self.TileLoader.change_colorspace(selected_option)
 
     def closeEvent(self):
         if hasattr(self, "TileLoader"):
