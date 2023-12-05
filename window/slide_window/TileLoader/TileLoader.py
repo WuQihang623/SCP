@@ -5,14 +5,14 @@ from PyQt5.QtGui import QPixmap
 from PIL.ImageQt import ImageQt
 from PyQt5.QtWidgets import QGraphicsScene, QGraphicsPixmapItem
 from PyQt5.QtCore import QThread, pyqtSignal, QMutex, QWaitCondition, QRectF
-
+from function.heatmap_background import get_colormap_background
 from window.slide_window.TileLoader.GraphicsTile import GraphicsTile
 from window.slide_window.utils.SlideHelper import SlideHelper
 from function.colorspace_transform import colordeconvolution, ndarray_to_pixmap
 
 class TileManager(QThread):
     addTileItemSignal = pyqtSignal(GraphicsTile)
-    def __init__(self, scene: QGraphicsScene, slide_helper: SlideHelper, tile_size=1024):
+    def __init__(self, scene: QGraphicsScene, slide_helper: SlideHelper, tile_size=1024, heatmap_alpha=0.3):
         super(TileManager, self).__init__()
         # 初始化变量
         self.scene = scene
@@ -42,6 +42,7 @@ class TileManager(QThread):
         self.downsample = None
         self.heatmap = None
         self.heatmap_downsample = None
+        self.heatmap_alpha = heatmap_alpha
 
         # 图像颜色空间
         if self.slide_helper.is_fluorescene is False:
@@ -89,6 +90,7 @@ class TileManager(QThread):
             heatmap_downsample = self.heatmap_downsample
             heatmap = self.heatmap
             colorspace = self.colorspace
+            heatmap_alpha = self.heatmap_alpha
             self.mutex.unlock()
             for tile_rect in tile_rects[level]:
                 if self.restart:
@@ -107,7 +109,7 @@ class TileManager(QThread):
                 """
                 if x >= top_left_x and y >= top_left_y:
                     if x <= bottom_right_x and y <= bottom_right_y:
-                        self.addTileItem(tile_rect, level, downsample, heatmap, heatmap_downsample, colorspace)
+                        self.addTileItem(tile_rect, level, downsample, heatmap, heatmap_downsample, colorspace, heatmap_alpha)
 
             # 等待其他线程对self.restart的修改，等待重新载入tile
             self.mutex.lock()
@@ -117,9 +119,9 @@ class TileManager(QThread):
             self.mutex.unlock()
 
     # 将item读出来并添加到视图中,并且加到缓存池中
-    def addTileItem(self, tile_rect, level, downsample, heatmap, heatmap_downsample, colorspace):
+    def addTileItem(self, tile_rect, level, downsample, heatmap, heatmap_downsample, colorspace, heatmap_alpha):
         item = GraphicsTile(self.slide_helper, tile_rect, self.slide_helper.get_slide_path(),
-                            level, downsample, heatmap, heatmap_downsample, colorspace)
+                            level, downsample, heatmap, heatmap_downsample, colorspace, heatmap_alpha)
         if heatmap is None:
             self.loaded_tileItem.append([item.level, item.x_y_w_h, item.pixmap])
             # 缓存池中一共有150个图像块
@@ -158,10 +160,15 @@ class TileManager(QThread):
         return
 
     # 加载背景热图
-    def update_heatmap_background(self, heatmap_background: QPixmap):
-        self.heatmap_background_image = heatmap_background
-        # TODO: 设置heatmap的下采样倍数
-        self.heatmap_background_downsample = self.slide_helper.level_dimensions[0][0] / heatmap_background.size().width()
+    def update_heatmap_background(self, heatmap_background, heatmap_alpha=0.3):
+        self.heatmap_alpha = heatmap_alpha
+        if isinstance(heatmap_background, QPixmap):
+            self.heatmap_background_image = heatmap_background
+            self.heatmap_background_downsample = self.slide_helper.level_dimensions[0][0] / heatmap_background.size().width()
+        else:
+            self.heatmap_background = heatmap_background
+            self.heatmap_background_image = get_colormap_background(self.slide_helper, heatmap_background, self.heatmap_alpha)
+            self.heatmap_background_downsample = self.slide_helper.level_dimensions[0][0] / heatmap_background.shape[1]
 
     # 加载某个视图下的tile
     def load_tiles_in_view(self, level, view_scene_rect: QRectF, heatmap=None, heatmap_downsample=None):
@@ -257,6 +264,25 @@ class TileManager(QThread):
             self.colorspace = colorspace
             # H颜色空间
             self.color_transform(colorspace)
+            # 若上一个线程还在执行，则停止，重开
+            if self.isRunning():
+                self.restart = True
+            self.restart_load_set()
+            self.loaded_tileItem = []
+            # 重新加载背景图片
+            self.addBackgroundItem()
+            if not self.isRunning():
+                # 开启线程
+                self.start(QThread.NormalPriority)
+            else:
+                # 重新加载缓存图片，让暂停的线程恢复工作并上面已经设置好新的view
+                self.restart = True
+                self.condition.wakeOne()
+
+    def change_heatmap_alpha(self, alpha):
+        self.heatmap_alpha = alpha
+        if self.heatmap is not None and hasattr(self, "heatmap_background"):
+            self.heatmap_background_image = get_colormap_background(self.slide_helper, self.heatmap_background, self.heatmap_alpha)
             # 若上一个线程还在执行，则停止，重开
             if self.isRunning():
                 self.restart = True

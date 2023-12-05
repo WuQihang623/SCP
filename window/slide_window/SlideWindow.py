@@ -193,6 +193,7 @@ class SlideWindow(QFrame):
         if not hasattr(self.slide_viewer_pair, "TileLoader"):
             self.slide_viewer_pair.load_slide(slide_path)
             self.splitter_viewer.widget(1).show()
+            self.slide_viewer_pair.addAction2Menu([])
 
         '''对比窗口加载结果链接'''
         # 载入结果后，初始化设置要显示的组织轮廓类型

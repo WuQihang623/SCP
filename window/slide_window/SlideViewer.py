@@ -124,6 +124,7 @@ class SlideViewer(BasicSlideViewer):
         # 设置测量工具的mpp
         self.ToolManager.measure_tool.set_mpp(self.slide_helper.mpp)
         self.load_nuclues_action.triggered.connect(self.choose_pkl_file)
+        self.change_heatmap_alpha_action.triggered.connect(self.change_heatmap_alpha)
 
     def eventFilter(self, qobj: 'QObject', event: 'QEvent') -> bool:
         # 如果不是鼠标事件或者滚轮事件，则不进行事件的传递
@@ -414,8 +415,7 @@ class SlideViewer(BasicSlideViewer):
                 self.heatmap_downsample_microenv = int(microenv_info['heatmap_downsample'])
                 if self.show_hierarchy_checkbox_state is False:
                     self.show_micrienv_colormap_flag = False
-                    self.TileLoader.update_heatmap_background(
-                        get_colormap_background(self.slide_helper, self.heatmap_microenv))
+                    self.TileLoader.update_heatmap_background(self.heatmap_microenv, self.heatmap_alpha)
                     sendShowMicroenv.append(0)
             except:
                 QMessageBox.warning(self, "提示", "colormap加载出错！")
@@ -428,8 +428,7 @@ class SlideViewer(BasicSlideViewer):
                 self.micrienv_colormap = microenv_info['hierarchy_mask']
                 if self.show_hierarchy_checkbox_state is True:
                     self.show_micrienv_colormap_flag = True
-                    self.TileLoader.update_heatmap_background(
-                        get_colormap_background(self.slide_helper, self.micrienv_colormap))
+                    self.TileLoader.update_heatmap_background(self.micrienv_colormap, self.heatmap_alpha)
                     sendShowMicroenv.append(0)
             else:
                 QMessageBox.warning(self, "提示", "层级区域的格式错误！")
@@ -497,8 +496,7 @@ class SlideViewer(BasicSlideViewer):
                 else:
                     QMessageBox.warning(self, "提示", "语义分割结果的格式错误！")
                 self.heatmap_downsample_pdl1 = int(pdl1_info['heatmap_downsample'])
-                self.TileLoader.update_heatmap_background(
-                    get_colormap_background(self.slide_helper, self.heatmap_pdl1))
+                self.TileLoader.update_heatmap_background(self.heatmap_pdl1, self.heatmap_alpha)
                 sendShowPDL1.append(0)
             except:
                 QMessageBox.warning(self, "提示", "colormap加载出错！")
@@ -587,13 +585,11 @@ class SlideViewer(BasicSlideViewer):
             self.TileLoader.loaded_heatmapItem = []
             if to_hierarchy_mask == 2:
                 self.show_micrienv_colormap_flag = True
-                self.TileLoader.update_heatmap_background(
-                    get_colormap_background(self.slide_helper, self.micrienv_colormap))
+                self.TileLoader.update_heatmap_background(self.micrienv_colormap, self.heatmap_alpha)
                 self.show_or_close_heatmap(self.micrienv_colormap, downsample, True)
             else:
                 self.show_micrienv_colormap_flag = False
-                self.TileLoader.update_heatmap_background(
-                    get_colormap_background(self.slide_helper, self.heatmap_microenv))
+                self.TileLoader.update_heatmap_background(self.heatmap_microenv, self.heatmap_alpha)
                 self.show_or_close_heatmap(self.heatmap_microenv, downsample, True)
             self.NucleiContourLoader.last_level = -1
             self.show_or_close_nuclei(current_rect=self.get_current_view_scene_rect(),
@@ -929,17 +925,19 @@ class SlideViewer(BasicSlideViewer):
 
     def update_multimodal_show(self, heatmap, downsample, flag):
         if heatmap is not None:
-            self.TileLoader.update_heatmap_background(
-                get_colormap_background(self.slide_helper, heatmap))
+            self.TileLoader.update_heatmap_background( heatmap, self.heatmap_alpha)
         self.show_or_close_heatmap(heatmap, downsample, flag)
-        # if heatmap is not None:
-        #     overview = numpy_to_pixmap(overview)
-        #     # 加载背景图
-        #     self.TileLoader.update_heatmap_background(overview)
-        #     # 加载缩略图
-        #     self.thumbnail.load_thumbnail(self.slide_helper, overview)
-        # else:
-        #     self.thumbnail.load_thumbnail(self.slide_helper)
+
+    # 更改heatmap权重
+    def change_heatmap_alpha(self):
+        from window.slide_window.utils.heatmap_alpha_slider import heatmap_alpha_Dialog
+        dialog = heatmap_alpha_Dialog(self.heatmap_alpha)
+        # 显示对话框
+        result = dialog.exec_()
+        # 在确定按钮点击后，输出滑块的值
+        if result == QDialog.Accepted:
+            self.heatmap_alpha = dialog.get_slider_value()
+            self.TileLoader.change_heatmap_alpha(self.heatmap_alpha)
 
     def closeEvent(self, *args, **kwargs):
         super().closeEvent()

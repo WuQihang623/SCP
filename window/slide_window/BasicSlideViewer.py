@@ -50,6 +50,7 @@ class BasicSlideViewer(QFrame):
         icon.addPixmap(QPixmap("logo/color.ico"), QIcon.Normal, QIcon.Off)
         self.colorspace_transform_action.setIcon(icon)
         self.load_nuclues_action = QAction("导入细胞核分割结果")
+        self.change_heatmap_alpha_action = QAction("设置热图权重")
         self.view.setTransformationAnchor(QGraphicsView.NoAnchor)
         self.view.viewport().installEventFilter(self)
         self.view.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -91,6 +92,9 @@ class BasicSlideViewer(QFrame):
         self.mouse_x = 0
         self.mouse_y = 0
 
+        # 热力图权重
+        self.heatmap_alpha = 0.3
+
     # 设置右键的菜单栏
     def addAction2Menu(self, action_list):
         for action in action_list:
@@ -102,6 +106,7 @@ class BasicSlideViewer(QFrame):
         self.menu.addAction(self.shot_screen_action)
         self.menu.addAction(self.colorspace_transform_action)
         self.menu.addAction(self.load_nuclues_action)
+        self.menu.addAction(self.change_heatmap_alpha_action)
 
     # 载入slide,同时初始化缩略图，放大滑块
     def load_slide(self, slide_path, zoom_step=1.25):
@@ -114,7 +119,7 @@ class BasicSlideViewer(QFrame):
         self.heatmap_downsample = None
 
         # 将一个小分辨率的slide载入到window中
-        self.TileLoader = TileManager(self.scene, self.slide_helper)
+        self.TileLoader = TileManager(self.scene, self.slide_helper, heatmap_alpha=self.heatmap_alpha)
         self.TileLoader.addTileItemSignal.connect(self.addTileItem)
         level = self.slide_helper.get_best_level_for_downsample(64)
         scene_rect = self.slide_helper.get_rect_for_level(level)

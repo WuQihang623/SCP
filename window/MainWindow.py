@@ -199,10 +199,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             splitter_viewer = sub_active.widget().splitter_viewer
             splitter_viewer.widget(1).show()
             # 将菜单栏中的按键连接到Slideviewer中
-            slide_viewer_pair.addAction2Menu([self.move_action, self.fixed_rect_action, self.rect_action,
-                                              self.polygon_action, self.measure_tool_action, self.modify_action,
-                                              None, self.annotation_action, self.diagnose_action,
-                                              self.microenv_action, self.pdl1_action, self.multimodal_action, None])
+            slide_viewer_pair.addAction2Menu([])
         else:
             if waning_text is None:
                 return
@@ -329,6 +326,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                         sub_active.widget().slide_viewer_pair.show_or_close_heatmap(None, None, False)
                     elif current_mode == 4:
                         sub_active.widget().slide_viewer.update_multimodal_show(None, None, False)
+                        sub_active.widget().slide_viewer_pair.update_multimodal_show(None, None, False)
 
                     # TODO：设置显示标志位
                     if mode2switch == 0:

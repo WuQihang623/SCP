@@ -14,7 +14,7 @@ def show_cam_on_image(img: np.ndarray,
                       mask: np.ndarray,
                       use_rgb: bool = False,
                       colormap: int = cv2.COLORMAP_JET,
-                      image_weight: float = 0.75) -> np.ndarray:
+                      heatmap_alpha: float = 0.75) -> np.ndarray:
     """ This function overlays the cam mask on the image as an heatmap.
     By default the heatmap is in BGR format.
 
@@ -38,17 +38,17 @@ def show_cam_on_image(img: np.ndarray,
         raise Exception(
             "The input image should np.float32 in the range [0, 1]")
 
-    if image_weight < 0 or image_weight > 1:
+    if heatmap_alpha < 0 or heatmap_alpha > 1:
         raise Exception(
             f"image_weight should be in the range [0, 1].\
-                Got: {image_weight}")
+                Got: {heatmap_alpha}")
 
-    cam = (1 - image_weight) * heatmap + image_weight * img
+    cam = heatmap_alpha * heatmap + (1 - heatmap_alpha) * img
     cam = cam / 1.0
     return np.uint8(255 * cam)
 
 def viz_tile_heatmap(slide, mask: np.ndarray,
-                     window_box: list, level: int, mask_downsample: int):
+                     window_box: list, level: int, mask_downsample: int, heatmap_alpha: float):
     """
     :param slide: wsi or wsi's path
     :param mask: Predicted probability map, whose resolution has been down sampled
@@ -76,7 +76,7 @@ def viz_tile_heatmap(slide, mask: np.ndarray,
     tile_mask = mask[mask_x: mask_x+mask_x_w, mask_y: mask_y+mask_y_h]
     tile_mask = cv2.resize(tile_mask, wh)
 
-    heatmap = show_cam_on_image(tile, tile_mask, use_rgb=True)
+    heatmap = show_cam_on_image(tile, tile_mask, use_rgb=True, heatmap_alpha=heatmap_alpha)
     return heatmap
 
 def viz_tile_colormap(slide, mask: np.ndarray,

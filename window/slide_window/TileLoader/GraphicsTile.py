@@ -15,7 +15,7 @@ from function.colorspace_transform import colordeconvolution, ndarray_to_pixmap
 
 
 class GraphicsTile(QGraphicsItem):
-    def __init__(self, slide_helper, x_y_w_h, slide_path, level, downsample, heatmap=None, heatmap_downsample=None, colorspace=0):
+    def __init__(self, slide_helper, x_y_w_h, slide_path, level, downsample, heatmap=None, heatmap_downsample=None, colorspace=0, heatmpa_alpha=0.3):
         super(GraphicsTile, self).__init__()
         """
         :param slide: 要显示的WSI
@@ -47,10 +47,10 @@ class GraphicsTile(QGraphicsItem):
             if self.heatmap is not None:
                 if len(self.heatmap.shape) == 3:
                     tile_image = viz_tile_colormap(slide_helper.slide, self.heatmap, window_box=x_y_w_h, level=level,
-                                                  mask_downsample=self.heatmap_downsample)
+                                                  mask_downsample=self.heatmap_downsample, alph=heatmpa_alpha)
                 elif len(self.heatmap.shape) == 2:
                     tile_image = viz_tile_heatmap(slide_helper.slide, self.heatmap, window_box=x_y_w_h, level=level,
-                                                   mask_downsample=self.heatmap_downsample)
+                                                   mask_downsample=self.heatmap_downsample, heatmap_alpha=heatmpa_alpha)
                 else:
                     assert False
                 self.pixmap = ndarray_to_pixmap(tile_image)
