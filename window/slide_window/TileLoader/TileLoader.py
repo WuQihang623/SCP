@@ -8,7 +8,7 @@ from PyQt5.QtCore import QThread, pyqtSignal, QMutex, QWaitCondition, QRectF
 from function.heatmap_background import get_colormap_background
 from window.slide_window.TileLoader.GraphicsTile import GraphicsTile
 from window.slide_window.utils.SlideHelper import SlideHelper
-from function.colorspace_transform import colordeconvolution, ndarray_to_pixmap
+from function.colorspace_transform import colordeconvolution, normalizeStaining, ndarray_to_pixmap
 
 class TileManager(QThread):
     addTileItemSignal = pyqtSignal(GraphicsTile)
@@ -63,6 +63,7 @@ class TileManager(QThread):
         self.heatmap_background_image = None
         self.background_image_h = None
         self.background_image_d = None
+        self.background_stainNorm = None
 
         """
         当self.background_flag==True时表示background_image还未载入到Scene中
@@ -146,8 +147,10 @@ class TileManager(QThread):
                     background = QGraphicsPixmapItem(self.background_image)
                 elif self.colorspace == 1:
                     background = QGraphicsPixmapItem(self.background_image_h)
-                else:
+                elif self.colorspace == 2:
                     background = QGraphicsPixmapItem(self.background_image_d)
+                else:
+                    background = QGraphicsPixmapItem(self.background_stainNorm)
             else:
                 background = QGraphicsPixmapItem(self.background_image)
             scale = self.background_image_downsample / self.slide_helper.get_downsample_for_level(self.level)
@@ -253,6 +256,10 @@ class TileManager(QThread):
                 if self.background_image_d is None or not isinstance(self.background_image_d, QPixmap):
                     self.background_image_d = colordeconvolution(self.background_image_pil, colorspace)
                     self.background_image_d = ndarray_to_pixmap(self.background_image_d)
+            if colorspace == 3:
+                if self.background_stainNorm is None or not isinstance(self.background_stainNorm, QPixmap):
+                    self.background_stainNorm = normalizeStaining(self.background_image_pil)
+                    self.background_stainNorm = ndarray_to_pixmap(self.background_stainNorm)
         else:
             self.background_image_pil = self.slide_helper.get_overview(self.backgroud_level, self.background_dimension, colorspace)
             self.background_image = ImageQt(self.background_image_pil)

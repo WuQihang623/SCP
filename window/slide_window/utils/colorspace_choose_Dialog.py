@@ -12,13 +12,15 @@ class ColorSpaceDialog(QDialog):
         self.radio1 = QRadioButton("RGB颜色空间")
         self.radio2 = QRadioButton("Hematoxylin颜色空间")
         self.radio3 = QRadioButton("DAB颜色空间")
+        self.radio4 = QRadioButton("染色标准化")
         if colorspace == 0:
             self.radio1.setChecked(True)
         elif colorspace == 1:
             self.radio2.setChecked(True)
-        else:
+        elif colorspace == 2:
             self.radio3.setChecked(True)
-
+        else:
+            self.radio4.setChecked(True)
         # 创建按钮组
         self.button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
 
@@ -27,6 +29,7 @@ class ColorSpaceDialog(QDialog):
         layout.addWidget(self.radio1)
         layout.addWidget(self.radio2)
         layout.addWidget(self.radio3)
+        layout.addWidget(self.radio4)
         layout.addWidget(self.button_box)
         self.setLayout(layout)
 
@@ -41,6 +44,8 @@ class ColorSpaceDialog(QDialog):
             return 1
         elif self.radio3.isChecked():
             return 2
+        elif self.radio4.isChecked():
+            return 3
         else:
             return None
 

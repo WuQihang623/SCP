@@ -11,7 +11,7 @@ from PyQt5.QtWidgets import QGraphicsItem, QWidget, QStyleOptionGraphicsItem
 
 from function.vis_multi_channel import  display_composite
 from function.heatmap import viz_tile_heatmap, viz_tile_colormap
-from function.colorspace_transform import colordeconvolution, ndarray_to_pixmap
+from function.colorspace_transform import colordeconvolution, ndarray_to_pixmap, normalizeStaining
 
 
 class GraphicsTile(QGraphicsItem):
@@ -65,6 +65,9 @@ class GraphicsTile(QGraphicsItem):
                     elif colorspace == 2:
                         tile_ndarray = colordeconvolution(tile_pilimage, 2)
                         self.pixmap = ndarray_to_pixmap(tile_ndarray)
+                    elif colorspace == 3:
+                        tile_pilimage = normalizeStaining(tile_pilimage)
+                        self.pixmap = ndarray_to_pixmap(tile_pilimage)
                     else:
                         self.pixmap = self.pilimage_to_pixmap(tile_pilimage)
                 # 显示荧光图像
