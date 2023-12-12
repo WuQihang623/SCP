@@ -64,9 +64,13 @@ def get_heatmap_background(slide_helper: SlideHelper, heatmap):
     heatmap = numpy_to_pixmap(heatmap)
     return heatmap
 
-def get_colormap_background(slide_helper: SlideHelper, colormap, alph=0.3):
-    level = slide_helper.get_max_level()
-    dimension = slide_helper.get_level_dimension(-1)
+def get_colormap_background(slide_helper: SlideHelper, colormap, alph=0.3, downsample=None):
+    if downsample is None:
+        level = slide_helper.get_max_level()
+        dimension = slide_helper.get_level_dimension(-1)
+    else:
+        level = slide_helper.get_best_level_for_downsample(int(downsample))
+        dimension = slide_helper.get_level_dimension(level)
     if colormap.dtype != 'uint8':
         colormap = np.uint8(colormap)
     colormap = cv2.resize(colormap, dimension, cv2.INTER_LINEAR)

@@ -415,7 +415,7 @@ class SlideViewer(BasicSlideViewer):
                 self.heatmap_downsample_microenv = int(microenv_info['heatmap_downsample'])
                 if self.show_hierarchy_checkbox_state is False:
                     self.show_micrienv_colormap_flag = False
-                    self.TileLoader.update_heatmap_background(self.heatmap_microenv, self.heatmap_alpha)
+                    self.TileLoader.update_heatmap_background(self.heatmap_microenv, self.heatmap_alpha, self.heatmap_downsample_microenv)
                     sendShowMicroenv.append(0)
             except:
                 QMessageBox.warning(self, "提示", "colormap加载出错！")
@@ -428,7 +428,7 @@ class SlideViewer(BasicSlideViewer):
                 self.micrienv_colormap = microenv_info['hierarchy_mask']
                 if self.show_hierarchy_checkbox_state is True:
                     self.show_micrienv_colormap_flag = True
-                    self.TileLoader.update_heatmap_background(self.micrienv_colormap, self.heatmap_alpha)
+                    self.TileLoader.update_heatmap_background(self.micrienv_colormap, self.heatmap_alpha, self.heatmap_downsample_microenv)
                     sendShowMicroenv.append(0)
             else:
                 QMessageBox.warning(self, "提示", "层级区域的格式错误！")
@@ -496,7 +496,7 @@ class SlideViewer(BasicSlideViewer):
                 else:
                     QMessageBox.warning(self, "提示", "语义分割结果的格式错误！")
                 self.heatmap_downsample_pdl1 = int(pdl1_info['heatmap_downsample'])
-                self.TileLoader.update_heatmap_background(self.heatmap_pdl1, self.heatmap_alpha)
+                self.TileLoader.update_heatmap_background(self.heatmap_pdl1, self.heatmap_alpha, self.heatmap_downsample_pdl1)
                 sendShowPDL1.append(0)
             except:
                 QMessageBox.warning(self, "提示", "colormap加载出错！")
@@ -585,11 +585,11 @@ class SlideViewer(BasicSlideViewer):
             self.TileLoader.loaded_heatmapItem = []
             if to_hierarchy_mask == 2:
                 self.show_micrienv_colormap_flag = True
-                self.TileLoader.update_heatmap_background(self.micrienv_colormap, self.heatmap_alpha)
+                self.TileLoader.update_heatmap_background(self.micrienv_colormap, self.heatmap_alpha, self.heatmap_downsample)
                 self.show_or_close_heatmap(self.micrienv_colormap, downsample, True)
             else:
                 self.show_micrienv_colormap_flag = False
-                self.TileLoader.update_heatmap_background(self.heatmap_microenv, self.heatmap_alpha)
+                self.TileLoader.update_heatmap_background(self.heatmap_microenv, self.heatmap_alpha, self.heatmap_downsample)
                 self.show_or_close_heatmap(self.heatmap_microenv, downsample, True)
             self.NucleiContourLoader.last_level = -1
             self.show_or_close_nuclei(current_rect=self.get_current_view_scene_rect(),
@@ -925,7 +925,7 @@ class SlideViewer(BasicSlideViewer):
 
     def update_multimodal_show(self, heatmap, downsample, flag):
         if heatmap is not None:
-            self.TileLoader.update_heatmap_background( heatmap, self.heatmap_alpha)
+            self.TileLoader.update_heatmap_background(heatmap, self.heatmap_alpha, downsample)
         self.show_or_close_heatmap(heatmap, downsample, flag)
 
     # 更改heatmap权重

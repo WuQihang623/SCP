@@ -163,14 +163,14 @@ class TileManager(QThread):
         return
 
     # 加载背景热图
-    def update_heatmap_background(self, heatmap_background, heatmap_alpha=0.3):
+    def update_heatmap_background(self, heatmap_background, heatmap_alpha=0.3, heatmap_downsample=None):
         self.heatmap_alpha = heatmap_alpha
         if isinstance(heatmap_background, QPixmap):
             self.heatmap_background_image = heatmap_background
             self.heatmap_background_downsample = self.slide_helper.level_dimensions[0][0] / heatmap_background.size().width()
         else:
             self.heatmap_background = heatmap_background
-            self.heatmap_background_image = get_colormap_background(self.slide_helper, heatmap_background, self.heatmap_alpha)
+            self.heatmap_background_image = get_colormap_background(self.slide_helper, heatmap_background, self.heatmap_alpha, heatmap_downsample)
             self.heatmap_background_downsample = self.slide_helper.level_dimensions[0][0] / heatmap_background.shape[1]
 
     # 加载某个视图下的tile
@@ -289,7 +289,7 @@ class TileManager(QThread):
     def change_heatmap_alpha(self, alpha):
         self.heatmap_alpha = alpha
         if self.heatmap is not None and hasattr(self, "heatmap_background"):
-            self.heatmap_background_image = get_colormap_background(self.slide_helper, self.heatmap_background, self.heatmap_alpha)
+            self.heatmap_background_image = get_colormap_background(self.slide_helper, self.heatmap_background, self.heatmap_alpha, self.heatmap_downsample)
             # 若上一个线程还在执行，则停止，重开
             if self.isRunning():
                 self.restart = True
