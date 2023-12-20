@@ -38,7 +38,9 @@ class SlideHelper():
         return list(range(self.level_count))
 
     def get_best_level_for_downsample(self, downsample):
-        return self.slide.get_best_level_for_downsample(downsample)
+        downsamples = np.array(self.slide.level_downsamples)
+        downsamples = np.abs(downsamples - downsample)
+        return int(np.argmin(downsamples))
 
     def get_overview(self, level, size, seleted_channels=None):
         if self.is_fluorescene is False:

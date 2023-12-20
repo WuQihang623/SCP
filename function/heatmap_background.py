@@ -69,7 +69,7 @@ def get_colormap_background(slide_helper: SlideHelper, colormap, alph=0.3, downs
         level = slide_helper.get_max_level()
         dimension = slide_helper.get_level_dimension(-1)
     else:
-        level = slide_helper.get_best_level_for_downsample(int(downsample))
+        level = slide_helper.get_best_level_for_downsample(downsample)
         dimension = slide_helper.get_level_dimension(level)
     if colormap.dtype != 'uint8':
         colormap = np.uint8(colormap)
