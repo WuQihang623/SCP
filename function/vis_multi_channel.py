@@ -26,7 +26,8 @@ def display_composite(img, choosed_channel: list = None):
         [255, 255, 0],  # yellow
         [51, 153, 255],  # cyan
         [255, 128, 0],  # orange
-        [0, 204, 0]  # green
+        [0, 204, 0],  # green
+        [153, 255, 51]
     ])
     if choosed_channel is None:
         choosed_channel = [i for i in range(img.shape[0])]

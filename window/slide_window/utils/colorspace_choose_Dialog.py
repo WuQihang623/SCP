@@ -51,6 +51,8 @@ class ColorSpaceDialog(QDialog):
 
 
 class Channel_Dialog(QDialog):
+    four_channel = ["DAPI", "Opal 520", "Opal 570", "Opal 620", "Sample AF"]
+    seven_channel = ["DAPI", "CD3 570", "CD66b 520", "LOX-1 690", "FATP2 480", "ACSL4 780", "PanCK 620", "Sample AF"]
     def __init__(self, selected_channels, num_markers):
         super().__init__()
         self.selected_channels = selected_channels
@@ -62,7 +64,12 @@ class Channel_Dialog(QDialog):
         self.setWindowTitle("荧光通道选择")
         layout = QVBoxLayout(self)
         for i in range(self.num_check_boxes):
-            check_box = QCheckBox(f"荧光通道{i}")
+            if self.num_check_boxes == 8:
+                check_box = QCheckBox(self.seven_channel[i])
+            elif self.num_check_boxes == 5:
+                check_box = QCheckBox(self.four_channel[i])
+            else:
+                check_box = QCheckBox(f"荧光通道{i}")
             layout.addWidget(check_box)
             if i in self.selected_channels:
                 check_box.setChecked(True)
