@@ -278,12 +278,20 @@ class BasicSlideViewer(QFrame):
             scale = self.get_current_view_scale() * zoom
             if scale < 0.6:
                 return
+        # 荧光图像取最下面一层为level=1
+        elif old_level_downsample == 2 and self.slide_helper.is_fluorescene:
+            scale = self.get_current_view_scale() * zoom
+            if 40 / (old_level_downsample / scale) > 120:
+                return
 
         # 将在当前视图中的鼠标位置变换到scene下的位置
         old_mouse_pos_scene = self.view.mapToScene(mousePos)
         old_view_scene_rect = self.get_current_view_scene_rect()
 
         self.current_level = self.get_best_level_for_scale(self.get_current_view_scale() * zoom)
+        # TODO: 暂时不支持40倍只有DAPI以外的格式
+        if self.slide_helper.is_fluorescene is True and self.current_level==0:
+            self.current_level = 1
 
         self.current_downsample = self.slide_helper.get_downsample_for_level(self.current_level)
 
