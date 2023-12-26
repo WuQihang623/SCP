@@ -47,8 +47,10 @@ class TileManager(QThread):
         # 图像颜色空间
         if self.slide_helper.is_fluorescene is False:
             self.colorspace = 0
+            self.channel_intensities = None
         else:
             self.colorspace = [i for i in range(self.slide_helper.num_markers)]
+            self.channel_intensities = [1 for _ in range(self.slide_helper.num_markers)]
 
         # 加载背景图像，背景图像用于等待显示，当该区域的tile没加载出来时显示这个背景图像
         expected_bg_area = 2048 * 1080
@@ -92,6 +94,7 @@ class TileManager(QThread):
             heatmap = self.heatmap
             colorspace = self.colorspace
             heatmap_alpha = self.heatmap_alpha
+            channnel_intensities = self.channel_intensities
             self.mutex.unlock()
             for tile_rect in tile_rects[level]:
                 if self.restart:
@@ -110,7 +113,7 @@ class TileManager(QThread):
                 """
                 if x >= top_left_x and y >= top_left_y:
                     if x <= bottom_right_x and y <= bottom_right_y:
-                        self.addTileItem(tile_rect, level, downsample, heatmap, heatmap_downsample, colorspace, heatmap_alpha)
+                        self.addTileItem(tile_rect, level, downsample, heatmap, heatmap_downsample, heatmap_alpha, colorspace, channnel_intensities)
 
             # 等待其他线程对self.restart的修改，等待重新载入tile
             self.mutex.lock()
@@ -120,9 +123,9 @@ class TileManager(QThread):
             self.mutex.unlock()
 
     # 将item读出来并添加到视图中,并且加到缓存池中
-    def addTileItem(self, tile_rect, level, downsample, heatmap, heatmap_downsample, colorspace, heatmap_alpha):
+    def addTileItem(self, tile_rect, level, downsample, heatmap, heatmap_downsample, heatmap_alpha, colorspace, channnel_intensities):
         item = GraphicsTile(self.slide_helper, tile_rect, self.slide_helper.get_slide_path(),
-                            level, downsample, heatmap, heatmap_downsample, colorspace, heatmap_alpha)
+                            level, downsample, heatmap, heatmap_downsample, heatmap_alpha, colorspace, channnel_intensities)
         if heatmap is None:
             self.loaded_tileItem.append([item.level, item.x_y_w_h, item.pixmap])
             # 缓存池中一共有150个图像块
@@ -246,7 +249,7 @@ class TileManager(QThread):
         return tile_rects
 
     # 更新background图
-    def color_transform(self, colorspace):
+    def color_transform(self, colorspace, channel_intensities=None):
         if self.slide_helper.is_fluorescene is False:
             if colorspace == 1:
                 if self.background_image_h is None or not isinstance(self.background_image_h, QPixmap):
@@ -261,16 +264,17 @@ class TileManager(QThread):
                     self.background_stainNorm = normalizeStaining(self.background_image_pil)
                     self.background_stainNorm = ndarray_to_pixmap(self.background_stainNorm)
         else:
-            self.background_image_pil = self.slide_helper.get_overview(self.backgroud_level, self.background_dimension, colorspace)
+            self.background_image_pil = self.slide_helper.get_overview(self.backgroud_level, self.background_dimension, colorspace, channel_intensities)
             self.background_image = ImageQt(self.background_image_pil)
             self.background_image = QPixmap.fromImage(self.background_image)
 
     # 该操作只有在非热图显示下才会进行
-    def change_colorspace(self, colorspace):
-        if colorspace != self.colorspace:
+    def change_colorspace(self, colorspace, channel_intensities=None):
+        if colorspace != self.colorspace or channel_intensities != self.channel_intensities:
             self.colorspace = colorspace
+            self.channel_intensities = channel_intensities
             # H颜色空间
-            self.color_transform(colorspace)
+            self.color_transform(colorspace, channel_intensities)
             # 若上一个线程还在执行，则停止，重开
             if self.isRunning():
                 self.restart = True

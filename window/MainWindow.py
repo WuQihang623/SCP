@@ -384,19 +384,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 if num_markers == 0:
                     colorspace_dialog = ColorSpaceDialog(slide_viewer.TileLoader.colorspace)
                 else:
-                    colorspace_dialog = Channel_Dialog(slide_viewer.TileLoader.colorspace, num_markers)
+                    colorspace_dialog = Channel_Dialog(slide_viewer.TileLoader.colorspace, num_markers, slide_viewer.slide_helper.fluorescene_color_list, slide_viewer.TileLoader.channel_intensities)
                 if colorspace_dialog.exec_() == QDialog.Accepted:
-                    selected_option = colorspace_dialog.get_selected_option()
+                    selected_option, channel_intensities = colorspace_dialog.get_selected_option()
                     if selected_option == []:
                         QMessageBox.warning(self, '警告', "至少选择一个颜色通道！")
                         return
                     print("选择的颜色空间:", selected_option)
-                    slide_viewer.TileLoader.change_colorspace(selected_option)
-
-                    # TODO: 子窗口同步转换颜色空间
-                    # slide_viewer_pair = sub_active.widget().slide_viewer_pair
-                    # if hasattr(slide_viewer_pair, "TileLoader"):
-                    #     sub_active.widget().slide_viewer_pair.TileLoader.change_colorspace(selected_option)
+                    slide_viewer.TileLoader.change_colorspace(selected_option, channel_intensities)
 
     # 标注工具切换
     def tools_toggle(self, mode2switch):

@@ -1,7 +1,7 @@
 import numpy as np
 from PIL import Image
 
-def display_composite(img, choosed_channel: list = None):
+def display_composite(img, choosed_channel: list = None, channel_intensities=None):
     """
     Display composite view of multi-channel image.
     Background is black. Each stain is rendered with a different colour.
@@ -19,18 +19,25 @@ def display_composite(img, choosed_channel: list = None):
     --------
     composite_image: PIL Image
     """
-    colours = np.array([
-        [0, 0, 255],  # blue (usually DAPI)
-        [255, 51, 153],  # magenta
-        [255, 0, 0],  # red
-        [255, 255, 0],  # yellow
-        [51, 153, 255],  # cyan
-        [255, 128, 0],  # orange
-        [0, 204, 0],  # green
-        [153, 255, 51]
-    ])
+    colours = np.array(([
+        [0, 0, 255], # DAPI
+        [255, 255, 0], # 570
+        [255, 0, 0], # 690
+        [0, 255, 255], # 480
+        [255, 128, 0], # 620
+        [255, 255, 255], # 780
+        [0, 255, 0], # 520
+        [0, 0, 0] # Sample AF
+    ]))
+
     if choosed_channel is None:
         choosed_channel = [i for i in range(img.shape[0])]
+    if channel_intensities is None:
+        channel_intensities = np.array([1 for i in range(img.shape[0])])
+    else:
+        channel_intensities = np.array(channel_intensities)
+        channel_intensities = channel_intensities[choosed_channel]
+
     colours = colours[choosed_channel]
     back = np.zeros((img.shape[1], img.shape[2], 4)).astype(np.uint8)
     composite = Image.fromarray(back, 'RGBA')
@@ -41,7 +48,7 @@ def display_composite(img, choosed_channel: list = None):
         channel_image = np.zeros((img.shape[1], img.shape[2], 4))
         channel_image[..., 0:-1] = colours[i]
         channel_image = Image.fromarray(channel_image.astype(np.uint8), 'RGBA')
-        c = Image.fromarray(img[i].astype(np.uint8))
+        c = Image.fromarray(np.clip(img[i] * channel_intensities[i], 0, 255).astype(np.uint8))
         c.convert('L')
         channel_image.putalpha(c)
         composite = Image.alpha_composite(composite, channel_image)

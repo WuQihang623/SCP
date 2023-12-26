@@ -224,8 +224,7 @@ class BasicSlideViewer(QFrame):
         # 获取当前视图在场景中的矩形
         view_scene_rect = self.get_current_view_scene_rect()
         # 加载当前视图内可见的图块
-        self.TileLoader.load_tiles_in_view(self.current_level, view_scene_rect, self.heatmap,
-                                           self.heatmap_downsample)
+        self.TileLoader.load_tiles_in_view(self.current_level, view_scene_rect, self.heatmap, self.heatmap_downsample)
         # 发射FOV更新信号
         self.updateFOVSignal.emit(view_scene_rect, self.current_level)
 
@@ -523,13 +522,13 @@ class BasicSlideViewer(QFrame):
             if num_markers == 0:
                 colorspace_dialog = ColorSpaceDialog(self.TileLoader.colorspace)
             else:
-                colorspace_dialog = Channel_Dialog(self.TileLoader.colorspace, num_markers)
+                colorspace_dialog = Channel_Dialog(self.TileLoader.colorspace, num_markers, self.slide_helper.fluorescene_color_list, self.TileLoader.channel_intensities)
             if colorspace_dialog.exec_() == QDialog.Accepted:
-                selected_option = colorspace_dialog.get_selected_option()
+                selected_option, channel_intensities = colorspace_dialog.get_selected_option()
                 if selected_option == []:
                     QMessageBox.warning(self, '警告', "至少选择一个颜色通道！")
                     return
-                self.TileLoader.change_colorspace(selected_option)
+                self.TileLoader.change_colorspace(selected_option, channel_intensities)
 
     def closeEvent(self):
         if hasattr(self, "TileLoader"):

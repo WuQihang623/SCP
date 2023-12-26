@@ -1,5 +1,5 @@
 import sys
-from PyQt5.QtWidgets import QApplication, QDialog, QRadioButton, QVBoxLayout, QDialogButtonBox, QCheckBox
+from PyQt5.QtWidgets import QApplication, QDialog, QRadioButton, QVBoxLayout, QDialogButtonBox, QCheckBox, QSlider, QLabel
 
 class ColorSpaceDialog(QDialog):
     def __init__(self, colorspace):
@@ -39,40 +39,58 @@ class ColorSpaceDialog(QDialog):
 
     def get_selected_option(self):
         if self.radio1.isChecked():
-            return 0
+            return 0, None
         elif self.radio2.isChecked():
-            return 1
+            return 1, None
         elif self.radio3.isChecked():
-            return 2
+            return 2, None
         elif self.radio4.isChecked():
-            return 3
+            return 3, None
         else:
-            return None
-
+            return None, None
 
 class Channel_Dialog(QDialog):
-    four_channel = ["DAPI", "Opal 520", "Opal 570", "Opal 620", "Sample AF"]
-    seven_channel = ["DAPI", "CD3 570", "CD66b 520", "LOX-1 690", "FATP2 480", "ACSL4 780", "PanCK 620", "Sample AF"]
-    def __init__(self, selected_channels, num_markers):
+    def __init__(self, selected_channels, num_markers, marker_names=None, intensities=None):
         super().__init__()
         self.selected_channels = selected_channels
         self.num_check_boxes = num_markers
+        self.marker_names = marker_names
+        self.intensities = intensities
         self.result_channels = []
+        self.slider_values = []  # Store slider values
         self.init_UI()
 
     def init_UI(self):
         self.setWindowTitle("荧光通道选择")
         layout = QVBoxLayout(self)
+
         for i in range(self.num_check_boxes):
-            if self.num_check_boxes == 8:
-                check_box = QCheckBox(self.seven_channel[i])
-            elif self.num_check_boxes == 5:
-                check_box = QCheckBox(self.four_channel[i])
+            if self.marker_names is not None and self.marker_names != []:
+                checkbox_text = self.marker_names[i]
             else:
-                check_box = QCheckBox(f"荧光通道{i}")
+                checkbox_text = f"荧光通道{i}"
+            check_box = QCheckBox(checkbox_text)
             layout.addWidget(check_box)
+
+            # Add a slider for each checkbox
+            slider = QSlider()
+            slider.setOrientation(1)  # Vertical orientation
+            slider.setRange(0, 50)  # Values from 0 to 5 with steps of 0.1
+            if self.intensities is None:
+                slider.setValue(10)  # Initial value set to 1
+            else:
+                slider.setValue(int(self.intensities[i] * 10))
+            self.slider_values.append(slider.value() / 10.0)  # Store initial value
+            slider_label = QLabel(f"{self.slider_values[i]:.1f}")
+            layout.addWidget(slider)
+            layout.addWidget(slider_label)
+
+            # Connect slider value change event to update the label and the stored value
+            slider.valueChanged.connect(lambda value, label=slider_label, index=i: self.slider_changed(value, label, index))
+
             if i in self.selected_channels:
                 check_box.setChecked(True)
+
         # 创建按钮组
         self.button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         layout.addWidget(self.button_box)
@@ -80,14 +98,20 @@ class Channel_Dialog(QDialog):
         self.button_box.accepted.connect(self.accept)
         self.button_box.rejected.connect(self.reject)
 
+    def slider_changed(self, value, label, index):
+        label.setText(f"{value / 10.0:.1f}")
+        self.slider_values[index] = value / 10.0
+
     def get_selected_option(self):
-        return self.result_channels
+        return self.result_channels, self.slider_values
 
     def exec_(self):
         super_result = super().exec_()
-        for i in range(self.num_check_boxes):
-            if self.layout().itemAt(i).widget().isChecked():
-                self.result_channels.append(i)
+        for i in range(self.num_check_boxes * 3):
+            widget = self.layout().itemAt(i).widget()
+            if isinstance(widget, QCheckBox) and widget.isChecked():
+                checkbox_index = self.layout().indexOf(widget)
+                self.result_channels.append(int(checkbox_index/3))
         return super_result
 
 if __name__ == '__main__':
@@ -97,5 +121,7 @@ if __name__ == '__main__':
     if dialog.exec_() == QDialog.Accepted:
         selected_option = dialog.result_channels
         print("选择的选项:", selected_option)
+        slider_values = dialog.slider_values
+        print(slider_values)
 
     sys.exit(app.exec_())
