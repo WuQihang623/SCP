@@ -13,8 +13,8 @@ from PIL.ImageQt import ImageQt
 from PyQt5.QtGui import QPixmap
 from window.slide_window.utils.SlideHelper import SlideHelper
 from window.slide_window.utils.MyGraphicsPixmapItem import MyGraphicsPixmapItem
-from Inference.diagnose.diagnose import Thread_Diagnose
-from Inference.progress_bar import progress_dialog
+# from Inference.diagnose.diagnose import Thread_Diagnose
+# from Inference.progress_bar import progress_dialog
 from function.sample_from_probmap import sample_from_porbmap
 from window.utils.DiagnoseReport import DiagnoseReport
 
@@ -149,20 +149,20 @@ class DiagnoseWidget(UI_Diagnose):
             if hasattr(item, 'key') and isinstance(item, MyGraphicsPixmapItem):
                 self.sendDiagnoseRectIdxSignal.emit(item.key)
 
-    def diagnose(self):
-        slide_name, _ = os.path.splitext(os.path.basename(self.slide_path))
-        path = os.path.join(self.file_dir, slide_name+".pkl")
-        if os.path.exists(path):
-            self.load_result(path)
-        else:
-            kwargs = {"slidepath": self.slide_helper.slide_path,
-                      'signal': self.bar_signal_diagnose}
-            self.diagnose_thread = Thread_Diagnose(kwargs, self.slide_helper.get_level_dimension(-1))
-            self.diagnose_dialog = progress_dialog("乳腺癌淋巴结转移诊断", '正在进行诊断……')
-            self.bar_signal_diagnose.connect(self.diagnose_dialog.call_back)
-            self.diagnose_thread.complete_signal.connect(self.load_result)
-            self.diagnose_thread.start()
-            self.diagnose_dialog.start()
+    # def diagnose(self):
+    #     slide_name, _ = os.path.splitext(os.path.basename(self.slide_path))
+    #     path = os.path.join(self.file_dir, slide_name+".pkl")
+    #     if os.path.exists(path):
+    #         self.load_result(path)
+    #     else:
+    #         kwargs = {"slidepath": self.slide_helper.slide_path,
+    #                   'signal': self.bar_signal_diagnose}
+    #         self.diagnose_thread = Thread_Diagnose(kwargs, self.slide_helper.get_level_dimension(-1))
+    #         self.diagnose_dialog = progress_dialog("乳腺癌淋巴结转移诊断", '正在进行诊断……')
+    #         self.bar_signal_diagnose.connect(self.diagnose_dialog.call_back)
+    #         self.diagnose_thread.complete_signal.connect(self.load_result)
+    #         self.diagnose_thread.start()
+    #         self.diagnose_dialog.start()
 
     def set_file_dir(self):
         self.file_dir = self.folderselector.FileDir()

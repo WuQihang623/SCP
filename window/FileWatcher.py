@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtCore import pyqtSignal, Qt, QTimer, QThread
 
-from Inference.batch_process import BatchProcessThread
+# from Inference.batch_process import BatchProcessThread
 from function.utils import setFileWatcherDir, is_file_copy_finished
 
 # 获取再文件夹中的病理图像文件
@@ -275,42 +275,42 @@ class FileWatcher(QWidget):
                 QMessageBox.warning(self, '警告', f'该文件{self.table_widget.item(row, 4).text()}')
                 return
 
-    def batch_process(self):
-        if hasattr(self, 't'):
-            if self.t.isRunning():
-                QMessageBox.warning(self, '警告', '正在执行批处理')
-                return
-
-        # 创建对话框对象
-        msg_box = QMessageBox(self)
-        msg_box.setWindowTitle("选择处理模式")
-        # 添加自定义按钮
-        custom_btn1 = msg_box.addButton('诊断', QMessageBox.YesRole)
-        custom_btn2 = msg_box.addButton('微环境分析', QMessageBox.YesRole)
-        custom_btn3 = msg_box.addButton('PD-L1测量', QMessageBox.YesRole)
-        custom_btn4 = msg_box.addButton('取消', QMessageBox.RejectRole)
-        custom_btn2.setEnabled(False)
-        custom_btn3.setEnabled(False)
-        # 弹出对话框并等待用户响应
-        result = msg_box.exec_()
-        # 根据用户的选择来进行处理
-        if msg_box.clickedButton() == custom_btn1:
-            mode = '诊断'
-        elif msg_box.clickedButton() == custom_btn2:
-            mode = '微环境分析'
-            return
-        elif msg_box.clickedButton() == custom_btn3:
-            mode = 'PD-L1测量'
-            return
-        else:
-            return
-        self.t = BatchProcessThread(self, mode, self.path)
-        self.t.batch_flag = True
-        self.t.start()
-
-    def stop_batch_process(self):
-        if hasattr(self, 't'):
-            self.t.batch_flag = False
+    # def batch_process(self):
+    #     if hasattr(self, 't'):
+    #         if self.t.isRunning():
+    #             QMessageBox.warning(self, '警告', '正在执行批处理')
+    #             return
+    #
+    #     # 创建对话框对象
+    #     msg_box = QMessageBox(self)
+    #     msg_box.setWindowTitle("选择处理模式")
+    #     # 添加自定义按钮
+    #     custom_btn1 = msg_box.addButton('诊断', QMessageBox.YesRole)
+    #     custom_btn2 = msg_box.addButton('微环境分析', QMessageBox.YesRole)
+    #     custom_btn3 = msg_box.addButton('PD-L1测量', QMessageBox.YesRole)
+    #     custom_btn4 = msg_box.addButton('取消', QMessageBox.RejectRole)
+    #     custom_btn2.setEnabled(False)
+    #     custom_btn3.setEnabled(False)
+    #     # 弹出对话框并等待用户响应
+    #     result = msg_box.exec_()
+    #     # 根据用户的选择来进行处理
+    #     if msg_box.clickedButton() == custom_btn1:
+    #         mode = '诊断'
+    #     elif msg_box.clickedButton() == custom_btn2:
+    #         mode = '微环境分析'
+    #         return
+    #     elif msg_box.clickedButton() == custom_btn3:
+    #         mode = 'PD-L1测量'
+    #         return
+    #     else:
+    #         return
+    #     self.t = BatchProcessThread(self, mode, self.path)
+    #     self.t.batch_flag = True
+    #     self.t.start()
+    #
+    # def stop_batch_process(self):
+    #     if hasattr(self, 't'):
+    #         self.t.batch_flag = False
 
     def set_style(self):
         self.setStyleSheet("QLabel{font-family:宋体; font: bold 14px;}")
