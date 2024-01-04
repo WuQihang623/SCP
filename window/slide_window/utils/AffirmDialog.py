@@ -1,9 +1,6 @@
 # 弹出是或否的对话框
 
-from PyQt5.QtGui import QIcon, QPixmap
-from PyQt5.QtGui import QPainterPath, QPen, QBrush, QColor, QFont
-from PyQt5.QtCore import Qt, QSize
-from PyQt5.QtWidgets import QGroupBox, QPushButton, QLabel, QGridLayout, QDialog, QComboBox
+from PyQt5.QtWidgets import QPushButton, QLabel, QGridLayout, QDialog
 
 class AffirmDialog(QDialog):
     def __init__(self, text):

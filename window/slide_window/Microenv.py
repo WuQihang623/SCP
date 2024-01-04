@@ -1,5 +1,8 @@
 import os.path
+import pickle
 import sys
+
+import numpy as np
 from PyQt5.QtWidgets import *
 from window.UI.UI_microenv import UI_Microenv
 from window.slide_window.utils.SlideHelper import SlideHelper
@@ -12,6 +15,12 @@ class MicroenvWidget(UI_Microenv):
     loadMicroenvComparisonSignal = pyqtSignal(str)
     # 打开同步窗口信号
     loadPairedWindowSignal = pyqtSignal(str)
+    # 载入配准结果到HE窗口信号
+    loadOriginRegSignal = pyqtSignal(dict)
+    # 载入配准结果到IHC窗口信号
+    loadTransformRegSignal = pyqtSignal(dict)
+    # 通知slide_viewer_pair绑定配准结果导入信号
+    loadRegistrationSignal = pyqtSignal(bool)
     def __init__(self):
         super(MicroenvWidget, self).__init__()
         self.file_dir = self.folderselector.FileDir()
@@ -20,9 +29,13 @@ class MicroenvWidget(UI_Microenv):
         self.setConnect()
 
     def setConnect(self):
+        """
+            设置界面按键的信号连接
+        """
         self.microenv_btn.clicked.connect(self.load_result)
         self.loadMicroenv_btn.clicked.connect(self.load_result)
         self.loadComparison_btn.clicked.connect(self.load_comparison_result)
+        self.loadRegistration_btn.clicked.connect(self.load_registration_results)
         self.folderselector.changeFileDirSignal.connect(self.set_file_dir)
 
     # 设置按键使能
@@ -60,11 +73,6 @@ class MicroenvWidget(UI_Microenv):
     # 载入对比结果
     def load_comparison_result(self):
         slide_name, _ = os.path.splitext(os.path.basename(self.slide_path))
-        # 打开对比窗口
-        if os.path.exists(self.slide_path):
-            self.loadPairedWindowSignal.emit(self.slide_path)
-        else:
-            return
         # 选取对比结果，并传给slide_viewer_pair
         options = QFileDialog.Options()
         path, _ = QFileDialog.getOpenFileName(self, "选择微环境分析结果存放的路径", self.file_dir,
@@ -72,7 +80,69 @@ class MicroenvWidget(UI_Microenv):
         if slide_name not in path:
             QMessageBox.warning(self, '警告', '结果文件与图片不匹配！')
             return
+
+        # 打开对比窗口
+        if os.path.exists(self.slide_path):
+            self.loadPairedWindowSignal.emit(self.slide_path)
+        else:
+            return
         self.loadMicroenvComparisonSignal.emit(path)
+
+
+    def load_registration_results(self):
+        """同时载入HE与IHC或荧光图像的细胞核分割结果，二者公用一个type?
+
+        载入文件的格式:
+            {
+               哈希值1: {
+                   'type': ndarray,
+                   'center': ndarray,
+                   'contour': ndarray,
+                   'grid': ndarray,
+                   'ihc_center': ndarray,
+                   'ihc_contour': ndarray,
+                   'ihc_grid': ndarray,
+               },
+            }
+
+        """
+        slide_name, _ = os.path.splitext(os.path.basename(self.slide_path))
+        options = QFileDialog.Options()
+        path, _ = QFileDialog.getOpenFileName(self, "选择配准结果存放路径", self.file_dir,
+                                              "结果(*.pkl)", options=options)
+        if slide_name not in path:
+            QMessageBox.warning(self, '警告', '结果文件与图片不匹配！')
+            return
+
+        with open(path, "rb") as f:
+            Reg_data = pickle.load(f)
+            f.close()
+        # TODO: 由于这并不是一个频繁的信号促发，因此在这里使用信号传递结果文件
+        origin_dict = self.get_empty_result_dict()
+        transform_dict = self.get_empty_result_dict()
+        for hash, patch_item in Reg_data.items():
+            origin_dict["center"].extend(patch_item["center"])
+            origin_dict["contour"].extend(patch_item["contour"])
+            origin_dict["type"].extend(patch_item["type"])
+            origin_dict["grid"].append(self.convert_grid_matrix(patch_item["grid"]))
+            transform_dict["center"].extend(patch_item["ihc_center"])
+            transform_dict["contour"].extend(patch_item["ihc_contour"])
+            transform_dict["type"].extend(patch_item["type"])
+            transform_dict["grid"].append(self.convert_grid_matrix(patch_item["ihc_grid"]))
+        for key, _ in origin_dict.items():
+            if key == "contour":
+                origin_dict[key] = np.array(origin_dict[key], dtype=object)
+            else:
+                origin_dict[key] = np.array(origin_dict[key], dtype=np.int32)
+        for key, _ in transform_dict.items():
+            if key == "contour":
+                transform_dict[key] = np.array(transform_dict[key], dtype=object)
+            else:
+                transform_dict[key] = np.array(transform_dict[key], dtype=np.int32)
+
+        self.loadRegistrationSignal.emit(True)
+        self.loadOriginRegSignal.emit(origin_dict)
+        self.loadTransformRegSignal.emit(transform_dict)
 
     # 显示细胞核个数信息
     def setNucleiText(self, num_list):
@@ -83,6 +153,25 @@ class MicroenvWidget(UI_Microenv):
 
     def set_file_dir(self):
         self.file_dir = self.folderselector.FileDir()
+
+    def convert_grid_matrix(self, grid):
+        """
+            将一个2*2矩阵（xyxy）转换成4*2矩阵（xyxyxyxy）
+        """
+        return np.array([
+            [grid[0][0], grid[0][1]], # 左上角
+            [grid[0][0], grid[1][1]], # 右上角
+            [grid[1][0], grid[1][1]], # 右下角
+            [grid[1][0], grid[0][1]], # 左下角
+        ], dtype=np.int32)
+
+    def get_empty_result_dict(self):
+        return {
+            "type": [],
+            "center": [],
+            "contour": [],
+            "grid": []
+        }
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

@@ -134,7 +134,7 @@ class BasicSlideViewer(QFrame):
         self.updateFOVSignal.connect(self.thumbnail.update_FOV)
         self.thumbnail.thumbnailClickedSignal.connect(self.showImageAtThumbnailArea)
 
-        # TODO: 初始化缩放滑块
+        # 初始化缩放滑块
         self.slider.slider.valueChanged.connect(self.responseSlider)
 
 
@@ -451,10 +451,8 @@ class BasicSlideViewer(QFrame):
         self.match_downsample = match_downsample
         self.Registration = Registration
 
-    # 根据放射变换矩阵，当平移时进行调用
-    # 如果只是平移的话，并不需要考虑缩放的问题，因为在一开始的时候就已经进行过了缩放维度的对其
     def move_together(self, center_pos):
-        """
+        """ 根据放射变换矩阵，当使用鼠标移动视图时同时用于移动配准视图
         :param center_pos: 在level=0下的要跟随的视图中心点的坐标，除以self.match_downsample
         :return:
         """
@@ -467,9 +465,10 @@ class BasicSlideViewer(QFrame):
 
     # 根据放射变换矩阵，当滚动滚轮时调用, 默认之前二者处于同样的放大倍数下面
     def scale_together(self, pos: QPoint, zoom):
-        """
+        """ 根据放射变换矩阵，当鼠标滚轮滑动时用于缩放配准的图像
+
         :param pos: 缩放时鼠标的位置
-        :param zoom: 要缩放的背书
+        :param zoom: 要缩放的倍数
         :return:
         """
         source_points_matrix = np.array([[pos.x()], [pos.y()], [1]])
@@ -495,8 +494,10 @@ class BasicSlideViewer(QFrame):
         self.responseWheelEvent(pos, zoom)
         self.move_together(main_center)
 
-    # 鼠标移动时，在另一个窗口绘制对应的鼠标
     def draw_mouse(self, pos):
+        """
+            鼠标移动时，在另一个窗口绘制对应的鼠标
+        """
         source_points_matrix = np.array([[pos.x() * self.current_downsample], [pos.y() * self.current_downsample], [1]])
         target_points_matrix = np.linalg.inv(self.transform_matrix) @ source_points_matrix
         self.mouse_x = target_points_matrix[0][0] / self.current_downsample
@@ -509,6 +510,9 @@ class BasicSlideViewer(QFrame):
         self.mouseItem.setZValue(40)
 
     def remove_mouse(self, *args):
+        """
+            打开图像同步后，当鼠标移动出了视图，会将配对的鼠标位置也删除掉
+        """
         if self.scene.clear_mouse is False:
             self.mouseItem.clearItem()
             self.scene.clear_mouse = True

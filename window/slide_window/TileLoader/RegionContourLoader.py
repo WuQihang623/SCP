@@ -55,7 +55,7 @@ class RegionContourLoader(QThread):
         self.types = types if types is not None else []
         self.show_types = show_types if show_types is not None else []
 
-        # TODO: 如果点击了移除某个类型，则进行删除
+        # 如果点击了移除某个类型，则进行删除
         if remove_types is not None:
             match_items = find_matching_objects(self.scene.items(), 'category', 'is_region', remove_types)
             for item in match_items:
@@ -68,7 +68,7 @@ class RegionContourLoader(QThread):
         else:
             self.start(QThread.NormalPriority)
 
-    # 将所有的
+    # 将所有的轮廓进行绘制
     def run(self):
         while True:
             # 获取共享变量

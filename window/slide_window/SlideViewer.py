@@ -36,7 +36,6 @@ class SlideViewer(BasicSlideViewer):
     sendRegionShowTypePDL1Signal = pyqtSignal(list)
     # 发送给PDL1分析面板，设置显示是否要显示表皮细胞，淋巴细胞
     sendNucleiShowTypePDL1Signal = pyqtSignal(list)
-
     def __init__(self, paired=False):
         super(SlideViewer, self).__init__()
         # 初始化标注工具,同步窗口并不需要标注工具
@@ -53,11 +52,11 @@ class SlideViewer(BasicSlideViewer):
     def init_variable(self):
         super(SlideViewer, self).init_variable()
         """
-        0: 显示标注
+        0:  显示标注
         1： 显示诊断结果
         2： 显示微环境分析
         3： 显示PD-L1分析
-        4: 显示多模态分析
+        4:  显示多模态分析
         """
         self.SHOW_FLAG = 0
         # 初始化诊断框
@@ -188,7 +187,6 @@ class SlideViewer(BasicSlideViewer):
     # 鼠标拖动页面
     def responseMouseMove(self, event):
         super().responseMouseMove(event)
-
         # 绘制细胞核分割结果
         self.show_nuclei()
 
@@ -203,19 +201,19 @@ class SlideViewer(BasicSlideViewer):
         super(SlideViewer, self).update_scale_view(level, scene_view_rect, clear_scene_flag, mouse_pos)
         if clear_scene_flag:
             downsample = self.slide_helper.get_downsample_for_level(level)
-            # TODO:重新绘制标注
+            # 重新绘制标注
             # 如果在标注模式下，重新绘制当前的标注
             if self.SHOW_FLAG == 0:
                 self.ToolManager.redraw(level, downsample)
-            # TODO：重新绘制诊断框
+            # 重新绘制诊断框
             if self.SHOW_FLAG == 1:
                 self.redrawDiagnoseRect()
-            # TODO: 重新绘制细胞核分割结果，肿瘤区域分割结果
+            # 重新绘制细胞核分割结果，肿瘤区域分割结果
             if self.SHOW_FLAG == 2:
                 self.show_or_close_contour(self.tissue_contours_microenv,
-                                            self.tissue_colors_microenv,
-                                            self.tissue_class_microenv,
-                                            self.show_region_types_microenv)
+                                           self.tissue_colors_microenv,
+                                           self.tissue_class_microenv,
+                                           self.show_region_types_microenv)
             elif self.SHOW_FLAG == 3:
                 self.show_or_close_contour(self.tissue_contours_pdl1,
                                            self.tissue_colors_pdl1,
@@ -231,9 +229,8 @@ class SlideViewer(BasicSlideViewer):
         # downsample = self.slide_helper.get_downsample_for_level(self.current_level)
         self.ToolManager.redraw(self.current_level, self.current_downsample)
 
-    # 点击标注，跳转到当前level下以pos为中心的画面下
     def switch2annotation(self, pos, choosed_idx):
-        """
+        """ 点击标注，跳转到当前level下以pos为中心的画面下
         :param pos: 标注的中心
         :param choosed_idx: 被选中的标注的索引
         :return:
@@ -350,7 +347,7 @@ class SlideViewer(BasicSlideViewer):
             # 发射FOV更新信号
             self.updateFOVSignal.emit(view_scene_rect, self.current_level)
 
-            # TODO:更新状态栏,视图位置
+            # 更新状态栏,视图位置
             self.magnificationSignal.emit(True)
 
             # 将上一个诊断框颜色置为黑色
@@ -365,10 +362,41 @@ class SlideViewer(BasicSlideViewer):
             return
         self.scene.addItem(item)
 
-
     # 将场景中的某个组织轮廓删除
     def removeContourItem(self, item):
         self.scene.removeItem(item)
+
+    def loadRegistrationWSIInfo(self, WSI_Info: dict):
+        """显示配准的细胞核分割结果
+        载入文件的格式:
+            {
+                "type": ndarray,
+                "center": ndarray,
+                "contour": ndarray,
+                "grid": ndarray,
+            }
+        """
+
+        # 如果还没有载入视图，则不进行显示
+        if not hasattr(self, "slide"):
+            return
+
+        self.sendShowMicroenvSignal.emit([])
+        self.sendRegionShowTypeMicroenvSignal.emit([])
+
+        # 载入细胞核分割结果
+        self.cell_centers_microenv = WSI_Info['center']
+        self.cell_type_microenv = WSI_Info['type']
+        self.cell_contour_microenv = WSI_Info['contour']
+
+        self.tissue_contours_microenv = WSI_Info["grid"]
+        self.tissue_colors_microenv = np.zeros((WSI_Info["grid"].shape[0], 3))
+        self.tissue_class_microenv = np.ones(WSI_Info["grid"].shape[0]) * 5
+
+        # 发送信号，给Combox，设置显示细胞核轮廓， （表皮细胞， 淋巴细胞……）
+        self.sendShowMicroenvSignal.emit([1, 2])
+        self.sendRegionShowTypeMicroenvSignal.emit([4])
+        self.sendNucleiShowTypeMicroenvSignal.emit([0, 1, 2, 3, 4])
 
     # 加载微环境分析结果
     def loadMicroenv(self, path):
@@ -391,15 +419,12 @@ class SlideViewer(BasicSlideViewer):
         if microenv_info.get('mask') is None:
             QMessageBox.warning(self, '提示', '该文件中没有肿瘤区域分割结果！')
         elif isinstance(microenv_info['mask'], np.ndarray):
-            if microenv_info.get('region_contours') is None or microenv_info.get('region_colors') is None or\
-                    microenv_info.get('region_types') is None:
+            if microenv_info.get('region_contours') is None or microenv_info.get('region_colors') is None or microenv_info.get('region_types') is None:
                 pass
             else:
                 self.tissue_contours_microenv = microenv_info.get('region_contours')
                 self.tissue_colors_microenv = microenv_info.get('region_colors')
                 self.tissue_class_microenv = microenv_info.get('region_types')
-                # TODO: 发送信号，给Combox，设置显示组织轮廓，（肿瘤，软骨，腺体）
-                # sendShowMicroenv.append(1)
 
             try:
                 # 用于保存肿瘤微环境分析的热图
@@ -454,7 +479,6 @@ class SlideViewer(BasicSlideViewer):
         if 2 in sendShowMicroenv:
             self.sendNucleiShowTypeMicroenvSignal.emit([0, 1, 2, 3, 4])
 
-    # TODO: 加载PDL1分析结果
     def loadPDL1(self, path):
         try:
             with open(path, 'rb') as f:
@@ -523,8 +547,11 @@ class SlideViewer(BasicSlideViewer):
             self.sendNucleiShowTypePDL1Signal.emit([0, 1, 2, 3, 4])
 
     def choose_pkl_file(self):
+        """
+            鼠标右击视图，弹出的菜单中，响应载入细胞核分割结果
+        """
         options = QFileDialog.Options()
-        path, _ = QFileDialog.getOpenFileName(self, "选择模型结果", './',
+        path, _ = QFileDialog.getOpenFileName(self, "选择细胞核分割结果", './',
                                               "标注 (*.pkl)", options=options)
         slide_name, _ = os.path.splitext(os.path.basename(self.slide_helper.slide_path))
         if os.path.exists(path):
@@ -533,7 +560,7 @@ class SlideViewer(BasicSlideViewer):
             else:
                 QMessageBox.warning(self, '警告', '导入文件与当前图片不符')
 
-    # TODO: 在标注模式下导入细胞核分割结果
+    # 在标注模式下导入细胞核分割结果
     def loadNuclei(self, path):
         try:
             with open(path, 'rb') as f:
@@ -613,7 +640,7 @@ class SlideViewer(BasicSlideViewer):
 
     # 更新要显示的肿瘤微环境组织区域类型,连接showRegionType_Combox
     def update_show_region_types_microenv(self, type_list):
-        type_dict = {"肿瘤区域": 2, "基质区域": 1, "坏死区域": 3, "无关区域": 4}
+        type_dict = {"基质区域": 1, "肿瘤区域": 2, "坏死区域": 3, "无关区域": 4, "图像块": 5}
         new_show_types = []
         for type in type_list:
             if type_dict.get(type) is not None:
@@ -731,8 +758,7 @@ class SlideViewer(BasicSlideViewer):
                 self.NucleiContourLoader.last_nuclei = None
                 self.NucleiContourLoader.load_contour(current_rect=current_rect,
                                                       current_level=self.current_level,
-                                                      current_downsample=self.slide_helper.get_downsample_for_level(
-                                                          self.current_level),
+                                                      current_downsample=self.slide_helper.get_downsample_for_level(self.current_level),
                                                       contours=None,
                                                       centers=None,
                                                       types=None,
@@ -741,6 +767,9 @@ class SlideViewer(BasicSlideViewer):
                                                       remove_types=[0, 1, 2, 3, 4])
 
     def show_nuclei(self):
+        """
+            当视图移动，视图缩放等操作的时候，要加载未载入到当前视图中的细胞核轮廓
+        """
         if self.SHOW_FLAG == 2:
             self.show_or_close_nuclei(current_rect=self.get_current_view_scene_rect(),
                                       contours=self.cell_contour_microenv,
@@ -768,8 +797,6 @@ class SlideViewer(BasicSlideViewer):
     # 修改细胞核的类型
     def modify_nuclei(self, event_point):
         point = self.view.mapToScene(event_point)
-        # downsample = self.slide_helper.get_downsample_for_level(self.current_level)
-        # print(point.x() * self.current_downsample, point.y() * self.current_downsample)
         if self.cell_contour_ann is not None and self.current_level < 1:
             distance = np.square(np.array([point.x()]) - self.cell_centers_ann[:, 0]) +\
                 np.square(np.array([point.y()]) - self.cell_centers_ann[:, 1])

@@ -126,6 +126,9 @@ class SlideWindow(QFrame):
         self.microenv.showNucleiType_Combox.selectionChangedSignal.connect(self.slide_viewer.update_show_nuclei_types_microenv)
         # 要显示层级结构还是区域mask
         self.microenv.show_hierarchy_mask_checkbox.stateChanged.connect(self.slide_viewer.change_hierarchy_mask_and_region_mask)
+        # 载入配准结果信号连接
+        self.microenv.loadOriginRegSignal.connect(self.slide_viewer.loadRegistrationWSIInfo)
+        self.microenv.loadTransformRegSignal.connect(self.slide_viewer_pair.loadRegistrationWSIInfo)
 
         """PD-L1信号"""
         self.pdl1.loadPDL1Signal.connect(self.slide_viewer.loadPDL1)
@@ -163,6 +166,7 @@ class SlideWindow(QFrame):
         self.multimodal.loadPairedWindowSignal.connect(self.load_comparison_slide)
         self.annotation.toogleNucleusSignal.connect(self.slide_viewer_pair.reverse_nulei)
         self.microenv.show_hierarchy_mask_checkbox.stateChanged.connect(self.slide_viewer_pair.change_hierarchy_mask_and_region_mask)
+        self.microenv.loadRegistrationSignal.connect(self.setSlideViewerResultSignal)
 
         '''重染后选取细胞核patch'''
         self.annotation.syncAnnotationPairSignal.connect(self.slide_viewer_pair.ToolManager.syncAnnotation)
@@ -183,9 +187,39 @@ class SlideWindow(QFrame):
         self.pdl1.set_slide_path(slide_path)
         self.multimodal.set_slide_path(slide_path)
 
-    # 载入对比结果
-    def load_comparison_slide(self, slide_path):
+    def setSlideViewerResultSignal(self):
         """
+            对比窗口加载结果的链接
+        """
+        # 载入结果后，初始化设置要显示的组织轮廓类型
+        self.slide_viewer_pair.sendRegionShowTypeMicroenvSignal.connect(self.microenv.showRegionType_Combox.setChecked)
+        # 人为选择要显示的组织轮廓类型
+        self.microenv.showRegionType_Combox.selectionChangedSignal.connect(self.slide_viewer_pair.update_show_region_types_microenv)
+        # 载入结果后，初始化设置要不要显示热图，组织区域，细胞核分割
+        self.slide_viewer_pair.sendShowMicroenvSignal.connect(self.microenv.showCombox.setChecked)
+        # 人为选择要显示热图，组织轮廓，细胞核分割轮廓
+        self.microenv.showCombox.selectionChangedSignal.connect(self.slide_viewer_pair.update_microenv_show)
+        # 载入结果后，初始化设置要不要显示表皮细胞，淋巴细胞
+        self.slide_viewer_pair.sendNucleiShowTypeMicroenvSignal.connect(self.microenv.showNucleiType_Combox.setChecked)
+        # 人为选择要显示表皮细胞，淋巴细胞
+        self.microenv.showNucleiType_Combox.selectionChangedSignal.connect(self.slide_viewer_pair.update_show_nuclei_types_microenv)
+
+        # 载入结果后，初始化设置要显示的组织轮廓类型
+        self.slide_viewer_pair.sendRegionShowTypePDL1Signal.connect(self.pdl1.showRegionType_Combox.setChecked)
+        # 人为选择要显示的组织轮廓类型
+        self.pdl1.showRegionType_Combox.selectionChangedSignal.connect(self.slide_viewer_pair.update_show_region_types_pdl1)
+        # 载入结果后，初始化设置要不要显示热图，组织区域，细胞核分割
+        self.slide_viewer_pair.sendShowPDL1Signal.connect(self.pdl1.showCombox.setChecked)
+        # 人为选择要显示热图，组织轮廓，细胞核分割轮廓
+        self.pdl1.showCombox.selectionChangedSignal.connect(self.slide_viewer_pair.update_pdl1_show)
+        # 载入结果后，初始化设置要不要显示表皮细胞，淋巴细胞
+        self.slide_viewer_pair.sendNucleiShowTypePDL1Signal.connect(self.pdl1.showNucleiType_Combox.setChecked)
+        # 人为选择要显示表皮细胞，淋巴细胞
+        self.pdl1.showNucleiType_Combox.selectionChangedSignal.connect(self.slide_viewer_pair.update_show_nuclei_types_pdl1)
+
+
+    def load_comparison_slide(self, slide_path):
+        """ 载入对比结果
         :param slide_path:
         :param mode: mode为1，则为微环境，mode为2，则为pdl1
         :return:
@@ -195,38 +229,7 @@ class SlideWindow(QFrame):
             self.splitter_viewer.widget(1).show()
             self.slide_viewer_pair.addAction2Menu([])
 
-        '''对比窗口加载结果链接'''
-        # 载入结果后，初始化设置要显示的组织轮廓类型
-        self.slide_viewer_pair.sendRegionShowTypeMicroenvSignal.connect(
-            self.microenv.showRegionType_Combox.setChecked)
-        # 人为选择要显示的组织轮廓类型
-        self.microenv.showRegionType_Combox.selectionChangedSignal.connect(
-            self.slide_viewer_pair.update_show_region_types_microenv)
-        # 载入结果后，初始化设置要不要显示热图，组织区域，细胞核分割
-        self.slide_viewer_pair.sendShowMicroenvSignal.connect(self.microenv.showCombox.setChecked)
-        # 人为选择要显示热图，组织轮廓，细胞核分割轮廓
-        self.microenv.showCombox.selectionChangedSignal.connect(self.slide_viewer_pair.update_microenv_show)
-        # 载入结果后，初始化设置要不要显示表皮细胞，淋巴细胞
-        self.slide_viewer_pair.sendNucleiShowTypeMicroenvSignal.connect(
-            self.microenv.showNucleiType_Combox.setChecked)
-        # 人为选择要显示表皮细胞，淋巴细胞
-        self.microenv.showNucleiType_Combox.selectionChangedSignal.connect(
-            self.slide_viewer_pair.update_show_nuclei_types_microenv)
-
-        # 载入结果后，初始化设置要显示的组织轮廓类型
-        self.slide_viewer_pair.sendRegionShowTypePDL1Signal.connect(self.pdl1.showRegionType_Combox.setChecked)
-        # 人为选择要显示的组织轮廓类型
-        self.pdl1.showRegionType_Combox.selectionChangedSignal.connect(
-            self.slide_viewer_pair.update_show_region_types_pdl1)
-        # 载入结果后，初始化设置要不要显示热图，组织区域，细胞核分割
-        self.slide_viewer_pair.sendShowPDL1Signal.connect(self.pdl1.showCombox.setChecked)
-        # 人为选择要显示热图，组织轮廓，细胞核分割轮廓
-        self.pdl1.showCombox.selectionChangedSignal.connect(self.slide_viewer_pair.update_pdl1_show)
-        # 载入结果后，初始化设置要不要显示表皮细胞，淋巴细胞
-        self.slide_viewer_pair.sendNucleiShowTypePDL1Signal.connect(self.pdl1.showNucleiType_Combox.setChecked)
-        # 人为选择要显示表皮细胞，淋巴细胞
-        self.pdl1.showNucleiType_Combox.selectionChangedSignal.connect(
-            self.slide_viewer_pair.update_show_nuclei_types_pdl1)
+        self.setSlideViewerResultSignal()
 
         # 将slide_viewer_pair的colorspace与主窗口对齐
         self.slide_viewer_pair.TileLoader.change_colorspace(self.slide_viewer.TileLoader.colorspace)
