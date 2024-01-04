@@ -2,9 +2,9 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "SCP"
-#define MyAppVersion "2.1"
-#define MyAppPublisher "Yu-Group"
+#define MyAppVersion "3.2.5"
 #define MyAppExeName "SCP.exe"
+#define UninstallExeName "SCPUninst.exe"
 #define MyAppAssocName MyAppName + " File"
 #define MyAppAssocExt ".myp"
 #define MyAppAssocKey StringChange(MyAppAssocName, " ", "") + MyAppAssocExt
@@ -12,19 +12,19 @@
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application. Do not use the same AppId value in installers for other applications.
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
-AppId={{652F3F8B-CAFB-4785-9411-7EC674CC9B00}
+AppId={{18EEC49C-9217-461D-A09A-B06170D20083}
 AppName={#MyAppName}
+UninstallDisplayName={#UninstallExeName}
 AppVersion={#MyAppVersion}
 ;AppVerName={#MyAppName} {#MyAppVersion}
-AppPublisher={#MyAppPublisher}
 DefaultDirName={autopf}\{#MyAppName}
 ChangesAssociations=yes
 DefaultGroupName={#MyAppName}
 ; Uncomment the following line to run in non administrative install mode (install for current user only.)
 ;PrivilegesRequired=lowest
-OutputDir=F:\scp_label_v1.3\scp_exe版
-OutputBaseFilename=SCP
-SetupIconFile=F:\scp_label_v1.3\scp_exe版\scp_label_v1.3\images\logo.ico
+OutputDir=E:\SCP-setup\output
+OutputBaseFilename=SCP-Setup-3.2.5
+SetupIconFile=C:\Users\wqh\Desktop\logo.ico
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
@@ -32,12 +32,9 @@ WizardStyle=modern
 [Languages]
 Name: "chinesesimplified"; MessagesFile: "compiler:Languages\ChineseSimplified.isl"
 
-[Tasks]
-Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
-
 [Files]
-Source: "F:\scp_label_v1.3\scp_exe版\output\SCP\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "F:\scp_label_v1.3\scp_exe版\output\SCP\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "E:\SCP-setup\output\SCP\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "E:\SCP-setup\output\SCP\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Registry]
@@ -46,11 +43,36 @@ Root: HKA; Subkey: "Software\Classes\{#MyAppAssocKey}"; ValueType: string; Value
 Root: HKA; Subkey: "Software\Classes\{#MyAppAssocKey}\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\{#MyAppExeName},0"
 Root: HKA; Subkey: "Software\Classes\{#MyAppAssocKey}\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#MyAppExeName}"" ""%1"""
 Root: HKA; Subkey: "Software\Classes\Applications\{#MyAppExeName}\SupportedTypes"; ValueType: string; ValueName: ".myp"; ValueData: ""
+Root: HKLM; Subkey: "Software\Microsoft\Windows\CurrentVersion\Uninstall\{#MyAppName}_is1"; ValueType: string; ValueName: "UninstallString"; ValueData: """{app}\unins000.exe"""; Flags: uninsdeletekey
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
 Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
+
+[Tasks]
+Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: checkedonce
+
+[Code]
+var
+  ResultCode: Integer; // 声明ResultCode变量
+
+function InitializeSetup: Boolean;
+var
+  PreviousVersionInstalled: Boolean;
+  UninstallString: String;
+begin
+  // 检查是否存在之前版本的安装
+  PreviousVersionInstalled := RegKeyExists(HKEY_LOCAL_MACHINE, 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{#MyAppName}_is1');
+  Result := True
+  if PreviousVersionInstalled then
+  begin
+    // 卸载失败，你可以在这里处理失败情况
+    MsgBox('检测到之前版本存在，请手动卸载！', mbError, MB_OK);
+    Result := False; // 中止安装
+  end;
+end;
+
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
