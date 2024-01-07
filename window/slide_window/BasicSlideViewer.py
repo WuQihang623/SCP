@@ -1,19 +1,19 @@
 import os.path
 import sys
 import constants
-import openslide
 import numpy as np
 from PyQt5.QtWidgets import *
-from PyQt5.QtCore import QPoint, Qt, QEvent, QRectF, pyqtSignal, QPointF, QObject, QSize
 from PyQt5.QtGui import QWheelEvent, QMouseEvent, QTransform, QIcon, QPixmap
-from window.slide_window.utils.thumbnail import Thumbnail
-from window.slide_window.slider import ZoomSlider
-from window.slide_window.utils.colorspace_choose_Dialog import ColorSpaceDialog, Channel_Dialog
+from PyQt5.QtCore import QPoint, Qt, QEvent, QRectF, pyqtSignal, QPointF, QObject, QSize
 
 from window.utils.mouseItem import MouseItem
-from function.shot_screen import build_screenshot_image
-from window.slide_window.utils.SlideHelper import SlideHelper
+from window.slide_window.slider import ZoomSlider
 from window.TileLoader.TileLoader import TileManager
+from window.slide_window.utils.thumbnail import Thumbnail
+from window.slide_window.utils.SlideHelper import SlideHelper
+from window.dialog.colorSpaceChooseDialog import channelDialog, colorSpaceDialog
+
+from function.shot_screen import build_screenshot_image
 
 class BasicSlideViewer(QFrame):
     updateFOVSignal = pyqtSignal(QRectF, int) # 更新缩略图的矩形框信号
@@ -74,53 +74,62 @@ class BasicSlideViewer(QFrame):
         self.mouseItem = MouseItem()
         self.scene.addItem(self.mouseItem)
 
-    def init_variable(self):
+    def initVariable(self):
         # 鼠标拖动标志，当鼠标点击左键时该标志置为True
         self.move_flag = False
         # 允许鼠标拖动标志
-        self.move_allow_flag = True
-
+        self.moveAllowFlag = True
         # 初始的slider的值
         self.slider_value = -1
-
         # 初始化配准信息
-        transform_matrix = np.array([[1, 0, 0],
-                                      [0, 1, 0],
-                                      [0, 0, 1]])
-        self.init_Registration(transform_matrix)
+        self.initRegistration(None)
         # 同步鼠标的信息
         self.mouse_x = 0
         self.mouse_y = 0
 
+        # 初始化heatmap为False
+        self.heatmap = None
+        self.heatmap_downsample = None
         # 热力图权重
         self.heatmap_alpha = 0.3
 
+    # 初始化配准信息
+    def initRegistration(self, transform_matrix, match_downsample=1, Registration=False):
+        self.transform_matrix = transform_matrix
+        self.match_downsample = match_downsample
+        self.Registration = Registration
+
     # 设置右键的菜单栏
     def addAction2Menu(self, action_list):
+        """
+            向Menu中添加Action，当右击视图时会弹出一些功能
+        """
+        # 添加一些MainWindow中的Action
         for action in action_list:
             if action is None:
                 self.menu.addSeparator()
             else:
                 self.menu.addAction(action)
+        # 添加Slideviewer自身的Action
         self.menu.addAction(self.full_screen_action)
         self.menu.addAction(self.shot_screen_action)
         self.menu.addAction(self.colorspace_transform_action)
         self.menu.addAction(self.load_nuclues_action)
         self.menu.addAction(self.change_heatmap_alpha_action)
 
-    # 载入slide,同时初始化缩略图，放大滑块
     def load_slide(self, slide_path, zoom_step=1.25):
-        self.slide = openslide.open_slide(slide_path)
+        """
+            载入slide,同时初始化缩略图，放大滑块等等
+        """
         self.slide_helper = SlideHelper(slide_path)
         self.slide_name = os.path.splitext(os.path.basename(slide_path))[0]
         self.zoom_step = zoom_step
-        # 初始化heatmap为False
-        self.heatmap = None
-        self.heatmap_downsample = None
 
         # 将一个小分辨率的slide载入到window中
         self.TileLoader = TileManager(self.scene, self.slide_helper, heatmap_alpha=self.heatmap_alpha)
         self.TileLoader.addTileItemSignal.connect(self.addTileItem)
+
+        # 设置初始时的画框大小
         level = self.slide_helper.get_best_level_for_downsample(64)
         scene_rect = self.slide_helper.get_rect_for_level(level)
         self.scene.setSceneRect(scene_rect)
@@ -129,6 +138,7 @@ class BasicSlideViewer(QFrame):
         self.TileLoader.load_tiles_in_view(level, rect, self.heatmap, self.heatmap_downsample)
         self.current_level = level
         self.current_downsample = self.slide_helper.get_downsample_for_level(self.current_level)
+
         # 设置右下角的缩略图
         self.thumbnail.load_thumbnail(self.slide_helper)
         self.updateFOVSignal.connect(self.thumbnail.update_FOV)
@@ -138,27 +148,35 @@ class BasicSlideViewer(QFrame):
         self.slider.slider.valueChanged.connect(self.responseSlider)
 
 
-    # 将线程中想scene增加item的信号链接到这里
     def addTileItem(self, item):
+        """
+            将Tile添加到Scene中
+        """
         if item.level != self.current_level:
             return
         self.scene.addItem(item)
 
-    # 将视口矩形映射到场景坐标系中，并返回场景中包含此矩形的最小矩形（边界矩形）
     def get_current_view_scene_rect(self):
+        """
+            将视口矩形映射到场景坐标系中，并返回场景中包含此矩形的最小矩形（边界矩形）
+        """
         # 获取视图的矩形区域
         view_rect = self.view.viewport().rect()
         # 将视图的矩形区域转换为场景坐标系下的区域
         view_scene_rect = self.view.mapToScene(view_rect).boundingRect()
         return view_scene_rect
 
-    # 当前窗口的缩放倍率
-    # 放大倍数为 40 / (downsample / scale)
     def get_current_view_scale(self):
+        """
+            获取当前窗口的缩放倍率scale
+            放大倍数为 40 / (downsample / scale)
+        """
         return self.view.transform().m11()
 
-    # 监听所有窗口小部件的事件
     def eventFilter(self, qobj: 'QObject', event: 'QEvent') -> bool:
+        """
+            监听所有窗口小部件的事件
+        """
         # 如果不是鼠标事件或者滚轮事件，则不进行事件的传递
         event_porcessed = False
         # 鼠标事件
@@ -174,8 +192,10 @@ class BasicSlideViewer(QFrame):
     def leaveEvent(self, event):
         self.clearMouseSignal.emit(True)
 
-    # TODO: 鼠标事件
     def processMouseEvent(self, event: QMouseEvent):
+        """
+            鼠标事件
+        """
         if self.slide_helper is None:
             return True
         # 鼠标左键
@@ -193,12 +213,14 @@ class BasicSlideViewer(QFrame):
             self.mousePosSignal.emit(self.view.mapToScene(event.pos()))
 
             # 视图移动
-            if self.move_flag and self.move_allow_flag:
+            if self.move_flag and self.moveAllowFlag:
                 self.responseMouseMove(event)
         return True
 
-    # 响应鼠标拖动屏幕
     def responseMouseMove(self, event):
+        """
+            响应鼠标拖动屏幕
+        """
         # 获取视图的水平和垂直滚动条对象
         horizontal_scrollbar = self.view.horizontalScrollBar()
         vertical_scrollbar = self.view.verticalScrollBar()
@@ -228,7 +250,7 @@ class BasicSlideViewer(QFrame):
         # 发射FOV更新信号
         self.updateFOVSignal.emit(view_scene_rect, self.current_level)
 
-        # TODO:更新状态栏,视图位置
+        # 更新状态栏,视图位置
         self.magnificationSignal.emit(True)
 
         # 如果需要配准的话，计算当前视图的中心点，让同步图像通过中心点进行配准
@@ -239,8 +261,10 @@ class BasicSlideViewer(QFrame):
                               current_center.y() * self.current_downsample]
             self.moveTogetherSignal.emit(current_center)
 
-    # TODO:鼠标滚轮事件
     def processWheelEvent(self, event: QWheelEvent):
+        """
+            鼠标滚轮事件
+        """
         # 计算放大与缩小的比例
         zoom_in = self.zoom_step
         zoom_out = 1 / zoom_in
@@ -258,8 +282,10 @@ class BasicSlideViewer(QFrame):
         event.accept()
         return True
 
-    # 滚动滚轮事件，调整缩放
     def responseWheelEvent(self, mousePos: QPoint, zoom):
+        """
+            滚动滚轮事件，调整缩放
+        """
         old_level = self.current_level
         old_level_downsample = self.slide_helper.get_downsample_for_level(old_level)
 
@@ -321,12 +347,12 @@ class BasicSlideViewer(QFrame):
         # 更新slider
         self.update_slider()
 
-    # 滚动滚轮时更新视图的方法
     def update_scale_view(self, level, scene_view_rect, clear_scene_flag, mouse_pos):
         """
-        :param level: 当前放大倍率下的level
-        :param scene_view_rect: 当前视图在level图像上的位置
-        :return:
+        滚动滚轮时更新视图的方法
+            :param level: 当前放大倍率下的level
+            :param scene_view_rect: 当前视图在level图像上的位置
+            :return:
         """
         # 清除掉当前scene中的图片，并重新设定Secne的大小
         new_rect = self.slide_helper.get_rect_for_level(level)
@@ -343,8 +369,10 @@ class BasicSlideViewer(QFrame):
         else:
             self.TileLoader.load_tiles_in_view(level, scene_view_rect, self.heatmap, self.heatmap_downsample)
 
-    # 更新slider的值
     def update_slider(self):
+        """
+            更新slider的值
+        """
         slider_value = int(self.get_magnification())
         if slider_value < 1:
             slider_value = 1
@@ -360,15 +388,19 @@ class BasicSlideViewer(QFrame):
         self.view.horizontalScrollBar().setValue(0)
         self.view.verticalScrollBar().setValue(0)
 
-    # 获取与scale相应的level
     def get_best_level_for_scale(self, scale):
+        """
+            获取与scale相应的level
+        """
         scene_width = self.scene.sceneRect().size().width() * scale
-        slide_dimensions = np.array(self.slide.level_dimensions)
+        slide_dimensions = np.array(self.slide_helper.level_dimensions)
         level = np.argmin(np.abs(slide_dimensions[:, 0] - scene_width))
         return level
 
-    # 跳转到当前level下的以pos为中心的区域
     def switch2pos(self, pos):
+        """
+            跳转到当前level下的以pos为中心的区域
+        """
         self.view.centerOn(pos)
         self.view.update()
         # 获取当前视图在场景中的矩形
@@ -381,8 +413,10 @@ class BasicSlideViewer(QFrame):
         # 更新状态栏,视图位置
         self.magnificationSignal.emit(True)
 
-    # 用于链接点击缩略图跳转的信号
     def showImageAtThumbnailArea(self, pos, thumbnail_dimension):
+        """
+            用于链接点击缩略图跳转的信号
+        """
         current_dimension = self.slide_helper.get_level_dimension(self.current_level)
         scale = current_dimension[0] / thumbnail_dimension[0]
         pos = QPointF(pos.x() * scale, pos.y() * scale)
@@ -390,8 +424,10 @@ class BasicSlideViewer(QFrame):
         if self.Registration:
             self.moveTogetherSignal.emit([pos.x() * self.current_downsample, pos.y() * self.current_downsample])
 
-    # 调整slider，响应图像缩放
     def responseSlider(self, value):
+        """
+            调整slider，响应图像缩放
+        """
         # 判断当前slider value 是否与改变过的相同
         if self.slider_value != value:
             # 计算当前的缩放倍数
@@ -408,19 +444,24 @@ class BasicSlideViewer(QFrame):
                 self.scaleTogetherSignal.emit(pos, zoom)
 
 
-    # 计算放大倍数
     def get_magnification(self):
+        """
+            计算放大倍数
+        """
         current_scale = self.get_current_view_scale()
-        # downsample = self.slide_helper.get_downsample_for_level(self.current_level)
         magnification = 40 / (self.current_downsample * 1.0 / current_scale)
         return magnification
 
-    # 设置move allow标志,
-    def set_Move_Allow(self, move: bool):
-        self.move_allow_flag = move
+    def setMoveAllow(self, move: bool):
+        """
+            设置moveAllow标志
+        """
+        self.moveAllowFlag = move
 
-    # 重新绘制视图
     def reshowView(self, heatmap=None, heatmap_downsample=None):
+        """
+            重新绘制视图
+        """
         if hasattr(self, 'slide_helper'):
             new_rect = self.slide_helper.get_rect_for_level(self.current_level)
             scene_view_rect = self.get_current_view_scene_rect()
@@ -434,8 +475,10 @@ class BasicSlideViewer(QFrame):
             # 绘制当前rect的图片
             self.TileLoader.load_tiles_in_view(self.current_level, scene_view_rect, heatmap, heatmap_downsample)
 
-    # 截图屏幕
     def shotScreen(self):
+        """
+            截图屏幕
+        """
         os.makedirs(constants.shot_screen_path, exist_ok=True)
         options = QFileDialog.Options()
         file_path, _ = QFileDialog.getSaveFileName(self, "保存截图",
@@ -443,13 +486,6 @@ class BasicSlideViewer(QFrame):
                                                    'jpg Files(*.jpg)', options=options)
         image = build_screenshot_image(self.scene, QSize(1024, 1024), self.get_current_view_scene_rect())
         image.save(file_path)
-
-    # 初始化配准信息
-    def init_Registration(self, transform_matrix, match_downsample=1, Registration=False):
-        if transform_matrix is not None:
-            self.transform_matrix = transform_matrix
-        self.match_downsample = match_downsample
-        self.Registration = Registration
 
     def move_together(self, center_pos):
         """ 根据放射变换矩阵，当使用鼠标移动视图时同时用于移动配准视图
@@ -485,8 +521,10 @@ class BasicSlideViewer(QFrame):
                           current_center.y() * self.current_downsample]
         return main_scale, current_center
 
-    # 第一次匹配时，将同步图像与主窗口对其
     def receive_match(self, main_scale, main_center):
+        """
+            第一次匹配时，将同步图像与主窗口对其
+        """
         # 先进行缩放，再
         pair_scale = self.get_current_view_scale() / self.current_downsample
         zoom = main_scale / pair_scale
@@ -520,13 +558,16 @@ class BasicSlideViewer(QFrame):
 
     # 颜色空间变换
     def colorspace_transform(self):
+        """
+            颜色空间变换
+        """
         if hasattr(self, 'slide_helper'):
             is_fluorescene = self.slide_helper.is_fluorescene
             num_markers = 0 if is_fluorescene is False else self.slide_helper.num_markers
             if num_markers == 0:
-                colorspace_dialog = ColorSpaceDialog(self.TileLoader.colorspace)
+                colorspace_dialog = colorSpaceDialog(self.TileLoader.colorspace)
             else:
-                colorspace_dialog = Channel_Dialog(self.TileLoader.colorspace, num_markers, self.slide_helper.fluorescene_color_list, self.TileLoader.channel_intensities)
+                colorspace_dialog = channelDialog(self.TileLoader.colorspace, num_markers, self.slide_helper.fluorescene_color_list, self.TileLoader.channel_intensities)
             if colorspace_dialog.exec_() == QDialog.Accepted:
                 selected_option, channel_intensities = colorspace_dialog.get_selected_option()
                 if selected_option == []:
