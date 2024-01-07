@@ -1,6 +1,25 @@
-import sys
-from PyQt5.QtWidgets import QApplication, QDialog, QVBoxLayout, QLabel, QPushButton
-from PyQt5.QtGui import QFont
+from PyQt5.QtWidgets import QDialog, QVBoxLayout, QLabel, QPushButton
+
+class RegistrationTipDialog(QDialog):
+    """
+        手工配准时的对话框
+    """
+    def __init__(self):
+        super(RegistrationTipDialog, self).__init__()
+        self.initUI()
+
+    def initUI(self):
+        self.setWindowTitle("手动配准")
+        layout = QVBoxLayout()
+        label = QLabel("请在两个视图中双击选择配准点", self)
+        layout.addWidget(label)
+        yes_button = QPushButton("确定", self)
+        layout.addWidget(yes_button)
+        yes_button.clicked.connect(self.accept)
+        cancel_button = QPushButton("取消", self)
+        layout.addWidget(cancel_button)
+        cancel_button.clicked.connect(self.reject)
+        self.setLayout(layout)
 
 class RegistrationDialog(QDialog):
     def __init__(self):
@@ -35,21 +54,15 @@ class RegistrationDialog(QDialog):
         self.setLayout(layout)
 
     def manualRegistration(self):
-        self.match_by_hand = 1
+        self.mode = "manual"
         self.accept()
 
     def sameImageRegistration(self):
-        self.match_by_hand = 2
+        self.mode = "same"
         self.accept()
     def loadMatrix(self):
-        self.match_by_hand = 3
+        self.mode = "load"
         self.accept()
 
-    def get_flag(self):
-        return self.match_by_hand
-
-if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    dialog = RegistrationDialog()
-    dialog.exec()
-    sys.exit(app.exec_())
+    def get_mode(self):
+        return self.mode
