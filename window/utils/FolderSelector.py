@@ -8,8 +8,8 @@ from function import saveResultFileDir, setResultFileDir
 
 class FolderSelector(QWidget):
     changeFileDirSignal = pyqtSignal()
-    def __init__(self, annotation=False):
-        super().__init__()
+    def __init__(self, annotation=False, parent=None):
+        super().__init__(parent=parent)
         self.annotation_flag = annotation
         # Create text box to display folder path
         font = QFont()

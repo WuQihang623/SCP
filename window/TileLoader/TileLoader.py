@@ -6,7 +6,7 @@ from PIL.ImageQt import ImageQt
 from PyQt5.QtWidgets import QGraphicsScene, QGraphicsPixmapItem
 from PyQt5.QtCore import QThread, pyqtSignal, QMutex, QWaitCondition, QRectF
 from function.heatmap_background import get_colormap_background
-from window.slide_window.TileLoader.GraphicsTile import GraphicsTile
+from window.TileLoader.GraphicsTile import GraphicsTile
 from window.slide_window.utils.SlideHelper import SlideHelper
 from function.colorspace_transform import colordeconvolution, normalizeStaining, ndarray_to_pixmap
 

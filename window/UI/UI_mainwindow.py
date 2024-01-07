@@ -164,15 +164,11 @@ class Ui_MainWindow(object):
         self.file_manager_menu.addAction(self.batch_process_action)
         self.file_manager_menu.addAction(self.stop_batch_process_action)
         self.menu.addAction(self.open_slide_action)
-        # self.menu.addAction(self.open_recent_slide_action)
         self.menu.addAction(self.open_recent_slide_menu.menuAction())
         self.menu.addAction(self.paired_slide_menu.menuAction())
         self.menu.addAction(self.file_manager_menu.menuAction())
-        # self.menu.addAction(self.fill_screen_action)
-        # self.menu.addAction(self.shot_screen_action)
         self.menu.addSeparator()
         self.menu.addAction(self.quit)
-        # self.edit_menu.addAction(self.recall_action)
         self.edit_menu.addAction(self.rect_resiz_action)
         self.edit_menu.addAction(self.convert_color_space_action)
         self.tool_menu.addAction(self.fixed_rect_action)
@@ -257,7 +253,6 @@ class Ui_MainWindow(object):
         self.activate_color_action2.setText(_translate("MainWindow", "颜色2"))
         self.activate_color_action3.setText(_translate("MainWindow", "颜色3"))
         self.activate_color_action4.setText(_translate("MainWindow", "颜色4"))
-
 
     # 只有在载入图像的叶片中激活这些功能
     def action_enabel(self, enable=True):

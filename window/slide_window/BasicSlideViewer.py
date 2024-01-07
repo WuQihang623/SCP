@@ -5,7 +5,7 @@ import openslide
 import numpy as np
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import QPoint, Qt, QEvent, QRectF, pyqtSignal, QPointF, QObject, QSize
-from PyQt5.QtGui import QWheelEvent, QMouseEvent, QTransform, QPainter, QPen, QColor, QBrush, QIcon, QPixmap
+from PyQt5.QtGui import QWheelEvent, QMouseEvent, QTransform, QIcon, QPixmap
 from window.slide_window.utils.thumbnail import Thumbnail
 from window.slide_window.slider import ZoomSlider
 from window.slide_window.utils.colorspace_choose_Dialog import ColorSpaceDialog, Channel_Dialog
@@ -13,7 +13,7 @@ from window.slide_window.utils.colorspace_choose_Dialog import ColorSpaceDialog,
 from window.utils.mouseItem import MouseItem
 from function.shot_screen import build_screenshot_image
 from window.slide_window.utils.SlideHelper import SlideHelper
-from window.slide_window.TileLoader.TileLoader import TileManager
+from window.TileLoader.TileLoader import TileManager
 
 class BasicSlideViewer(QFrame):
     updateFOVSignal = pyqtSignal(QRectF, int) # 更新缩略图的矩形框信号
