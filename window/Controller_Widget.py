@@ -78,6 +78,51 @@ class Controller(QTabWidget):
             清空标注
         """
 
+
+    """
+        结果文件的格式
+        Args: {
+            "properties": {
+                "nucleus_info": {
+                    "肿瘤细胞": {"type": 1, "color": [255, 0, 0], "number": 1000},
+                    "淋巴细胞": {"type": 2, "color": [0, 255, 0], "number": 1000},
+                    "中性粒细胞": {"type": 3, "color": [255, 255, 0], "number": 1000},
+                    "基质细胞": {"type": 4, "color": [0, 0, 255], "number": 1000},
+                },
+                "nucleus_diff_info": {
+                    "FN": {"color": [255, 0, 0]},
+                    "FP": {"color": [0, 255, 0]},
+                }
+                "heatmap_info": {
+                    "heatmap": ["组织区域热力图", "边界区域热力图"],
+                    "downsample": int,
+                },
+                "contour_info": {
+                    "肿瘤区域": {"color": [255, 0, 0], "type": 1},
+                    "基质区域": {"color": [0, 255, 0], "type": 2},
+                    "图像块": {"color": [0, 0, 0], "type": 3}
+                }
+            }
+            "nucleus_info": {
+                "type": ndarray,
+                "center": ndarray,
+                "contour": ndarray,
+            },
+            "nucleus_diff_info": {
+                "center": ndarray,
+                "diff_array": ndarray = ["TP", "TN", "FP", "FN", ...]
+            },
+            "heatmap_info": {
+                "组织区域热力图": ndarray,
+                "边界区域热力图": ndarray,
+            }
+            "contour_info": {
+                "contour": ndarray,  array[array(contour1), array(contour2), ...]
+                "type": ndarray, array[1, 2, 3, ...]
+            }
+            
+        }
+    """
     def load_nucleus(self):
         """
             载入细胞核结果文件
