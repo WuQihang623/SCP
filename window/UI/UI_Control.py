@@ -2,7 +2,7 @@ import sys
 from PyQt5.QtWidgets import QFrame, QVBoxLayout, QScrollArea, QApplication, QWidget, QLabel, QSpacerItem, QSizePolicy
 
 from window.utils.FolderSelector import FolderSelector
-from window.utils.controller_ComboBox import CustomComboBox
+from window.utils.controller_ComboBox import MulitSeleteComboBox, SigleSeleteCombox
 
 
 class UI_Controller(QFrame):
@@ -50,6 +50,25 @@ class UI_Controller(QFrame):
         # 将滚动区域添加到主布局中
         self.main_layout.addWidget(scroll_area)
 
+        # self.add_nucleus_widget({
+        #             "肿瘤细胞": {"type": 1, "color": [255, 0, 0], "number": 1000},
+        #             "淋巴细胞": {"type": 2, "color": [0, 255, 0], "number": 1000},
+        #             "中性粒细胞": {"type": 3, "color": [255, 255, 0], "number": 1000},
+        #             "基质细胞": {"type": 4, "color": [0, 0, 255], "number": 1000},
+        #         })
+        # self.add_contour_widget({
+        #             "肿瘤区域": {"color": [255, 0, 0], "type": 1},
+        #             "基质区域": {"color": [0, 255, 0], "type": 2},
+        #         })
+        # self.add_nucleus_diff_widget({
+        #             "FN": {"color": [255, 0, 0]},
+        #             "FP": {"color": [0, 255, 0]},
+        #         })
+        # self.add_heatmap_widget({
+        #             "heatmap": ["组织区域热力图", "边界区域热力图"],
+        #             "downsample": int,
+        #         })
+
     def add_nucleus_widget(self, nucleus_info: dict):
         """
             载入了细胞核分割结果后， 读取了文件中的properties，知道了有哪些类型的细胞，以及细胞的颜色
@@ -72,7 +91,9 @@ class UI_Controller(QFrame):
             nucleus_names.append(name)
             nucleus_colors.append(item["color"])
             nucleus_numbers.append(item["number"])
-        self.nucleus_widget = CustomComboBox(nucleus_names, nucleus_colors)
+        label = QLabel("细胞核：")
+        self.nucleus_layout.addWidget(label)
+        self.nucleus_widget = MulitSeleteComboBox(nucleus_names, nucleus_colors)
         self.nucleus_layout.addWidget(self.nucleus_widget)
         for name, number in zip(nucleus_names, nucleus_numbers):
             label = QLabel(f"{name}的数量：{number}")
@@ -95,21 +116,31 @@ class UI_Controller(QFrame):
         for name, item in nucleus_diff.items():
             diff_name.append(name)
             diff_color.append(item["color"])
-        self.nucleus_diff_widget = CustomComboBox(diff_name, diff_color)
+        label = QLabel("对比差异：")
+        self.nucleus_diff_layout.addWidget(label)
+        self.nucleus_diff_widget = MulitSeleteComboBox(diff_name, diff_color)
         self.nucleus_diff_layout.addWidget(self.nucleus_diff_widget)
 
 
-    def add_heatmap_widget(self, heatmap_info: list):
+    def add_heatmap_widget(self, heatmap_info: dict):
         """
             载入了热力图结果后， 读取了文件中的properties，知道了有哪些类型的热力图
             生成一个与热力图数量一致的选择框
             Args:
-                heatmap_info: ["组织区域热力图", "边界区域热力图"]
+                heatmap_info": {
+                    "heatmap": ["组织区域热力图", "边界区域热力图"],
+                    "downsample": int,
+                }
         """
         if self.heatmap_widget is not None:
             self.removeAllItems(self.heatmap_layout)
             self.heatmap_widget = None
-        self.heatmap_widget = CustomComboBox(heatmap_info)
+        heatmap_names = []
+        for name, _ in heatmap_info.items():
+            heatmap_names.append(name)
+        label = QLabel("热力图：")
+        self.heatmap_layout.addWidget(label)
+        self.heatmap_widget = SigleSeleteCombox(heatmap_names)
         self.heatmap_layout.addWidget(self.heatmap_widget)
 
     def add_contour_widget(self, contour_info: dict):
@@ -129,6 +160,10 @@ class UI_Controller(QFrame):
         for name, item in contour_info.items():
             contour_name.append(name)
             contour_color.append(item["color"])
+        label = QLabel("区域轮廓")
+        self.contour_layout.addWidget(label)
+        self.contour_widget = MulitSeleteComboBox(contour_name, contour_color)
+        self.contour_layout.addWidget(self.contour_widget)
 
     def removeAllItems(self, layout):
         # 从布局中移除所有子项并释放资源

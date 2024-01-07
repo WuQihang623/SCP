@@ -4,11 +4,10 @@ from PyQt5.QtCore import pyqtSignal
 from functools import partial
 
 class CustomComboBox(QComboBox):
-    showItemSignal = pyqtSignal(list)
     def __init__(self, items, colors=None):
         super().__init__()
 
-        self.items = ["全选"] + items  # 在下拉框中添加全选选项
+        self.items = items  # 在下拉框中添加全选选项
         self.colors = colors
         self.qCheckBox = []
         self.qLineEdit = QLineEdit()
@@ -31,14 +30,25 @@ class CustomComboBox(QComboBox):
     def addQCheckBox(self, i):
         self.qCheckBox.append(QCheckBox())
         self.qCheckBox[i].setText(self.items[i])
-        if self.colors is not None and i > 0:  # 不为全选项添加颜色块
+        if self.colors is not None:  # 不为全选项添加颜色块
             pixmap = QPixmap(20, 20)
-            pixmap.fill(QColor(*self.colors[i - 1]))
+            pixmap.fill(QColor(*self.colors[i]))
             icon = QIcon(pixmap)
             qItem = QListWidgetItem(icon, '', self.qListWidget)
         else:
             qItem = QListWidgetItem(self.qListWidget)
+
         self.qListWidget.setItemWidget(qItem, self.qCheckBox[i])
+
+    def updateSelectedText(self, checkbox_idx):
+        return
+class MulitSeleteComboBox(CustomComboBox):
+    showItemSignal = pyqtSignal(list)
+    def __init__(self, items, colors=None):
+        items = ["全选"] + items  # 在下拉框中添加全选选项
+        if colors is not None:
+            colors = [[0, 0, 0]] + colors
+        super().__init__(items, colors)
 
     def updateSelectedText(self, checkbox_idx):
         if checkbox_idx == 0:
@@ -60,11 +70,30 @@ class CustomComboBox(QComboBox):
         # 发送信号，要显示什么东西
         self.showItemSignal.emit(selected_items)
 
+class SigleSeleteCombox(CustomComboBox):
+    showItemSignal = pyqtSignal(list)
+
+    def __init__(self, items, colors=None):
+        super().__init__(items, colors)
+
+    def updateSelectedText(self, checkbox_idx):
+        # 其他的结果设置为unchecked
+        for i in range(0, len(self.qCheckBox)):
+            if i!=checkbox_idx:
+                self.qCheckBox[i].blockSignals(True)
+                self.qCheckBox[i].setChecked(False)
+                self.qCheckBox[i].blockSignals(False)
+        selected_items = [self.qCheckBox[i].text() for i in range(0, len(self.qCheckBox)) if self.qCheckBox[i].isChecked()]
+        self.qLineEdit.setText(', '.join(selected_items))
+        # 发送信号，要显示什么东西
+        self.showItemSignal.emit(selected_items)
+
+
 if __name__ == '__main__':
     app = QApplication([])
     items = ["Option 1", "Option 2", "Option 3"]
     colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255)]
 
-    window = CustomComboBox(items, colors)
+    window = SigleSeleteCombox(items, colors)
     window.show()
     app.exec_()
