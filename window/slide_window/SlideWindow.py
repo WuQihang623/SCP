@@ -42,6 +42,11 @@ class SlideWindow(QFrame):
         """
             初始化mainViewer的信号与槽
         """
+        self.mainViewer.load_nucleus_action.triggered.connect(lambda : self.controller.load_nucleus_signal_fn(True))
+        self.mainViewer.load_heatmap_action.triggered.connect(lambda : self.controller.load_heatmap_signal_fn(True))
+        self.mainViewer.load_contour_action.triggered.connect(lambda : self.controller.load_contour_signal_fn(True))
+        self.mainViewer.load_nucleus_diff_action.triggered.connect(lambda : self.controller.load_nucleus_diff_signal_fn(True))
+
         self.controller.mainViewerloadNucleusSignal.connect(self.mainViewer.load_nucleus_slot)
         self.controller.mainViewerloadheatmapSignal.connect(self.mainViewer.load_heatmap_slot)
         self.controller.mainViewerloadContourSignal.connect(self.mainViewer.load_contour_slot)
@@ -66,6 +71,11 @@ class SlideWindow(QFrame):
         """
             初始化sideViewer的信号与槽
         """
+        self.sideViewer.load_nucleus_action.triggered.connect(lambda: self.controller.load_nucleus_signal_fn(False))
+        self.sideViewer.load_heatmap_action.triggered.connect(lambda: self.controller.load_heatmap_signal_fn(False))
+        self.sideViewer.load_contour_action.triggered.connect(lambda: self.controller.load_contour_signal_fn(False))
+        self.sideViewer.load_nucleus_diff_action.triggered.connect(lambda: self.controller.load_nucleus_diff_signal_fn(False))
+
         self.controller.sideViewerloadNucleusSignal.connect(self.sideViewer.load_nucleus_slot)
         self.controller.sideViewerloadheatmapSignal.connect(self.sideViewer.load_heatmap_slot)
         self.controller.sideViewerloadContourSignal.connect(self.sideViewer.load_contour_slot)
@@ -91,6 +101,7 @@ class SlideWindow(QFrame):
         self.sideViewer.loadSlide(slide_path=slide_path, zoom_step=zoom_step)
         self.controller.setSideViewerName(slide_path=slide_path)
         self.sideViewerInitSignalSlotConnections()
+        self.sideViewer.addAction2Menu([])
 
         # 显示副窗口
         if not self.splitter_viewer.widget(1).isVisible():

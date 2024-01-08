@@ -42,6 +42,14 @@ class CustomComboBox(QComboBox):
 
     def updateSelectedText(self, checkbox_idx):
         return
+
+    def chooseFirst(self):
+        """
+            勾选上第一个选项
+        """
+        if len(self.qCheckBox) > 0:
+            self.qCheckBox[0].setChecked(True)
+
 class MulitSeleteComboBox(CustomComboBox):
     showItemSignal = pyqtSignal(list)
     def __init__(self, items, colors=None):

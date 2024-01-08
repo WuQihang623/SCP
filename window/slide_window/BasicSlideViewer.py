@@ -52,7 +52,12 @@ class BasicSlideViewer(QFrame):
         icon = QIcon()
         icon.addPixmap(QPixmap("logo/color.ico"), QIcon.Normal, QIcon.Off)
         self.colorspace_transform_action.setIcon(icon)
-        self.load_nuclues_action = QAction("导入细胞核分割结果")
+
+        self.load_nucleus_action = QAction("导入细胞核分割结果")
+        self.load_heatmap_action = QAction("导入热图")
+        self.load_contour_action = QAction("导入区域轮廓")
+        self.load_nucleus_diff_action = QAction("导入细胞核标记结果")
+
         self.change_heatmap_alpha_action = QAction("设置热图权重")
         self.view.setTransformationAnchor(QGraphicsView.NoAnchor)
         self.view.viewport().installEventFilter(self)
@@ -114,10 +119,16 @@ class BasicSlideViewer(QFrame):
             else:
                 self.menu.addAction(action)
         # 添加Slideviewer自身的Action
+        self.menu.addAction(self.load_contour_action)
+        self.menu.addAction(self.load_heatmap_action)
+        self.menu.addAction(self.load_nucleus_diff_action)
+        self.menu.addAction(self.load_nucleus_action)
+
+        self.menu.addSeparator()
+
         self.menu.addAction(self.full_screen_action)
         self.menu.addAction(self.shot_screen_action)
         self.menu.addAction(self.colorspace_transform_action)
-        self.menu.addAction(self.load_nuclues_action)
         self.menu.addAction(self.change_heatmap_alpha_action)
 
     def loadSlide(self, slide_path, zoom_step=1.25):

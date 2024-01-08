@@ -1,5 +1,5 @@
 from PyQt5.QtCore import QPointF
-from PyQt5.QtGui import QPolygonF, QBrush, QColor
+from PyQt5.QtGui import QPolygonF, QBrush, QColor, QPen
 from PyQt5.QtWidgets import QGraphicsPathItem, QGraphicsEllipseItem, QGraphicsPolygonItem
 
 
@@ -47,3 +47,17 @@ class TriangleItem(QGraphicsPolygonItem):
         brush = QBrush(QColor(*color))
         self.setBrush(brush)
         self.setPos(x, y)
+
+class CircleItem(QGraphicsEllipseItem):
+    """
+        对比的细胞核圆形图元
+    """
+    def __init__(self, x, y, color, category, level, radius=20, is_region=False):
+        super().__init__(x-radius, y-radius, 2 * radius, 2 * radius)
+        self.category = category
+        self.level = level
+        self.is_region = is_region
+        # 设置圆形的边框颜色
+        pen = QPen(QColor(*color))
+        # 设置圆形的边框
+        self.setPen(pen)

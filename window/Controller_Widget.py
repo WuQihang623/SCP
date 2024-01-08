@@ -19,10 +19,10 @@ class Controller(QTabWidget):
     sideViewerloadNucleusDiffSignal = pyqtSignal(dict, dict)
 
     # 将显示信息传递给Viewer
-    viewerShowNucleusSignal = pyqtSignal(list)
+    viewerShowNucleusSignal = pyqtSignal(list, bool)
     viewerShowHeatmapSignal = pyqtSignal(list)
     viewerShowContourSignal = pyqtSignal(list)
-    viewerShowNucleusDiffSignal = pyqtSignal(list)
+    viewerShowNucleusDiffSignal = pyqtSignal(list, bool)
 
     def __init__(self):
         super().__init__()
@@ -167,17 +167,34 @@ class Controller(QTabWidget):
                 main_viewer: 是否为主窗口，或者是对比窗口
         """
         path = self.selete_path(main_viewer, "选择细胞核分割结果")
-        if path is None:
+        if path is None or path == "":
             return
         with open(path, 'rb') as f:
             data = pickle.load(f)
             f.close()
-        # TODO: 对比传递字典的速度块还是传递路径快
+
+        # 检查文件是否正确
         properties = data.get("properties", {}).get("nucleus_info")
         nucleus_info = data.get("nucleus_info")
         if properties is None or nucleus_info is None:
-            QMessageBox.warning("细胞核分割结果不存在于该文件中")
+            QMessageBox.warning(self, '警告', "细胞核分割结果不存在于该文件中")
             return
+
+        for _, item in properties.items():
+            if item.get("color") is None or item.get("type") is None:
+                QMessageBox.warning(self, '警告', "细胞核分割结果有误")
+                return
+        try:
+            if nucleus_info["center"].shape[0] != nucleus_info["type"].shape[0] or nucleus_info["center"].shape[0] != nucleus_info["contour"].shape[0]:
+                QMessageBox.warning(self, '警告', "细胞核分割结果有误")
+                return
+        except:
+            QMessageBox.warning(self, '警告', "细胞核分割结果有误")
+            return
+
+        # 计算各种细胞核的数量
+        for nucleus_name, item in properties.items():
+            properties[nucleus_name]["number"] = int((nucleus_info["type"] == item["type"]).sum())
 
         self.controller_widget.add_nucleus_widget(properties)
         self.controller_widget.nucleus_widget.showItemSignal.connect(self.show_nucleus_signal_fn)
@@ -185,13 +202,14 @@ class Controller(QTabWidget):
             self.mainViewerloadNucleusSignal.emit(properties, nucleus_info)
         else:
             self.sideViewerloadNucleusSignal.emit(properties, nucleus_info)
+        self.controller_widget.nucleus_widget.chooseFirst()
 
     def show_nucleus_signal_fn(self, show_nucleus: list):
         """
             显示/关闭细胞核分割结果
             选择要显示哪些细胞核
         """
-        self.viewerShowNucleusSignal.emit(show_nucleus)
+        self.viewerShowNucleusSignal.emit(show_nucleus, True)
 
     def load_heatmap_signal_fn(self, main_viewer:bool = True):
         """
@@ -200,7 +218,7 @@ class Controller(QTabWidget):
                 main_viewer: 是否为主窗口，或者是对比窗口
         """
         path = self.selete_path(main_viewer, "选择热力图结果")
-        if path is None:
+        if path is None or path == "":
             return
         with open(path, 'rb') as f:
             data = pickle.load(f)
@@ -209,14 +227,24 @@ class Controller(QTabWidget):
         properties = data.get("properties", {}).get("heatmap_info")
         heatmap_info = data.get("heatmap_info")
         if properties is None or heatmap_info is None:
-            QMessageBox.warning("热力图结果不存在于该文件中")
+            QMessageBox.warning(self, '警告', "热力图结果不存在于该文件中")
             return
+
+        if not isinstance(properties.get("downsample"), int):
+            QMessageBox.warning(self, '警告', "properties中的downsample应为一个int类型的值")
+            return
+
+        if len(properties["heatmap_info"]) != len(heatmap_info):
+            QMessageBox.warning(self, '警告', "properties 与 结果对应不上")
+            return
+
         self.controller_widget.add_heatmap_widget(properties)
         self.controller_widget.heatmap_widget.showItemSignal.connect(self.show_heatmap_signal_fn)
         if main_viewer:
             self.mainViewerloadheatmapSignal.emit(properties, heatmap_info)
         else:
             self.sideViewerloadheatmapSignal.emit(properties, heatmap_info)
+        self.controller_widget.heatmap_widget.chooseFirst()
 
     def show_heatmap_signal_fn(self, showItem: list):
         """
@@ -233,7 +261,7 @@ class Controller(QTabWidget):
                 main_viewer: 是否为主窗口，或者是对比窗口
         """
         path = self.selete_path(main_viewer, "选择区域轮廓结果")
-        if path is None:
+        if path is None or path == "":
             return
         with open(path, 'rb') as f:
             data = pickle.load(f)
@@ -242,7 +270,19 @@ class Controller(QTabWidget):
         properties = data.get("properties", {}).get("contour_info")
         contour_info = data.get("contour_info")
         if properties is None or contour_info is None:
-            QMessageBox.warning("区域轮廓结果不存在于该文件中")
+            QMessageBox.warning(self, '警告', "区域轮廓结果不存在于该文件中")
+            return
+
+        for name, item in properties.items():
+            if item.get("type") is None or item.get("color") is None:
+                QMessageBox.warning(self, '警告', "properties 文件缺失")
+                return
+        try:
+            if contour_info["contour"].shape[0] != contour_info["type"].shape[0]:
+                QMessageBox.warning(self, '警告', "区域轮廓结果错误")
+                return
+        except:
+            QMessageBox.warning(self, '警告', "区域轮廓结果错误")
             return
 
         self.controller_widget.add_contour_widget(properties)
@@ -251,6 +291,7 @@ class Controller(QTabWidget):
             self.mainViewerloadContourSignal.emit(properties, contour_info)
         else:
             self.sideViewerloadContourSignal.emit(properties, contour_info)
+        self.controller_widget.contour_widget.chooseFirst()
 
     def show_contour_signal_fn(self, showItem: list):
         """
@@ -266,7 +307,7 @@ class Controller(QTabWidget):
                 main_viewer: 是否为主窗口，或者是对比窗口
         """
         path = self.selete_path(main_viewer, "选择细胞核差异结果")
-        if path is None:
+        if path is None or path == "":
             return
         with open(path, 'rb') as f:
             data = pickle.load(f)
@@ -274,7 +315,19 @@ class Controller(QTabWidget):
         properties = data.get("properties", {}).get("nucleus_diff_info")
         nucleus_diff_info = data.get("nucleus_diff_info")
         if properties is None or nucleus_diff_info is None:
-            QMessageBox.warning("细胞核差异结果不存在于该文件中")
+            QMessageBox.warning(self, '警告', "细胞核差异结果不存在于该文件中")
+            return
+
+        for name, item in properties.items():
+            if item.get("color") is None:
+                QMessageBox.warning(self, '警告', "properties 文件缺失！")
+                return
+        try:
+            if nucleus_diff_info["center"].shape[0] != nucleus_diff_info["diff_array"].shape[0]:
+                QMessageBox.warning(self, '警告', "细胞核差异结果缺失！")
+                return
+        except:
+            QMessageBox.warning(self, '警告', "细胞核差异结果缺失！")
             return
 
         self.controller_widget.add_nucleus_diff_widget(properties)
@@ -283,12 +336,13 @@ class Controller(QTabWidget):
             self.mainViewerloadNucleusDiffSignal.emit(properties, nucleus_diff_info)
         else:
             self.sideViewerloadNucleusDiffSignal.emit(properties, nucleus_diff_info)
+        self.controller_widget.nucleus_diff_widget.chooseFirst()
 
     def show_nucleus_diff_signal_fn(self, showItem: list):
         """
             显示/关闭差异点
         """
-        self.viewerShowNucleusDiffSignal.emit(showItem)
+        self.viewerShowNucleusDiffSignal.emit(showItem, True)
 
     def selete_path(self, mainViewer:bool, title):
         """
@@ -302,6 +356,8 @@ class Controller(QTabWidget):
             file_dir = "./"
         options = QFileDialog.Options()
         path, _ = QFileDialog.getOpenFileName(self, title, file_dir, "结果(*.pkl)", options=options)
+        if path == "":
+            return None
         if mainViewer:
             slide_name = self.mainViewer_name
         else:

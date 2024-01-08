@@ -1,6 +1,6 @@
 import numpy as np
 from PyQt5.QtWidgets import QGraphicsScene
-from window.utils.ContourItem import TriangleItem
+from window.utils.ContourItem import TriangleItem, CircleItem
 
 
 class NucleusMarkLoader():
@@ -67,7 +67,10 @@ class NucleusMarkLoader():
                                                    last_nucleus=self.last_nucleus)
         for center, mark in zip (self.centers[::step][show_nucleus], self.nucleus_marks[::step][show_nucleus]):
             if mark in self.show_types:
-                self.draw_triangle(center, mark, current_level=self.current_level, current_downsample=self.current_downsample)
+                if self.current_downsample >= 2:
+                    self.draw_triangle(center, mark, current_level=self.current_level, current_downsample=self.current_downsample)
+                else:
+                    self.draw_circle(center, mark, current_level=self.current_level, current_downsample=self.current_downsample)
 
     def get_current_rect_nuclei(self, current_rect, current_level, current_downsample, centers, last_level, last_nucleus):
         """
@@ -108,11 +111,17 @@ class NucleusMarkLoader():
                 current_level: 当前slide的level, 用于标识item
                 current_downsample: 当前的下采样倍数
         """
-        color = self.color_dict["mark"]
+        color = self.color_dict[mark]
         triangle = TriangleItem(x=center[0] / current_downsample, y=center[1] / current_downsample, color=color,
                                 category=mark, level=current_level)
         triangle.setZValue(35)
         self.scene.addItem(triangle)
+
+    def draw_circle(self, center, mark, current_level, current_downsample):
+        color = self.color_dict[mark]
+        cicle = CircleItem(x=center[0] / current_downsample, y=center[1] / current_downsample, color=color, category=mark, level=current_level)
+        cicle.setZValue(35)
+        self.scene.addItem(cicle)
 
     def __del__(self):
         print("nucleiContourloader is del")

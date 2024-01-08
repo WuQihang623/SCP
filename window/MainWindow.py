@@ -147,10 +147,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
             self.slide_file_dir = os.path.dirname(file_path)
             slide_window = SlideWindow(file_path)
-
+            slide_window.setWindowTitle(os.path.basename(file_path))
             self.mdiArea.addSubWindow(slide_window)
             slide_window.show()
-            slide_window.setWindowTitle(os.path.basename(file_path))
 
             # 向最近文件中添加文件
             self.add_recent_path(file_path)
@@ -165,7 +164,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             # self.connect_Annotation_ation()
 
             # 将菜单栏中的按键连接到Slideviewer中
-            slide_window.slide_viewer.addAction2Menu([self.move_action, self.fixed_rect_action, self.rect_action,
+            slide_window.mainViewer.addAction2Menu([self.move_action, self.fixed_rect_action, self.rect_action,
                                                       self.polygon_action, self.measure_tool_action, self.modify_action, None])
             # TODO:全屏的功能连接
             # self.fill_screen_action.triggered.connect(slide_window.full_screen)
@@ -176,9 +175,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             QMessageBox.warning(self, '警告', str(e))
 
     def openSideViewer(self):
-        file_path, warning_text = self.selete_path("选择WSI文件")
-
         sub_active = self.mdiArea.activeSubWindow()
+        file_path, warning_text = self.selete_path("选择WSI文件")
         if warning_text != True:
             if warning_text is None:
                 return
@@ -187,12 +185,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 return
 
         self.slide_file_dir = os.path.dirname(file_path)
-        sideViewer = sub_active.widget().sideViewer
-        sideViewer.loadSlide(file_path)
-        splitter_viewer = sub_active.widget().splitter_viewer
-        splitter_viewer.widget(1).show()
-        # 将菜单栏中的按键连接到Slideviewer中
-        sideViewer.addAction2Menu([])
+        sub_active.widget().sideViewerLoadSlide(file_path)
 
     def selete_path(self, title):
         options = QFileDialog.Options()

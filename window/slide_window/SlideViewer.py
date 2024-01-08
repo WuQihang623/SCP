@@ -54,6 +54,7 @@ class SlideViewer(BasicSlideViewer):
         self.tissue_contours = None
         self.tissue_type = None
         self.tissue_properties = None
+        self.tissue_color_dict = None
         self.showItemTissueContour = set([])
 
         self.nucleus_diff_properties = None
@@ -160,8 +161,7 @@ class SlideViewer(BasicSlideViewer):
             self.ToolManager.redraw(level, downsample)
 
             # 重新绘制区域分割结果
-            self.show_contour_slot(self.showItemTissueContour)
-
+            self.show_contour()
 
     def loadAllAnnotation(self):
         """
@@ -258,6 +258,9 @@ class SlideViewer(BasicSlideViewer):
         self.tissue_properties = properties
         self.tissue_contours = contour_info["contour"]
         self.tissue_type = contour_info["type"]
+        self.tissue_color_dict = {}
+        for name, item in properties.items():
+            self.tissue_color_dict[item["type"]] = item["color"]
 
     def load_nucleus_diff_slot(self, properties, nucleus_diff_info):
         """
@@ -275,14 +278,14 @@ class SlideViewer(BasicSlideViewer):
             if nucleus_diff_info["diff_array"].shape[0] != self.nucleus_center.shape[0]:
                 return
         else:
-            self.nucleus_center = nucleus_diff_info["diff_array"]
-        self.nucleus_diff = nucleus_diff_info
+            self.nucleus_center = nucleus_diff_info["center"]
+        self.nucleus_diff = nucleus_diff_info["diff_array"]
         self.nucleus_diff_properties = properties
         self.nucleus_diff_color_dict = {}
         for name, item in properties.items():
             self.nucleus_diff_color_dict[name] = item["color"]
 
-    def show_nucleus_slot(self, showItem: list):
+    def show_nucleus_slot(self, showItem: list, clear_nuclues=False):
         """
             显示细胞核分割结果
             Args:
@@ -296,12 +299,13 @@ class SlideViewer(BasicSlideViewer):
         showType = set(showType)
         # TODO:
         showType_copy = showType.copy()
-        showType = showType - self.showItemNucleus
+        # showType = showType - self.showItemNucleus
         removeType = self.showItemNucleus - showType
         self.showItemNucleus = showType_copy
 
         # TODO: last_nuclei?
-        self.NucleiContourLoader.last_nuclei = None
+        if clear_nuclues:
+            self.NucleiContourLoader.last_nuclei = None
         self.NucleiContourLoader.load_contour(current_rect=self.get_current_view_scene_rect(),
                                               current_level=self.current_level,
                                               current_downsample=self.current_downsample,
@@ -331,7 +335,7 @@ class SlideViewer(BasicSlideViewer):
             self.heatmap_downsample = None
             self.reshowView(self.heatmap, self.heatmap_downsample)
 
-    def show_contour_slot(self, showItem):
+    def show_contour_slot(self, showItem, update_level=False):
         """
             Args:
                 showItem: 是一个列表，存放了要显示的轮廓["肿瘤区域"， "基质区域", ...] or []
@@ -342,38 +346,39 @@ class SlideViewer(BasicSlideViewer):
         for type_name in showItem:
             showType.append(self.tissue_properties.get(type_name, {}).get("type", -1))
         showType = set(showType)
-        # TODO:
-        showType_copy = showType.copy()
-        showType = showType - self.showItemTissueContour
-
-        removeType = self.showItemTissueContour - showType
-        self.showItemTissueContour = showType_copy
+        if update_level == False:
+            removeType = self.showItemTissueContour - showType
+        else:
+            removeType = []
+        self.showItemTissueContour = showType
 
         self.RegionContourLoader.load_contour(current_level=self.current_level,
                                               current_downsample=self.current_downsample,
                                               contours=self.tissue_contours,
+                                              color_dict=self.tissue_color_dict,
                                               types=self.tissue_type,
                                               show_types=list(showType) if len(showType) != 0 else None,
                                               remove_types=list(removeType) if len(removeType) != 0 else None)
 
 
-    def show_nucleus_diff_slot(self, showItem):
+    def show_nucleus_diff_slot(self, showItem, clear_nucleus=False):
         """
             Args:showItem: 是一个列表，存放了要显示的差异细胞中心点["FP"， "FN", ...] or []
         """
         if self.nucleus_diff is None or self.nucleus_diff_properties is None or self.nucleus_center is None:
             return
         showItem = set(showItem)
-        showType = showItem - self.showItemNucleusDiff
         removeType = self.showItemNucleusDiff - showItem
         self.showItemNucleusDiff = showItem
+        if clear_nucleus:
+            self.NucleusMarkLoader.last_nucleus = None
         self.NucleusMarkLoader.load_nucleus_mark(current_rect=self.get_current_view_scene_rect(),
                                                  current_level=self.current_level,
                                                  current_downsample=self.current_downsample,
                                                  centers=self.nucleus_center,
                                                  nucleus_marks=self.nucleus_diff,
                                                  color_dict=self.nucleus_diff_color_dict,
-                                                 show_types=showType,
+                                                 show_types=showItem,
                                                  remove_types=removeType)
 
     def show_nuclei(self):
@@ -390,6 +395,21 @@ class SlideViewer(BasicSlideViewer):
             self.show_nucleus_slot(showItem)
 
         self.show_nucleus_diff_slot(self.showItemNucleusDiff)
+
+    def show_contour(self):
+        """
+            当视图缩放等操作的时候，要加载区域轮廓
+        """
+        if self.tissue_contours is None or self.tissue_properties is None or self.tissue_type is None:
+            return
+
+        showItem = []
+        for type_idx in self.showItemTissueContour:
+            for type_name, item in self.tissue_properties.items():
+                if type_idx == item["type"]:
+                    showItem.append(type_name)
+                    break
+        self.show_contour_slot(showItem, True)
 
     def addContourItem(self, item):
         """

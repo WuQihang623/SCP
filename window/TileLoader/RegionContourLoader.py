@@ -24,11 +24,11 @@ class RegionContourLoader(QThread):
         self.abort = False
 
         self.contours = []
-        self.colors = []
         self.types = []
+        self.color_dict = {}
 
     # 如果是要显示或者关闭某个类别的轮廓
-    def load_contour(self, current_level, current_downsample, contours=None, colors=None, types=None, show_types=None, remove_types=None):
+    def load_contour(self, current_level, current_downsample, contours=None, types=None, color_dict=None, show_types=None, remove_types=None):
         """
         :param current_downsample: 当前scene的slide的downsample
         :param contours: 所有的区域轮廓列表
@@ -51,7 +51,7 @@ class RegionContourLoader(QThread):
         self.current_level = current_level
         self.current_downsample = current_downsample
         self.contours = contours if contours is not None else []
-        self.colors = colors if colors is not None else []
+        self.color_dict = color_dict if color_dict is not None else {}
         self.types = types if types is not None else []
         self.show_types = show_types if show_types is not None else []
 
@@ -75,14 +75,15 @@ class RegionContourLoader(QThread):
             self.mutex.lock()
             current_downsample = self.current_downsample
             contours = self.contours
-            colors = self.colors
             types = self.types
             show_types = self.show_types
             current_level = self.current_level
+            color_dict = self.color_dict
             self.mutex.unlock()
 
             if show_types is not None:
-                for contour, color, type in zip(contours, colors, types):
+                for contour, type in zip(contours, types):
+                    color = color_dict.get(type, [255, 0, 0])
                     if self.restart:
                         break
                     if self.abort:
