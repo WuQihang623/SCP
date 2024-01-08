@@ -1,20 +1,57 @@
+import os
 import sys
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLabel, QTabWidget
+import pickle
+from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLabel, QTabWidget, QFileDialog, QMessageBox
 
-from UI.UI_annotation import UI_Annotation
-from UI.UI_Control import UI_Controller
+from window.UI.UI_annotation import UI_Annotation
+from window.UI.UI_Control import UI_Controller
 
 class Controller(QTabWidget):
+    # 将结果文件传递给Viewer
+    mainViewerloadNucleusSignal = pyqtSignal(dict, dict)
+    sideViewerloadNucleusSignal = pyqtSignal(dict, dict)
+    mainViewerloadheatmapSignal = pyqtSignal(dict, dict)
+    sideViewerloadheatmapSignal = pyqtSignal(dict, dict)
+    mainViewerloadContourSignal = pyqtSignal(dict, dict)
+    sideViewerloadContourSignal = pyqtSignal(dict, dict)
+    mainViewerloadNucleusDiffSignal = pyqtSignal(dict, dict)
+    sideViewerloadNucleusDiffSignal = pyqtSignal(dict, dict)
+
+    # 将显示信息传递给Viewer
+    viewerShowNucleusSignal = pyqtSignal(list)
+    viewerShowHeatmapSignal = pyqtSignal(list)
+    viewerShowContourSignal = pyqtSignal(list)
+    viewerShowNucleusDiffSignal = pyqtSignal(list)
+
     def __init__(self):
         super().__init__()
         self.annotation_widget = UI_Annotation()
         self.controller_widget = UI_Controller()
         self.addTab(self.annotation_widget, "标注桌面")
         self.addTab(self.controller_widget, "可视化桌面")
+
+        # 初始化变量
+        self.mainViewer_name = None
+        self.sideViewer_name = None
+
+    def setMainViewerName(self, slide_path):
+        """
+            主窗口的文件名称
+        """
+        self.mainViewer_name, _ = os.path.splitext(os.path.basename(slide_path))
+
+    def setSideViewerName(self, slide_path):
+        """
+            副窗口的文件名成
+        """
+        self.sideViewer_name, _ = os.path.splitext(os.path.basename(slide_path))
+
     def load_annotation(self):
         """
             载入标注文件
         """
+        
 
     def add_label_category(self):
         """
@@ -123,33 +160,157 @@ class Controller(QTabWidget):
             
         }
     """
-    def load_nucleus(self):
+    def load_nucleus_signal_fn(self, main_viewer: bool=True):
         """
             载入细胞核结果文件
+            Args:
+                main_viewer: 是否为主窗口，或者是对比窗口
         """
+        path = self.selete_path(main_viewer, "选择细胞核分割结果")
+        if path is None:
+            return
+        with open(path, 'rb') as f:
+            data = pickle.load(f)
+            f.close()
+        # TODO: 对比传递字典的速度块还是传递路径快
+        properties = data.get("properties", {}).get("nucleus_info")
+        nucleus_info = data.get("nucleus_info")
+        if properties is None or nucleus_info is None:
+            QMessageBox.warning("细胞核分割结果不存在于该文件中")
+            return
 
-    def show_nucleus(self):
+        self.controller_widget.add_nucleus_widget(properties)
+        self.controller_widget.nucleus_widget.showItemSignal.connect(self.show_nucleus_signal_fn)
+        if main_viewer:
+            self.mainViewerloadNucleusSignal.emit(properties, nucleus_info)
+        else:
+            self.sideViewerloadNucleusSignal.emit(properties, nucleus_info)
+
+    def show_nucleus_signal_fn(self, show_nucleus: list):
         """
             显示/关闭细胞核分割结果
             选择要显示哪些细胞核
         """
+        self.viewerShowNucleusSignal.emit(show_nucleus)
 
-    def load_heatmap(self):
+    def load_heatmap_signal_fn(self, main_viewer:bool = True):
         """
             载入热力图
+            Args:
+                main_viewer: 是否为主窗口，或者是对比窗口
         """
+        path = self.selete_path(main_viewer, "选择热力图结果")
+        if path is None:
+            return
+        with open(path, 'rb') as f:
+            data = pickle.load(f)
+            f.close()
 
-    def show_heatmap(self):
+        properties = data.get("properties", {}).get("heatmap_info")
+        heatmap_info = data.get("heatmap_info")
+        if properties is None or heatmap_info is None:
+            QMessageBox.warning("热力图结果不存在于该文件中")
+            return
+        self.controller_widget.add_heatmap_widget(properties)
+        self.controller_widget.heatmap_widget.showItemSignal.connect(self.show_heatmap_signal_fn)
+        if main_viewer:
+            self.mainViewerloadheatmapSignal.emit(properties, heatmap_info)
+        else:
+            self.sideViewerloadheatmapSignal.emit(properties, heatmap_info)
+
+    def show_heatmap_signal_fn(self, showItem: list):
         """
             显示/关闭热力图
             选择要显示哪些热力图
         """
+        self.viewerShowHeatmapSignal.emit(showItem)
 
-    def load_contour(self):
+    def load_contour_signal_fn(self, main_viewer):
         """
             载入轮廓文件
             选择要显示哪些轮廓
+            Args:
+                main_viewer: 是否为主窗口，或者是对比窗口
         """
+        path = self.selete_path(main_viewer, "选择区域轮廓结果")
+        if path is None:
+            return
+        with open(path, 'rb') as f:
+            data = pickle.load(f)
+            f.close()
+
+        properties = data.get("properties", {}).get("contour_info")
+        contour_info = data.get("contour_info")
+        if properties is None or contour_info is None:
+            QMessageBox.warning("区域轮廓结果不存在于该文件中")
+            return
+
+        self.controller_widget.add_contour_widget(properties)
+        self.controller_widget.contour_widget.showItemSignal.connect(self.show_contour_signal_fn)
+        if main_viewer:
+            self.mainViewerloadContourSignal.emit(properties, contour_info)
+        else:
+            self.sideViewerloadContourSignal.emit(properties, contour_info)
+
+    def show_contour_signal_fn(self, showItem: list):
+        """
+            显示/关闭轮廓
+            选择要显示哪些类型的轮廓
+        """
+        self.viewerShowContourSignal.emit(showItem)
+
+    def load_nucleus_diff_signal_fn(self, main_viewer:bool = True):
+        """
+            载入差异文件
+            Args:
+                main_viewer: 是否为主窗口，或者是对比窗口
+        """
+        path = self.selete_path(main_viewer, "选择细胞核差异结果")
+        if path is None:
+            return
+        with open(path, 'rb') as f:
+            data = pickle.load(f)
+            f.close()
+        properties = data.get("properties", {}).get("nucleus_diff_info")
+        nucleus_diff_info = data.get("nucleus_diff_info")
+        if properties is None or nucleus_diff_info is None:
+            QMessageBox.warning("细胞核差异结果不存在于该文件中")
+            return
+
+        self.controller_widget.add_nucleus_diff_widget(properties)
+        self.controller_widget.nucleus_diff_widget.showItemSignal.connect(self.show_nucleus_diff_signal_fn)
+        if main_viewer:
+            self.mainViewerloadNucleusDiffSignal.emit(properties, nucleus_diff_info)
+        else:
+            self.sideViewerloadNucleusDiffSignal.emit(properties, nucleus_diff_info)
+
+    def show_nucleus_diff_signal_fn(self, showItem: list):
+        """
+            显示/关闭差异点
+        """
+        self.viewerShowNucleusDiffSignal.emit(showItem)
+
+    def selete_path(self, mainViewer:bool, title):
+        """
+            打开窗口用于选择结果文件
+            Args:
+                mainViewer: 是否为主窗口
+                title: window title
+        """
+        file_dir = self.controller_widget.folder_seletector.FileDir()
+        if not os.path.isdir(file_dir):
+            file_dir = "./"
+        options = QFileDialog.Options()
+        path, _ = QFileDialog.getOpenFileName(self, title, file_dir, "结果(*.pkl)", options=options)
+        if mainViewer:
+            slide_name = self.mainViewer_name
+        else:
+            slide_name = self.sideViewer_name
+        if slide_name not in path:
+            QMessageBox.warning(self, '警告', '结果文件与图片不匹配！')
+            return None
+        return path
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

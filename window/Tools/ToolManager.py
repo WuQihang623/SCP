@@ -11,7 +11,7 @@ from PyQt5.QtCore import Qt, pyqtSignal, QPointF, QObject
 from PyQt5.QtGui import QPainterPath, QColor
 from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsEllipseItem
 
-from window.slide_window.Tools import DrawFixedRect, DrawRect, DrawPolygon, MeasureTool, DrawPoint
+from window.Tools import DrawFixedRect, DrawRect, DrawPolygon, MeasureTool, DrawPoint
 from function.delDictItem import delDictItem
 
 class ToolManager(QObject):
@@ -34,12 +34,12 @@ class ToolManager(QObject):
         # 设置移动控制点的标志
         self.modifyAnnotationFlag = False
         """
-        1: 移动工具
-        2： 固定矩形工具
-        3： 矩形工具
-        4： 多边形工具
-        5： 测量工具
-        6： 修改工具
+            1: 移动工具
+            2： 固定矩形工具
+            3： 矩形工具
+            4： 多边形工具
+            5： 测量工具
+            6： 修改工具
         """
         # 所有的标注信息存储
         self.Annotations = OrderedDict()
@@ -68,7 +68,7 @@ class ToolManager(QObject):
 
     # 当手动进行配准时切换标志位
     def set_registration_flag(self, flag: bool):
-        print("设置标志位",flag)
+
         self.registration_flag = flag
         if flag is False:
             self.draw_point.deleteItem()

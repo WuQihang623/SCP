@@ -3,8 +3,8 @@ import math
 from PyQt5.QtWidgets import QGraphicsScene, QGraphicsView, QGraphicsLineItem
 from PyQt5.QtCore import QPoint, QObject, Qt
 from PyQt5.QtGui import QColor, QPen, QFont, QBrush
-from window.slide_window.Tools import TranslucentTextItem
-from window.slide_window.Tools.BaseTool import BaseTool
+from window.Tools import TranslucentTextItem
+from window.Tools.BaseTool import BaseTool
 from window.slide_window.utils.SlideHelper import SlideHelper
 
 class MeasureTool(BaseTool):

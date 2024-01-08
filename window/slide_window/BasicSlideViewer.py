@@ -16,6 +16,9 @@ from window.dialog.colorSpaceChooseDialog import channelDialog, colorSpaceDialog
 from function.shot_screen import build_screenshot_image
 
 class BasicSlideViewer(QFrame):
+    """
+        BasicSlideViewer实现的功能是WSI的加载显示，同时实现配准功能
+    """
     updateFOVSignal = pyqtSignal(QRectF, int) # 更新缩略图的矩形框信号
     mousePosSignal = pyqtSignal(QPointF)      # 鼠标位置更新信号
     magnificationSignal = pyqtSignal(bool)   # 视图放大倍数更新信号
@@ -28,7 +31,7 @@ class BasicSlideViewer(QFrame):
     def __init__(self):
         super(BasicSlideViewer, self).__init__()
         self.init_UI()
-        self.init_variable()
+        self.initVariable()
 
     def init_UI(self):
         self.scene = QGraphicsScene()
@@ -117,7 +120,7 @@ class BasicSlideViewer(QFrame):
         self.menu.addAction(self.load_nuclues_action)
         self.menu.addAction(self.change_heatmap_alpha_action)
 
-    def load_slide(self, slide_path, zoom_step=1.25):
+    def loadSlide(self, slide_path, zoom_step=1.25):
         """
             载入slide,同时初始化缩略图，放大滑块等等
         """
@@ -135,7 +138,7 @@ class BasicSlideViewer(QFrame):
         self.scene.setSceneRect(scene_rect)
         self.scene.addRect(scene_rect, pen=Qt.white, brush=Qt.white)
         rect = self.get_current_view_scene_rect()
-        self.TileLoader.load_tiles_in_view(level, rect, self.heatmap, self.heatmap_downsample)
+        self.TileLoader.load_tiles_in_view(level, rect)
         self.current_level = level
         self.current_downsample = self.slide_helper.get_downsample_for_level(self.current_level)
 
@@ -406,8 +409,7 @@ class BasicSlideViewer(QFrame):
         # 获取当前视图在场景中的矩形
         view_scene_rect = self.get_current_view_scene_rect()
         # 加载当前视图内可见的图块
-        self.TileLoader.load_tiles_in_view(self.current_level, view_scene_rect, self.heatmap,
-                                           self.heatmap_downsample)
+        self.TileLoader.load_tiles_in_view(self.current_level, view_scene_rect, self.heatmap, self.heatmap_downsample)
         # 发射FOV更新信号
         self.updateFOVSignal.emit(view_scene_rect, self.current_level)
         # 更新状态栏,视图位置

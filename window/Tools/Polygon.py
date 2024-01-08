@@ -5,7 +5,7 @@ from numbers import Number
 from PyQt5.QtWidgets import QGraphicsScene, QGraphicsView, QGraphicsLineItem, QGraphicsPathItem
 from PyQt5.QtCore import QPoint, Qt, pyqtSignal
 from PyQt5.QtGui import QColor, QPen, QBrush, QPainterPath
-from window.slide_window.Tools.BaseTool import BaseTool
+from window.Tools.BaseTool import BaseTool
 
 
 class DrawPolygon(BaseTool):

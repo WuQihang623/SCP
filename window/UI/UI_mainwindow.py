@@ -256,11 +256,6 @@ class Ui_MainWindow(object):
 
     # 只有在载入图像的叶片中激活这些功能
     def action_enabel(self, enable=True):
-        self.annotation_action.setEnabled(enable)
-        self.diagnose_action.setEnabled(enable)
-        self.microenv_action.setEnabled(enable)
-        self.pdl1_action.setEnabled(enable)
-        self.multimodal_action.setEnabled(enable)
         self.open_paired_action.setEnabled(enable)
         self.open_paired_win_action.setEnabled(enable)
         self.close_paired_win_action.setEnabled(enable)

@@ -1,7 +1,7 @@
 import numpy as np
 from PyQt5.QtGui import QPainterPath, QPen, QColor, QBrush
 from PyQt5.QtWidgets import QGraphicsScene
-from window.utils.ContourItem import ContourPathItem, EllipseItem
+from window.utils.ContourItem import ContourPathItem, EllipseItem, TriangleItem
 
 class NucleiContourLoader():
     def __init__(self, scene: QGraphicsScene):
@@ -12,18 +12,22 @@ class NucleiContourLoader():
         # 初始化上一次的level
         self.last_level = -1
         self.last_nuclei = None
-
         self.contours = None
 
     def load_contour(self, current_rect,
                      current_level,
                      current_downsample,
-                     contours, centers,
-                     types, color_dict=None,
+                     contours,
+                     centers,
+                     types,
+                     color_dict=None,
                      show_types=None,
                      remove_types=None):
-        # 定义一个函数来返回具有特定属性的对象的迭代器
+
         def find_matching_objects(lst, att_category, att_is_region, categorys):
+            """
+                定义一个函数来返回具有特定属性的对象的迭代器
+            """
             for obj in lst:
                 if getattr(obj, att_category, None) in categorys and getattr(obj, att_is_region, None) is False:
                     yield obj
@@ -51,32 +55,33 @@ class NucleiContourLoader():
         self.run()
 
     def run(self):
-        if self.show_types is not None and self.contours is not None:
-            if self.current_downsample <= 2:
-                step = 1
-            else:
-                step = int(self.current_downsample * 2)
-            # 计算当前画面中的细胞
-            show_nuclei = self.get_current_rect_nuclei(current_rect=self.current_rect,
-                                                       current_level=self.current_level,
-                                                       current_downsample=self.current_downsample,
-                                                       centers=self.centers[::step],
-                                                       last_level=self.last_level,
-                                                       last_nuclei=self.last_nuclei)
-            for contour, center, type in zip(self.contours[::step][show_nuclei], self.centers[::step][show_nuclei], self.types[::step][show_nuclei]):
-                if type in self.show_types:
-                    # 绘制轮廓
-                    if self.current_level < 1:
-                        self.draw_contour(contour, type, self.current_level, self.current_downsample)
-                    # 绘制点
-                    else:
-                        self.draw_Ellipse(center, type, self.current_level, self.current_downsample)
+        if self.show_types is None or self.contours is None or self.types is None or self.centers is None:
+            return
+        if self.current_downsample <= 2:
+            step = 1
+        else:
+            step = int(self.current_downsample * 2)
+        # 计算当前画面中的细胞
+        show_nuclei = self.get_current_rect_nuclei(current_rect=self.current_rect,
+                                                   current_level=self.current_level,
+                                                   current_downsample=self.current_downsample,
+                                                   centers=self.centers[::step],
+                                                   last_level=self.last_level,
+                                                   last_nuclei=self.last_nuclei)
 
+        for contour, center, type in zip(self.contours[::step][show_nuclei], self.centers[::step][show_nuclei], self.types[::step][show_nuclei]):
+            if type in self.show_types:
+                # 绘制轮廓
+                if self.current_level < 1:
+                    self.draw_contour(contour, type, self.current_level, self.current_downsample)
+                # 绘制点
+                else:
+                    self.draw_Ellipse(center, type, self.current_level, self.current_downsample)
 
-
-    # 获取当前视图下的细胞
-    def get_current_rect_nuclei(self, current_rect, current_level, current_downsample, centers,
-                                last_level, last_nuclei):
+    def get_current_rect_nuclei(self, current_rect, current_level, current_downsample, centers, last_level, last_nuclei):
+        """
+            获取当前视图下的细胞
+        """
         current_rect = current_rect.getRect()
         top_left_x = current_rect[0] * current_downsample
         top_left_x = 0 if top_left_x < 0 else top_left_x

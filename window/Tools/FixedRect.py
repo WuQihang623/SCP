@@ -4,7 +4,7 @@ import constants
 from PyQt5.QtWidgets import QGraphicsScene, QGraphicsView, QGraphicsRectItem
 from PyQt5.QtCore import QPoint, Qt
 from PyQt5.QtGui import QColor, QPen, QBrush
-from window.slide_window.Tools.BaseTool import BaseTool
+from window.Tools.BaseTool import BaseTool
 
 class DrawFixedRect(BaseTool):
     FixedRectSizePath = os.path.join(constants.cache_path, "FixedRectSize.json")

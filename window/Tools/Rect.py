@@ -2,7 +2,7 @@ import math
 from PyQt5.QtWidgets import QGraphicsScene, QGraphicsView, QGraphicsRectItem
 from PyQt5.QtCore import QPoint
 from PyQt5.QtGui import QPen, QBrush
-from window.slide_window.Tools.BaseTool import BaseTool
+from window.Tools.BaseTool import BaseTool
 
 class DrawRect(BaseTool):
     def __init__(self, scene: QGraphicsScene, view: QGraphicsView):

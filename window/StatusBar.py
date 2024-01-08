@@ -6,7 +6,7 @@ class StatusBar(QStatusBar):
     def __init__(self, mdiArea: QMdiArea):
         super(StatusBar, self).__init__()
         self.mdiArea = mdiArea
-        self.slide_viewer = None
+        self.slideViewer = None
         self.init_UI()
 
     def init_UI(self):
@@ -41,28 +41,28 @@ class StatusBar(QStatusBar):
     def change_SlideViewer(self):
         active_sub = self.mdiArea.activeSubWindow()
         try:
-            if hasattr(active_sub.widget(), "slide_viewer"):
-                self.slide_viewer = active_sub.widget().slide_viewer
-                self.slide_viewer.mousePosSignal.connect(self.update_mouse_pos)
-                self.slide_viewer.magnificationSignal.connect(self.update_magnification)
+            if hasattr(active_sub.widget(), "mainViewer"):
+                self.slideViewer = active_sub.widget().mainViewer
+                self.slideViewer.mousePosSignal.connect(self.update_mouse_pos)
+                self.slideViewer.magnificationSignal.connect(self.update_magnification)
         except:
             return
 
     def update_mouse_pos(self, pos: QPointF):
-        downsample = int(self.slide_viewer.slide_helper.get_downsample_for_level(self.slide_viewer.current_level))
+        downsample = int(self.slideViewer.slide_helper.get_downsample_for_level(self.slideViewer.current_level))
         self.mouse_pos_label.setText("鼠标位置: " + self.point_to_str(pos, downsample))
 
     def update_magnification(self):
-        downsample = int(self.slide_viewer.slide_helper.get_downsample_for_level(self.slide_viewer.current_level))
-        max_dimension = self.slide_viewer.slide_helper.get_level_dimension(0)
-        scale = self.slide_viewer.get_current_view_scale()
+        downsample = int(self.slideViewer.slide_helper.get_downsample_for_level(self.slideViewer.current_level))
+        max_dimension = self.slideViewer.slide_helper.get_level_dimension(0)
+        scale = self.slideViewer.get_current_view_scale()
         self.magnification_label.setText(
             "当前倍数:  {:}".format(int(40 / (downsample / scale) * 10) / 10)
         )
         self.slide_dimension_label.setText(
             "图片尺寸: ({}, {})".format(*max_dimension)
         )
-        new_view_scene_rect = self.slide_viewer.get_current_view_scene_rect().getRect()
+        new_view_scene_rect = self.slideViewer.get_current_view_scene_rect().getRect()
         rect = (int(new_view_scene_rect[0])*downsample, int(new_view_scene_rect[1])*downsample,
                 int(new_view_scene_rect[2])*downsample, int(new_view_scene_rect[3])*downsample)
         self.view_rect_label.setText(
