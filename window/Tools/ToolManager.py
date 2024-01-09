@@ -17,7 +17,7 @@ from function.delDictItem import delDictItem
 class ToolManager(QObject):
     # 当标注被选择时用红色显示
     CHOOSED_COLOR= Qt.red
-    sendAnnotationSignal = pyqtSignal(dict, int)
+    sendAnnotationSignal = pyqtSignal(dict, int, bool, bool)
     # 发送被选中的item的bbox，用于跳转到该位置
     switch2choosedItemSignal = pyqtSignal(list, int)
     # 删除所有标注时，将整个画面清除的信号
@@ -190,7 +190,7 @@ class ToolManager(QObject):
             annotaion_info = self.draw_polygon.mouseReleaseEvent(event, downsample)
         elif self.TOOL_FLAG == 5:
             annotaion_info = self.measure_tool.mouseReleaseEvent(event, downsample)
-        elif self.TOOL_FLAG == 6:
+        elif self.TOOL_FLAG == 6 and self.Annotations.get(f"标注{self.choosed_idx}") is not None:
             annotation = self.Annotations[f"标注{self.choosed_idx}"]
             annotation2tree = annotation.copy()
             annotation2tree.pop("annotation_item", None)
@@ -236,7 +236,7 @@ class ToolManager(QObject):
 
 
     # 设置标注工具的类型和颜色
-    def set_annotationColor(self, type, color):
+    def set_annotationColor(self, type, color, args):
         self.draw_fixedRect.set_AnnotationColor(type, color)
         self.draw_Rect.set_AnnotationColor(type, color)
         self.draw_polygon.set_AnnotationColor(type, color)
@@ -252,7 +252,7 @@ class ToolManager(QObject):
             annotation2tree.pop("annotation_item", None)
             annotation2tree.pop('text_item', None)
             annotation2tree.pop("control_point_items", None)
-            self.sendAnnotationSignal.emit(annotation2tree, num_annotation)
+            self.sendAnnotationSignal.emit(annotation2tree, num_annotation, True, False)
 
             # TODO：把上一个选中的标注item删除，重新绘制，并将当前Annotation设置为被选中的状态
             if self.choosed_idx is not None:
@@ -286,9 +286,11 @@ class ToolManager(QObject):
     """
     def drawAnnotaion(self, annotation, downsample, choosed=False):
         """
-        :param downsample: 当前scene的下采样倍数
-        :param choosed_index: 当前选中的标注索引
-        :return:
+            当更换选中标注的时候，需要重新绘制被替代的和替代的，并且要更新self.Annotations
+            当视图缩放时也要重新绘制，并且要更新self.Annotations
+            Args:
+                downsample: 当前scene的下采样倍数
+                choosed_index: 当前选中的标注索引
         """
         width = 4
         text_size = 15
@@ -329,10 +331,10 @@ class ToolManager(QObject):
 
         return annotation_item, control_point_items, text_item
 
-    """
-    删除item，配合选中标注，删除标注的功能
-    """
     def remove_AnnotationItem(self, idx):
+        """
+            删除item，配合选中标注，删除标注的功能
+        """
         if self.Annotations.get(f"标注{idx}"):
             annotation = self.Annotations[f'标注{idx}']
             # 删除
@@ -342,10 +344,13 @@ class ToolManager(QObject):
             if annotation.get('text_item') is not None:
                 self.scene.removeItem(annotation.get('text_item'))
 
-    # TODO: 跳转到当前标注的视图下
     def switch2choosedItem(self, idx):
+        """
+            跳转到当前标注的视图下
+        """
         # 计算选中的标注所在的区域，将该标注设置到当前视图的中心位置
         if self.Annotations.get(f'标注{idx}') is not None:
+            # self.choosed_idx = idx
             annotation = self.Annotations[f'标注{idx}']
             location = np.array(annotation['location'])
             x1 = location[:, 0].min()
@@ -355,8 +360,10 @@ class ToolManager(QObject):
 
             self.switch2choosedItemSignal.emit([x1, y1, x2, y2], idx)
 
-    # 删除上一个激活的item并重画，再重画当前激活的item
     def reactivateItem(self, choosed_idx, downsample):
+        """
+            删除上一个激活的item并重画，再重画当前激活的item
+        """
         if self.choosed_idx is not None:
             self.remove_AnnotationItem(self.choosed_idx)
             annotation_item, control_point_items, text_item = \
@@ -382,22 +389,21 @@ class ToolManager(QObject):
         self.Annotations = delDictItem(self.Annotations, idx)
         self.choosed_idx = None
 
-    # 清除所有的标注
     def clearAnnotations(self):
+        """
+            清除所有的标注
+        """
         self.Annotations = OrderedDict()
         # 发送清除画面的信号
         self.clearViewSignal.emit(True)
         self.choosed_idx = None
 
-    # 同步Annotation中的信息
-    def syncAnnotation(self, annotation, idx, choosed_idx, pair=False):
+    def syncAnnotation(self, annotation, idx, choosed_idx):
+        """
+            同步ControllerWidget中的信息
+        """
         self.choosed_idx = choosed_idx if choosed_idx != -1 else None
-        # 如果是对比窗口，那么要判断annotation中是否有对比窗口的结果
-        if pair is False:
-            self.Annotations[f'标注{idx}'] = annotation
-        elif pair is True and annotation.get("pair_location") is not None:
-            annotation["location"] = annotation.pop("pair_location")
-            self.Annotations[f"标注{idx}"] = annotation
+        self.Annotations[f'标注{idx}'] = annotation
 
     # 获取item的索引
     def getAnnotationItemIdx(self, current_item):

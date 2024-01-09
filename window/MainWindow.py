@@ -154,14 +154,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             # 向最近文件中添加文件
             self.add_recent_path(file_path)
 
-            # TODO: 设置一些标注工具的细胞
-            # slide_window.annotation.AnnotationTypeChangeSignal.connect(self.bindAnnotationColor)
-            # slide_window.annotation.annotationActionCheckSignal.connect(self.set_color_action_checked)
+            # TODO: 设置一些标注工具的信号
+            slide_window.controller.annotationTypeChooseSignal.connect(self.set_color_action_checked)
+            slide_window.controller.updateAnnotationTypeSignal.connect(self.bindAnnotationColor)
 
             # TODO: 设置工具栏上的图像块的颜色
-
-            # TODO: 设置工具栏上图像块点击所发出的指令
-            # self.connect_Annotation_ation()
+            self.annotaionColorConnections()
+            self.bindAnnotationColor(slide_window.controller.annotationTypeDict)
 
             # 将菜单栏中的按键连接到Slideviewer中
             slide_window.mainViewer.addAction2Menu([self.move_action, self.fixed_rect_action, self.rect_action,
@@ -320,34 +319,28 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
             标注工具切换
         """
-        pass
-        # sub_active = self.mdiArea.activeSubWindow()
-        # try:
-        #     if hasattr(sub_active.widget(), 'annotation'):
-        #         # TODO：判断当前如果不是标注模式，则不能进行标注工具的切换
-        #         if self.get_visible_widget(sub_active.widget().splitter) == 0:
-        #             annotation = sub_active.widget().annotation
-        #             annotation.set_annotation_mode(mode2switch)
-        #             # 如果标志位不为move，则将slide_viewer中的move_allow_flag设置为Flase
-        #             # 对于同步窗口move_allow_flag永远都是True
-        #             slide_viewer = sub_active.widget().slide_viewer
-        #             if mode2switch != 1:
-        #                 slide_viewer.setMoveAllow(False)
-        #             else:
-        #                 slide_viewer.setMoveAllow(True)
-        #             if mode2switch == 1:
-        #                 slide_viewer.setCursor(Qt.ArrowCursor)
-        #             elif mode2switch == 6:
-        #                 slide_viewer.setCursor(Qt.PointingHandCursor)
-        #             else:
-        #                 slide_viewer.setCursor(Qt.CrossCursor)
-        #
-        #         else:
-        #             self.move_action.setChecked(True)
-        #             slide_viewer = sub_active.widget().slide_viewer
-        #             slide_viewer.setMoveAllow(True)
-        # except:
-        #     QMessageBox.warning(self, '警告', "没有打开图像子窗口")
+        sub_active = self.mdiArea.activeSubWindow()
+        try:
+            if hasattr(sub_active.widget(), 'controller') is False:
+                return
+            controller = sub_active.widget().controller
+            mainViewer = sub_active.widget().mainViewer
+
+            controller.change_label_tool(mode2switch)
+
+            if mode2switch != 1:
+                mainViewer.setMoveAllow(False)
+            else:
+                mainViewer.setMoveAllow(True)
+            if mode2switch == 1:
+                mainViewer.setCursor(Qt.ArrowCursor)
+            elif mode2switch == 6:
+                mainViewer.setCursor(Qt.PointingHandCursor)
+            else:
+                mainViewer.setCursor(Qt.CrossCursor)
+        except:
+            QMessageBox.warning(self, "警告",  "切换标注工具时出错")
+            return
 
     def disconnect_action_signal(self, action: QAction):
         """
@@ -355,8 +348,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         action.triggered.disconnect()
 
-    # 进行链接：点击状态栏中的图像块，设置标注的颜色与类型
-    def connect_Annotation_ation(self):
+    def annotaionColorConnections(self):
+        """
+            进行链接：绑定状态栏中的颜色与标注颜色
+        """
         # 解除activate_color_action与之前绑定的函数的链接
         self.disconnect_action_signal(self.activate_color_action1)
         self.disconnect_action_signal(self.activate_color_action2)
@@ -364,21 +359,21 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.disconnect_action_signal(self.activate_color_action4)
         sub_active = self.mdiArea.activeSubWindow()
         try:
-            if hasattr(sub_active.widget(), 'annotation'):
-                annotation = sub_active.widget().annotation
-                self.activate_color_action1.triggered.connect(lambda: annotation.set_AnnotationColor(0))
-                self.activate_color_action2.triggered.connect(lambda: annotation.set_AnnotationColor(1))
-                self.activate_color_action3.triggered.connect(lambda: annotation.set_AnnotationColor(2))
-                self.activate_color_action4.triggered.connect(lambda: annotation.set_AnnotationColor(3))
-
+            if hasattr(sub_active.widget(), 'controller'):
+                controller = sub_active.widget().controller
+                self.activate_color_action1.triggered.connect(lambda : controller.switch_label_category(0))
+                self.activate_color_action2.triggered.connect(lambda: controller.switch_label_category(1))
+                self.activate_color_action3.triggered.connect(lambda: controller.switch_label_category(2))
+                self.activate_color_action4.triggered.connect(lambda: controller.switch_label_category(3))
                 # 连接信号，选择标注时，同样会激活菜单栏中的颜色块
-                self.set_color_action_checked(annotation.annotation_flag)
-
+                self.set_color_action_checked(None, None, controller.annotationTypeIdx)
         except:
             QMessageBox.warning(self, '警告', "没有打开图像子窗口")
 
-    # 改变工具栏中标注颜色的图块颜色
     def bindAnnotationColor(self, annotationType: dict):
+        """
+            改变工具栏中标注颜色的图块颜色
+        """
         for idx, (key, value) in enumerate(annotationType.items()):
             if idx > 3:
                 return
@@ -418,19 +413,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         try:
             if hasattr(sub_active.widget(), 'mainViewer'):
-                pass
-                # # 设置状态栏中的颜色，并于AnnotationTypeTree中的信息进行链接
-                # self.bindAnnotationColor(sub_active.widget().annotation.AnnotationTypes)
-                # self.connect_Annotation_ation()
-                #
-                # # 设置模式，设置为当前模式
-                # current_mode = self.get_visible_widget(sub_active.widget().splitter)
-                # action = self.mode_group.actions()[current_mode]
-                # action.setChecked(True)
-                #
-                # # 设置标注工具,设置为移动模式
-                # self.tools_toggle(1)
-                # self.move_action.setChecked(True)
+                self.bindAnnotationColor(sub_active.widget().controller.annotationTypeDict)
+                self.annotaionColorConnections()
+
+                # 设置标注工具,设置为移动模式
+                self.tools_toggle(1)
+                self.move_action.setChecked(True)
+
         except:
             print("MainWindow 437 行")
 

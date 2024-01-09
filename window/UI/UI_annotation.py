@@ -1,12 +1,24 @@
+import os
 import sys
+import constants
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import Qt
+from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtGui import QColor, QPixmap, QIcon
 from window.utils.FolderSelector import FolderSelector
 
 class UI_Annotation(QFrame):
+    updateChoosedAnnotationSignal = pyqtSignal(int)
     def __init__(self):
         super(UI_Annotation, self).__init__()
         self.init_UI()
+
+        self.annotationTypeDictPath = os.path.join(constants.cache_path, "AnnotationTypes.json")
+        self.annotationDir = constants.annotation_path
+        os.makedirs(self.annotationDir, exist_ok=True)
+
+        # 信号连接
+        self.annotationTree.itemClicked.connect(self.onClickedAnnotationTree)
 
     def init_UI(self):
         self.main_layout = QVBoxLayout(self)
@@ -57,7 +69,7 @@ class UI_Annotation(QFrame):
 
         # 设置删除按键
         self.delete_type_action = QAction("删除")
-        self.delete_type_action.triggered.connect(self.delete_annotationTypeItem)
+        # self.delete_type_action.triggered.connect(self.delete_annotationTypeItem)
         self.change_type_name_action = QAction("修改标注")
         self.change_type_color_action = QAction("修改颜色")
         self.annotationTypeTree_menu = QMenu()
@@ -78,22 +90,95 @@ class UI_Annotation(QFrame):
         self.annotationTree.setContextMenuPolicy(Qt.CustomContextMenu)
         self.annotationTree.customContextMenuRequested.connect(self.show_annotationTree_menu)
 
+    def setAnnotationTypeDictTreeWidget(self, annotationTypeDict):
+        """
+            设置annotationTypeTree中的内容
+        """
+        self.annotationTypeTree.clear()
+        for annotation_name, color in annotationTypeDict.items():
+            item = QTreeWidgetItem(self.annotationTypeTree)
+            pixmap = QPixmap(20, 20)
+            color = QColor(*color)
+            pixmap.fill(color)
+            item.setText(0, annotation_name)
+            item.setIcon(1, QIcon(pixmap))
+
+            # 自适应调整宽度
+            self.annotationTypeTree.resizeColumnToContents(0)
+            self.annotationTypeTree.resizeColumnToContents(1)
+
+    def addItem2AnnotationTreeWidget(self, annotation, annIdx, is_choosed=True, is_switch=False):
+        item = QTreeWidgetItem(self.annotationTree)
+        item.setText(0, f"标注{annIdx}")
+        item.setText(1, annotation['type'])
+        item.setText(2, annotation['tool'])
+        pixmap = QPixmap(20, 20)
+        color = QColor(*annotation['color'])
+        pixmap.fill(color)
+        item.setIcon(3, QIcon(pixmap))
+        description = annotation.get('description')
+        if description is not None:
+            item.setText(4, description)
+        # 让表自适应内容长度
+        self.annotationTree.resizeColumnToContents(0)
+        self.annotationTree.resizeColumnToContents(1)
+        self.annotationTree.resizeColumnToContents(2)
+        self.annotationTree.resizeColumnToContents(3)
+        self.annotationTree.resizeColumnToContents(4)
+        # 设置选中状态
+        if is_choosed:
+            self.annotationTree.setCurrentItem(item)
+        if is_switch:
+            self.updateChoosedAnnotationSignal.emit(annIdx)
+
+    def getChoosedAnnotationTypeItem(self):
+        """
+            获取被点击的AnnotationTypeItem
+        """
+        item = self.annotationTypeTree.currentItem()
+        return item
+
+    def getChoosedAnnotationItem(self):
+        item = self.annotationTree.currentItem()
+        return item
 
     def show_annotationTypeTree_menu(self, pos):
+        """
+            右键，修改标注名称和颜色
+        """
         item = self.annotationTypeTree.itemAt(pos)
         if item is not None:
             self.annotationTypeTree_menu.exec_(self.annotationTypeTree.mapToGlobal(pos))
 
-    def delete_annotationTypeItem(self):
-        items = self.annotationTypeTree.selectedItems()
-        for item in items:
-            (item.parent() or self.annotationTypeTree.invisibleRootItem()).removeChild(item)
-
     def show_annotationTree_menu(self, pos):
+        """
+            右键，删除标注，修改标注
+        """
         item = self.annotationTree.itemAt(pos)
         if item is not None:
+            self.onClickedAnnotationTree(item)
             self.annotationTree_menu.exec_(self.annotationTree.mapToGlobal(pos))
 
+    def onClickedAnnotationTree(self, item):
+        self.annotationTree.setCurrentItem(item)
+        choosed_idx = self.annotationTree.indexOfTopLevelItem(item)
+        self.updateChoosedAnnotationSignal.emit(choosed_idx)
+
+    def changeAnnotationCategory(self, row, type=None, color=None):
+        """
+            更改self.annotationTree的显示的标注类别和颜色
+            Args:
+                row: int
+                type: str
+                color: QColor
+        """
+        item = self.annotationTree.topLevelItem(row)
+        if type is not None:
+            item.setText(1, type)
+        if color is not None:
+            pixmap = QPixmap(20, 20)
+            pixmap.fill(color)
+            item.setIcon(3, QIcon(pixmap))
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

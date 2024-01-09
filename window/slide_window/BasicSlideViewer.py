@@ -2,6 +2,7 @@ import os.path
 import sys
 import constants
 import numpy as np
+from PyQt5 import  QtGui
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import QWheelEvent, QMouseEvent, QTransform, QIcon, QPixmap
 from PyQt5.QtCore import QPoint, Qt, QEvent, QRectF, pyqtSignal, QPointF, QObject, QSize
@@ -57,6 +58,22 @@ class BasicSlideViewer(QFrame):
         self.load_heatmap_action = QAction("导入热图")
         self.load_contour_action = QAction("导入区域轮廓")
         self.load_nucleus_diff_action = QAction("导入细胞核标记结果")
+
+        icon_nucleus = QtGui.QIcon()
+        icon_nucleus.addPixmap(QtGui.QPixmap("logo/cell_segment.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.load_nucleus_action.setIcon(icon_nucleus)
+
+        icon_heatmap = QtGui.QIcon()
+        icon_heatmap.addPixmap(QtGui.QPixmap("logo/heatmap.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.load_heatmap_action.setIcon(icon_heatmap)
+
+        icon_contour = QtGui.QIcon()
+        icon_contour.addPixmap(QtGui.QPixmap("logo/tissue.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.load_contour_action.setIcon(icon_contour)
+
+        icon_nucleus_diff = QtGui.QIcon()
+        icon_nucleus_diff.addPixmap(QtGui.QPixmap("logo/tag.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.load_nucleus_diff_action.setIcon(icon_nucleus_diff)
 
         self.change_heatmap_alpha_action = QAction("设置热图权重")
         self.view.setTransformationAnchor(QGraphicsView.NoAnchor)

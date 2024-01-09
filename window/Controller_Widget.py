@@ -1,8 +1,11 @@
+import json
 import os
+import re
 import sys
 import pickle
 from enum import Enum
 from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtGui import QColor, QPixmap, QIcon
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLabel, QTabWidget, QFileDialog, QMessageBox, QDialog
 
 from window.UI.UI_annotation import UI_Annotation
@@ -17,6 +20,17 @@ class AnnotationMode(Enum):
     MODIFY = 6
 
 class Controller(QTabWidget):
+    # 标注
+    syncAnnotationSignal = pyqtSignal(dict, int, int) # 是否要将导入的标注
+    showAnnotationSignal = pyqtSignal(bool)           # 显示标注
+    changeAnnotationItemSignal = pyqtSignal(int, str, list)
+    updateChoosedAnnotationSignal = pyqtSignal(int)
+    toolChangeSignal = pyqtSignal(int) # 标注工具切换信号
+    annotationTypeChooseSignal = pyqtSignal(str, list, int)
+    updateAnnotationTypeSignal = pyqtSignal(dict)
+    deleteAnnotationSignal = pyqtSignal(int)
+    changeAnnotaionSignal = pyqtSignal(int, str, list)
+
     # 将结果文件传递给Viewer
     mainViewerloadNucleusSignal = pyqtSignal(dict, dict)
     sideViewerloadNucleusSignal = pyqtSignal(dict, dict)
@@ -45,15 +59,44 @@ class Controller(QTabWidget):
         self.sideViewer_name = None
 
         # 标注
-        self.annotation = None
+        self.annotation = {}
         # 被选择上的标注索引
         self.choosedIdx = None
+        self.annotationTypeIdx = -1
+
+        # 初始化annotationTypeDict
+        self.initAnnotationTypeDictTree()
+
+        self.controllSignalConnections()
+
+    def controllSignalConnections(self):
+        """
+            控制面板中的信号连接
+        """
+        self.annotation_widget.addType_btn.clicked.connect(self.add_label_category)
+        self.annotation_widget.deleteType_btn.clicked.connect(self.remove_label_category)
+        self.annotation_widget.change_type_name_action.triggered.connect(self.change_label_name)
+        self.annotation_widget.change_type_color_action.triggered.connect(self.change_label_color)
+        self.annotation_widget.delete_type_action.triggered.connect(self.remove_label_category)
+
+        self.annotation_widget.modify_annotation_action.triggered.connect(self.modify_annotation_category)
+        self.annotation_widget.delete_annotation_action.triggered.connect(self.remove_annotation_slot)
+
+
+        self.annotation_widget.loadAnnotation_btn.clicked.connect(self.load_annotation_slot)
+        self.annotation_widget.clearAnnotation_btn.clicked.connect(self.clear_annotaiton_slot)
+        self.annotation_widget.save_btn.clicked.connect(self.save_annotation_slot)
+
+        self.annotation_widget.updateChoosedAnnotationSignal.connect(self.update_choosed_annotation_slot)
+
+        self.annotation_widget.annotationTypeTree.itemClicked.connect(self.clickedAnnotationTypeTable)
 
     def setMainViewerName(self, slide_path):
         """
             主窗口的文件名称
         """
         self.mainViewer_name, _ = os.path.splitext(os.path.basename(slide_path))
+        self.mainViewer_slidePath = slide_path
 
     def setSideViewerName(self, slide_path):
         """
@@ -61,7 +104,26 @@ class Controller(QTabWidget):
         """
         self.sideViewer_name, _ = os.path.splitext(os.path.basename(slide_path))
 
-    def load_annotation(self):
+    def initAnnotationTypeDictTree(self):
+        if os.path.exists(self.annotation_widget.annotationTypeDictPath):
+            with open(self.annotation_widget.annotationTypeDictPath, 'r') as f:
+                self.annotationTypeDict = json.load(f)
+                f.close()
+            if len(self.annotationTypeDict) == 0:
+                self.annotationTypeDict = {
+                    "肿瘤区域": [255, 0, 0, 255],
+                    "基质区域": [0, 0, 255, 255],
+                    "其他区域": [142, 255, 111, 255]
+                }
+        else:
+            self.annotationTypeDict = {
+                "肿瘤区域": [255, 0, 0, 255],
+                "基质区域": [0, 0, 255, 255],
+                "其他区域": [142, 255, 111, 255]
+            }
+        self.annotation_widget.setAnnotationTypeDictTreeWidget(self.annotationTypeDict)
+
+    def load_annotation_slot(self):
         """
             载入标注文件
         """
@@ -71,66 +133,292 @@ class Controller(QTabWidget):
             return
 
         # 如果存在标注，则清除掉所有标注
-        self.clear_annotaiton()
+        self.clear_annotaiton_slot()
+
+        with open(path, 'r') as f:
+            annotation = json.load(f)
+            f.close()
+
+        # 判断标注文件的格式
+        if annotation.get("image_path") is None or annotation.get("color_and_type") is None or annotation.get("annotation") is None:
+            QMessageBox.warning(self, '警告', '标注文件缺失！')
+            return
+
+        # 判断标注文件是否与图像一致
+        if self.mainViewer_name not in annotation["image_path"]:
+            QMessageBox.warning(self, '警告', '标注与图片不匹配！')
+            return
+
+        self.annotationTypeDict = annotation["color_and_type"]
+
+        # 设置标注类别Table
+        self.annotation_widget.setAnnotationTypeDictTreeWidget(self.annotationTypeDict)
+        self.saveAnnotationTypeDict()
+
+        # 加载标注item Table
+        for annIdx, (name, ann) in enumerate(annotation["annotation"].items()):
+            self.addAnnotaton(ann, annIdx, is_choosed=False, is_switch=False, sync2ToolManager=True)
+
+        self.showAnnotationSignal.emit(True)
+
+
+    def addAnnotaton(self, annotation, annIdx, is_choosed=True, is_switch=False, sync2ToolManager=False):
+        """
+            将标注信息添加到TreeWidget中，并显示到viewer中
+            Args:
+                annotation: 标注信息
+                annIdx: 标注的索引
+                is_choosed: 是否选中该标注
+                sync2ToolManager: 是否要将annotation传递给ToolManager
+        """
+        self.annotation[f"标注{annIdx}"] = annotation
+        self.annotation_widget.addItem2AnnotationTreeWidget(annotation, annIdx, is_choosed, is_switch)
+        if sync2ToolManager:
+            self.syncAnnotationSignal.emit(annotation, annIdx ,annIdx if is_choosed else -1)
+
+    def update_choosed_annotation_slot(self, annIdx):
+        self.choosedIdx = annIdx
+        self.updateChoosedAnnotationSignal.emit(annIdx)
+
+    def saveAnnotationTypeDict(self):
+        """
+            保存标注的类别文件
+        """
+        self.updateAnnotationTypeSignal.emit(self.annotationTypeDict)
+        with open(self.annotation_widget.annotationTypeDictPath, 'w') as f:
+            f.write(json.dumps(self.annotationTypeDict, indent=2))
+            f.close()
+        return
 
     def add_label_category(self):
         """
             增加标注工具的类别，肿瘤区域，基质区域，角化物……
         """
+        from window.dialog.colorChoosedDialog import ColorChooseDialog
+        dialog = ColorChooseDialog()
+        if dialog.exec_() == QDialog.Rejected:
+            return
+        text = dialog.get_text()
+        color = dialog.get_color()
+        if text ==  "" or not isinstance(color, QColor):
+            return
+        if text in self.annotationTypeDict.keys() or list(color.getRgb()) in self.annotationTypeDict.values():
+            QMessageBox.warning(self, '警告', "该颜色或文本已被添加！")
+            return
+        self.annotationTypeDict[text] = list(color.getRgb())
+        self.annotation_widget.setAnnotationTypeDictTreeWidget(self.annotationTypeDict)
+        self.saveAnnotationTypeDict()
+
+        # TODO: 绑定颜色块
 
     def remove_label_category(self):
         """
             删除标注类别
             先要获取到当前被选中的标注类别，然后更新标注类别字典
         """
+        item = self.annotation_widget.getChoosedAnnotationTypeItem()
+        if item is None:
+            return
 
-    def change_label_tool(self):
-        """
-            切换当前的标注工具，切换成： 矩形，多边形，测量工具……
-            通过点击标注工具
-        """
+        # 查看当前标注中是否存在要删除的类别
+        existed_type = [annotation['type'] for name, annotation in self.annotation.items()]
 
-    def change_label_category(self):
-        """
-            切换当前标注工具的类型，切换成：肿瘤区域，基质区域……
-            通过点击添加的label
-        """
+        if item.text(0) in existed_type:
+            QMessageBox.warning(self, '警告', '无法删除已存在的标注类型！')
+            return
+        self.annotationTypeDict.pop(item.text(0))
+        self.annotation_widget.setAnnotationTypeDictTreeWidget(self.annotationTypeDict)
+        self.saveAnnotationTypeDict()
 
-    def change_label_color(self):
-        """
-            更换添加的类别的颜色
-            通过双击添加的label
-        """
+        # TODO: 绑定颜色块
 
     def change_label_name(self):
         """
             更换添加的类别的名称，
             通过双击添加的label
         """
+        item = self.annotation_widget.getChoosedAnnotationTypeItem()
+        if item is None:
+            return
+        item_type = item.text(0)
+        color = self.annotationTypeDict[item_type]
 
-    def add_annotation(self):
-        """
-            绘制完成一个标注后，将标注结果记录下来
-        """
+        from window.dialog.ChangeTypeDialog import ChangeTypeDialog
+        dialog = ChangeTypeDialog()
+        if dialog.exec_() == QDialog.Rejected:
+            return
+        new_type = dialog.get_text()
+        if new_type == "" or new_type in self.annotationTypeDict.keys():
+            QMessageBox.warning(self, "警告", "修改类别不成功")
+            return
 
-    def remove_annotation(self):
+        item.setText(0, new_type)
+
+        from function import update_dict_key
+        self.annotationTypeDict = update_dict_key(self.annotationTypeDict, item_type, new_type)
+        self.saveAnnotationTypeDict()
+
+        # 更新self.annotation中的结果，annotation_widget中的结果，以及viewer中的可视化
+        for annIdx, (name, annItem) in enumerate(self.annotation.items()):
+            if annItem["type"] != item_type:
+                continue
+            self.annotation["name"]["type"] = new_type
+            self.annotation_widget.changeAnnotationCategory(annIdx, new_type)
+            self.changeAnnotationItemSignal.emit(annIdx, new_type, color)
+
+    def change_label_color(self):
+        """
+            更换添加的类别的颜色
+            通过双击添加的label
+        """
+        item = self.annotation_widget.getChoosedAnnotationTypeItem()
+        if item is None:
+            return
+
+        from PyQt5.QtWidgets import QColorDialog
+        new_color = QColorDialog.getColor(QColor(0, 0, 0), self, "选择颜色")
+        if not new_color.isValid():
+            return
+
+        # 判断是否与之前的颜色一致
+        if list(new_color.getRgb()) in self.annotationTypeDict.values():
+            QMessageBox.warning(self, "警告", "颜色已经存在！")
+            return
+
+        current_type = item.text(0)
+
+        self.annotationTypeDict[current_type] = list(new_color.getRgb())
+        self.annotation_widget.setAnnotationTypeDictTreeWidget(self.annotationTypeDict)
+        self.saveAnnotationTypeDict()
+
+        # 更新self.annotation中的结果，annotation_widget中的结果，以及viewer中的可视化
+        for annIdx, (name, annItem) in enumerate(self.annotation.items()):
+            if annItem["type"] != current_type:
+                continue
+            self.annotation["name"]["color"] = list(new_color.getRgb())
+            self.annotation_widget.changeAnnotationCategory(annIdx, None, new_color)
+            self.changeAnnotationItemSignal.emit(annIdx, current_type, list(new_color.getRgb()))
+
+    def clickedAnnotationTypeTable(self, item, colum):
+        row = self.annotation_widget.annotationTypeTree.indexOfTopLevelItem(item)
+        self.switch_label_category(row)
+
+    def switch_label_category(self, annTypeIdx):
+        """
+            切换当前标注工具的类型，切换成：肿瘤区域，基质区域……
+            通过点击添加的label
+        """
+        numTypes = self.annotation_widget.annotationTypeTree.topLevelItemCount()
+        if annTypeIdx >= numTypes or annTypeIdx < 0:
+            return
+        self.annotationTypeIdx = annTypeIdx
+        label_category = self.annotation_widget.annotationTypeTree.topLevelItem(annTypeIdx).text(0)
+        label_color = self.annotationTypeDict[label_category]
+        self.annotationTypeChooseSignal.emit(label_category, label_color, annTypeIdx)
+
+    def change_label_tool(self, mode):
+        """
+            切换当前的标注工具，切换成： 矩形，多边形，测量工具……
+            通过点击标注工具
+        """
+        self.toolChangeSignal.emit(mode)
+
+    def remove_annotation_slot(self):
         """
             删除绘制好的标注
             先获取到被点击的标注，然后删除记录以及场景中的图元
         """
+        item = self.annotation_widget.getChoosedAnnotationItem()
+        if item is None:
+            return
+        row_idx = self.annotation_widget.annotationTree.indexOfTopLevelItem(item)
 
-    def modify_annotation(self):
+        from window.dialog.AffirmDialog import AffirmDialog
+        from function.delDictItem import delDictItem
+
+        dialog = AffirmDialog("是否要删除该标注？")
+        if dialog.exec_() == QDialog.Rejected:
+            return
+
+        self.annotation_widget.annotationTree.clearSelection()
+        self.choosedIdx = None
+        self.annotation = delDictItem(self.annotation, row_idx)
+
+        item_to_remove = self.annotation_widget.annotationTree.topLevelItem(row_idx)
+        self.annotation_widget.annotationTree.takeTopLevelItem(self.annotation_widget.annotationTree.indexOfTopLevelItem(item_to_remove))
+
+        # 遍历修改每一行
+        for i in range(self.annotation_widget.annotationTree.topLevelItemCount()):
+            item = self.annotation_widget.annotationTree.topLevelItem(i)
+            name = item.text(0)
+            old_idx = int(re.search(r'\d+', name).group())
+            if old_idx > row_idx:
+                item.setText(0, f"标注{old_idx - 1}")
+
+        # 将idx发送给ToolManager，并对key进行重命名
+        self.deleteAnnotationSignal.emit(row_idx)
+
+    def modify_annotation_slot(self, annotation, choosed_idx):
         """
             修改绘制好的标注
-            先获取被点击的标注，然后更新标注字典以及场景中的图元
+            先获取被点击的标注，然后更新标注字典
         """
+        self.annotation[f"标注{choosed_idx}"] = annotation
 
-    def save_annotation(self):
+    def modify_annotation_category(self):
+        """
+            修改标注的类别和颜色
+        """
+        item = self.annotation_widget.getChoosedAnnotationItem()
+        if item is None:
+            return
+
+        from window.dialog.changeAnnotationDialog import ChangeAnnotationDiaglog
+        row_idx = self.annotation_widget.annotationTree.indexOfTopLevelItem(item)
+        old_type = item.text(0)
+        dialog = ChangeAnnotationDiaglog(self.annotationTypeDict, old_type)
+        if dialog.exec_() == QDialog.Rejected:
+            return
+        new_type = dialog.get_text()
+        new_color = self.annotationTypeDict[new_type]
+
+        if old_type == new_type:
+            return
+
+        self.annotation[f'标注{row_idx}']['type'] = new_type
+        self.annotation[f"标注{row_idx}"]['color'] = new_color
+        item.setText(1, new_type)
+        pixmap = QPixmap(20, 20)
+        color = QColor(*new_color)
+        pixmap.fill(color)
+        item.setIcon(3, QIcon(pixmap))
+
+        self.changeAnnotaionSignal.emit(row_idx, new_type, new_color)
+
+    def save_annotation_slot(self):
         """
             保存标注
         """
+        if len(self.annotation) <= 0 :
+            return
+        options = QFileDialog.Options()
+        path, _ = QFileDialog.getSaveFileName(self, '保存标注',
+                                              f'{self.annotation_widget.annotationDir}/{self.mainViewer_name}_annotation.json', 'json Files(*.json)', options=options)
+        if path == "":
+            return
+        from function.check_write_permission import check_write_permission
+        permission = check_write_permission(os.path.dirname(path))
+        if permission is False:
+            QMessageBox.warning(self, "警告", "该文件夹没有写权限！")
+            return
+        annotation = {"image_path": self.mainViewer_slidePath,
+                      "color_and_type": self.annotationTypeDict,
+                      "annotation": self.annotation}
+        with open(path, 'w') as f:
+            f.write(json.dumps(annotation, indent=2, ensure_ascii=False))
+            f.close()
 
-    def clear_annotaiton(self):
+    def clear_annotaiton_slot(self):
         """
             清空标注
         """
@@ -140,10 +428,14 @@ class Controller(QTabWidget):
         from window.dialog.AffirmDialog import AffirmDialog
         dialog = AffirmDialog("是否要保存当前的标注？")
         if dialog.exec_() == QDialog.Accepted:
-            self.save_annotation()
+            self.save_annotation_slot()
 
         # TODO: 发送信号，清空mainViewer中的标注
-
+        rows = self.annotation_widget.annotationTree.topLevelItemCount()
+        self.choosedIdx = None
+        for row in range(rows-1, -1, -1):
+            self.deleteAnnotationSignal.emit(row)
+        self.annotation = {}
         self.annotation_widget.annotationTree.clear()
 
     """

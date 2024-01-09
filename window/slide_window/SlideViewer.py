@@ -203,6 +203,12 @@ class SlideViewer(BasicSlideViewer):
         super(SlideViewer, self).showImageAtThumbnailArea(pos, thumbnail_dimension)
 
 
+    def show_annotation_slot(self, *args):
+        """
+            显示标注
+        """
+        self.ToolManager.redraw(self.current_level, self.current_downsample)
+
     def load_nucleus_slot(self, properties, nucleus_info):
         """
             载入细胞核分割结果

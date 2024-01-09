@@ -42,6 +42,29 @@ class SlideWindow(QFrame):
         """
             初始化mainViewer的信号与槽
         """
+        # 标注
+        # 导入标注时，设置choosed_idx
+        self.controller.syncAnnotationSignal.connect(self.mainViewer.ToolManager.syncAnnotation)
+        # 导入标注后，绘制所有的标注
+        self.controller.showAnnotationSignal.connect(self.mainViewer.show_annotation_slot)
+        # 改变标注的颜色或者类型
+        self.controller.changeAnnotationItemSignal.connect(self.mainViewer.ToolManager.changeAnnotation)
+        # 点击标注时，跳转到该标注视图位置
+        self.controller.updateChoosedAnnotationSignal.connect(self.mainViewer.ToolManager.switch2choosedItem)
+        # 将修改的标注坐标信息转递给Controller
+        self.mainViewer.ToolManager.sendModifiedAnnotationSignal.connect(self.controller.modify_annotation_slot)
+        # 切换标注工具
+        self.controller.toolChangeSignal.connect(self.mainViewer.ToolManager.set_annotation_mode)
+        # 切换标注类型
+        self.controller.annotationTypeChooseSignal.connect(self.mainViewer.ToolManager.set_annotationColor)
+        # 绘制完标注后添加
+        self.mainViewer.ToolManager.sendAnnotationSignal.connect(self.controller.addAnnotaton)
+        self.controller.deleteAnnotationSignal.connect(self.mainViewer.ToolManager.deleteAnnotation)
+        self.controller.changeAnnotaionSignal.connect(self.mainViewer.ToolManager.changeAnnotation)
+
+        self.mainViewer.ToolManager.switch2choosedItemSignal.connect(self.mainViewer.switch2annotation)
+        self.mainViewer.reactivateItemSignal.connect(self.mainViewer.ToolManager.reactivateItem)
+
         self.mainViewer.load_nucleus_action.triggered.connect(lambda : self.controller.load_nucleus_signal_fn(True))
         self.mainViewer.load_heatmap_action.triggered.connect(lambda : self.controller.load_heatmap_signal_fn(True))
         self.mainViewer.load_contour_action.triggered.connect(lambda : self.controller.load_contour_signal_fn(True))
@@ -304,23 +327,23 @@ class SlideWindow(QFrame):
         """
             关闭窗口的时候保存标注
         """
-        # if hasattr(self, 'annotation'):
-        #     if self.annotation.Annotations:
-        #         if not hasattr(self.annotation, 'slide_path'):
-        #             text = ''
-        #         else:
-        #             text = os.path.basename(self.annotation.slide_path)
-        #         dialog = CloseDialog(f"是否要保存{text}标注？")
-        #         if dialog.exec_() == QDialog.Accepted:
-        #             if dialog.text == '保存':
-        #                 self.annotation.saveAnnotations()
-        #             else:
-        #                 event.accept()
-        #         else:
-        #             event.ignore()
-        #             return
-        # self.slide_viewer.closeEvent()
-        # self.slide_viewer_pair.closeEvent()
+        if hasattr(self, 'controller') is False:
+            return
+
+        if self.controller.annotation:
+            text = os.path.basename(self.controller.mainViewer_name)
+            dialog = CloseDialog(f"是否要保存{text}标注？")
+            if dialog.exec_() == QDialog.Accepted:
+                if dialog.text == '保存':
+                    self.controller.save_annotation_slot()
+                else:
+                    event.accept()
+            else:
+                event.ignore()
+                return
+
+        self.mainViewer.closeEvent()
+        self.sideViewer.closeEvent()
         return
 
 
