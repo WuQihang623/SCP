@@ -1,11 +1,20 @@
 import os
 import sys
 import pickle
+from enum import Enum
 from PyQt5.QtCore import pyqtSignal
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLabel, QTabWidget, QFileDialog, QMessageBox
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLabel, QTabWidget, QFileDialog, QMessageBox, QDialog
 
 from window.UI.UI_annotation import UI_Annotation
 from window.UI.UI_Control import UI_Controller
+
+class AnnotationMode(Enum):
+    MOVE = 1
+    FIXED_RECT = 2
+    RECT = 3
+    POLYGON = 4
+    MEASURE_TOOL = 5
+    MODIFY = 6
 
 class Controller(QTabWidget):
     # 将结果文件传递给Viewer
@@ -35,6 +44,11 @@ class Controller(QTabWidget):
         self.mainViewer_name = None
         self.sideViewer_name = None
 
+        # 标注
+        self.annotation = None
+        # 被选择上的标注索引
+        self.choosedIdx = None
+
     def setMainViewerName(self, slide_path):
         """
             主窗口的文件名称
@@ -51,7 +65,13 @@ class Controller(QTabWidget):
         """
             载入标注文件
         """
-        
+        options = QFileDialog.Options()
+        path, _ = QFileDialog.getOpenFileName(self, "选择标注文件", self.annotation_widget.folderselector.FileDir(),"标注 (*.json)", options=options)
+        if not os.path.exists(path):
+            return
+
+        # 如果存在标注，则清除掉所有标注
+        self.clear_annotaiton()
 
     def add_label_category(self):
         """
@@ -114,7 +134,17 @@ class Controller(QTabWidget):
         """
             清空标注
         """
+        if self.annotation is None or len(self.annotation) == 0:
+            return
 
+        from window.dialog.AffirmDialog import AffirmDialog
+        dialog = AffirmDialog("是否要保存当前的标注？")
+        if dialog.exec_() == QDialog.Accepted:
+            self.save_annotation()
+
+        # TODO: 发送信号，清空mainViewer中的标注
+
+        self.annotation_widget.annotationTree.clear()
 
     """
         结果文件的格式
@@ -329,6 +359,9 @@ class Controller(QTabWidget):
         except:
             QMessageBox.warning(self, '警告', "细胞核差异结果缺失！")
             return
+
+        for name, item in properties.items():
+            properties[name]["number"] = int((nucleus_diff_info["diff_array"]==name).sum())
 
         self.controller_widget.add_nucleus_diff_widget(properties)
         self.controller_widget.nucleus_diff_widget.showItemSignal.connect(self.show_nucleus_diff_signal_fn)

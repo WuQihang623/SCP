@@ -113,13 +113,18 @@ class UI_Controller(QFrame):
             self.nucleus_diff_widget = None
         diff_name = []
         diff_color = []
+        diff_number = []
         for name, item in nucleus_diff.items():
             diff_name.append(name)
             diff_color.append(item["color"])
+            diff_number.append(item["number"])
         label = QLabel("对比差异：")
         self.nucleus_diff_layout.addWidget(label)
         self.nucleus_diff_widget = MulitSeleteComboBox(diff_name, diff_color)
         self.nucleus_diff_layout.addWidget(self.nucleus_diff_widget)
+        for name, number in zip(diff_name, diff_number):
+            label = QLabel(f"{name}的数量：{number}")
+            self.nucleus_diff_layout.addWidget(label)
 
 
     def add_heatmap_widget(self, heatmap_info: dict):
