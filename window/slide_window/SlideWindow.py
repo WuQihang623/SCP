@@ -152,8 +152,6 @@ class SlideWindow(QFrame):
         info_dialog.setWindowTitle("仿射变换矩阵")
         info_dialog.setText(f"图像配准成功\n仿射变换矩阵为:\n{np.linalg.inv(transform_matrix)}")
         info_dialog.exec_()
-        slide_name = os.path.splitext(os.path.basename(self.mainViewer.slide_helper.slide_path))[0]
-        np.save(f"{constants.cache_path}/{slide_name}.npy", np.linalg.inv(transform_matrix))
 
     def cancelRegistration(self):
         """
@@ -235,6 +233,10 @@ class SlideWindow(QFrame):
                 transform_matrix = np.linalg.inv(transform_matrix)
 
             self.RegistrationSigalSlotConnections(transform_matrix)
+
+            if dialog.get_mode() == "manual":
+                slide_name = os.path.splitext(os.path.basename(self.mainViewer.slide_helper.slide_path))[0]
+                np.save(f"{constants.cache_path}/{slide_name}.npy", np.linalg.inv(transform_matrix))
 
         else:
             return
