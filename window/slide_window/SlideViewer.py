@@ -495,6 +495,14 @@ class SlideViewer(BasicSlideViewer):
 
     def closeEvent(self, *args, **kwargs):
         super().closeEvent()
+        del self.nucleus_center
+        del self.nucleus_contour
+        del self.nucleus_type
+        del self.nucleus_properties
+        del self.nucleus_diff
+        del self.heatmap
+        del self.tissue_contours
+        del self.tissue_type
         self.NucleiContourLoader.__del__()
 
 if __name__ == '__main__':

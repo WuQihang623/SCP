@@ -346,6 +346,7 @@ class SlideWindow(QFrame):
 
         self.mainViewer.closeEvent()
         self.sideViewer.closeEvent()
+        self.controller.closeEvent(event)
         return
 
 

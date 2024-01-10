@@ -692,6 +692,10 @@ class Controller(QTabWidget):
             return None
         return path
 
+    def closeEvent(self, event):
+        super().closeEvent(event)
+        del self.annotation
+        event.accept()
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
