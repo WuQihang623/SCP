@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "SCP"
-#define MyAppVersion "3.2.5"
+#define MyAppVersion "4.0.0"
 #define MyAppExeName "SCP.exe"
 #define UninstallExeName "SCPUninst.exe"
 #define MyAppAssocName MyAppName + " File"
@@ -22,9 +22,9 @@ ChangesAssociations=yes
 DefaultGroupName={#MyAppName}
 ; Uncomment the following line to run in non administrative install mode (install for current user only.)
 ;PrivilegesRequired=lowest
-OutputDir=E:\SCP-setup\output
-OutputBaseFilename=SCP-Setup-3.2.5
-SetupIconFile=C:\Users\wqh\Desktop\logo.ico
+OutputDir=E:\SCP-develop\output
+OutputBaseFilename=SCP-Setup-4.0.0
+SetupIconFile=E:\SCP-develop\logo\setup_logo.ico
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
@@ -33,8 +33,8 @@ WizardStyle=modern
 Name: "chinesesimplified"; MessagesFile: "compiler:Languages\ChineseSimplified.isl"
 
 [Files]
-Source: "E:\SCP-setup\output\SCP\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "E:\SCP-setup\output\SCP\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "E:\SCP-develop\output\SCP\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "E:\SCP-develop\output\SCP\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Registry]
