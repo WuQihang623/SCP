@@ -482,15 +482,36 @@ class Controller(QTabWidget):
             
         }
     """
-    def load_nucleus_signal_fn(self, main_viewer: bool=True):
+    def load_all_results_signal_fn(self, main_viewer: bool=True):
+        path = self.selete_path(main_viewer, "选择结果")
+        if path is None or path == "":
+            return
+        with open(path, 'rb') as f:
+            data = pickle.load(f)
+            f.close()
+
+        if data.get("properties", {}).get("nucleus_info") is not None:
+            self.load_nucleus_signal_fn(main_viewer, path)
+        if data.get("properties", {}).get("heatmap_info") is not None:
+            self.load_heatmap_signal_fn(main_viewer, path)
+        if data.get("properties", {}).get("contour_info") is not None:
+            self.load_contour_signal_fn(main_viewer, path)
+        if data.get("properties", {}).get("nucleus_diff_info") is not None:
+            self.load_nucleus_diff_signal_fn(main_viewer, path)
+
+        return
+
+    def load_nucleus_signal_fn(self, main_viewer: bool=True, path=None):
         """
             载入细胞核结果文件
             Args:
                 main_viewer: 是否为主窗口，或者是对比窗口
         """
-        path = self.selete_path(main_viewer, "选择细胞核分割结果")
-        if path is None or path == "":
-            return
+        if path is None:
+            path = self.selete_path(main_viewer, "选择细胞核分割结果")
+            if path is None or path == "":
+                return
+
         with open(path, 'rb') as f:
             data = pickle.load(f)
             f.close()
@@ -533,15 +554,17 @@ class Controller(QTabWidget):
         """
         self.viewerShowNucleusSignal.emit(show_nucleus, True)
 
-    def load_heatmap_signal_fn(self, main_viewer:bool = True):
+    def load_heatmap_signal_fn(self, main_viewer:bool = True, path=None):
         """
             载入热力图
             Args:
                 main_viewer: 是否为主窗口，或者是对比窗口
         """
-        path = self.selete_path(main_viewer, "选择热力图结果")
-        if path is None or path == "":
-            return
+        if path is None:
+            path = self.selete_path(main_viewer, "选择热力图结果")
+            if path is None or path == "":
+                return
+
         with open(path, 'rb') as f:
             data = pickle.load(f)
             f.close()
@@ -575,16 +598,18 @@ class Controller(QTabWidget):
         """
         self.viewerShowHeatmapSignal.emit(showItem)
 
-    def load_contour_signal_fn(self, main_viewer):
+    def load_contour_signal_fn(self, main_viewer:bool = True, path=None):
         """
             载入轮廓文件
             选择要显示哪些轮廓
             Args:
                 main_viewer: 是否为主窗口，或者是对比窗口
         """
-        path = self.selete_path(main_viewer, "选择区域轮廓结果")
-        if path is None or path == "":
-            return
+        if path is None:
+            path = self.selete_path(main_viewer, "选择区域轮廓结果")
+            if path is None or path == "":
+                return
+
         with open(path, 'rb') as f:
             data = pickle.load(f)
             f.close()
@@ -622,15 +647,17 @@ class Controller(QTabWidget):
         """
         self.viewerShowContourSignal.emit(showItem)
 
-    def load_nucleus_diff_signal_fn(self, main_viewer:bool = True):
+    def load_nucleus_diff_signal_fn(self, main_viewer:bool = True, path=None):
         """
             载入差异文件
             Args:
                 main_viewer: 是否为主窗口，或者是对比窗口
         """
-        path = self.selete_path(main_viewer, "选择细胞核差异结果")
-        if path is None or path == "":
-            return
+        if path is None:
+            path = self.selete_path(main_viewer, "选择细胞核差异结果")
+            if path is None or path == "":
+                return
+
         with open(path, 'rb') as f:
             data = pickle.load(f)
             f.close()

@@ -58,6 +58,7 @@ class BasicSlideViewer(QFrame):
         self.load_heatmap_action = QAction("导入热图")
         self.load_contour_action = QAction("导入区域轮廓")
         self.load_nucleus_diff_action = QAction("导入细胞核标记结果")
+        self.load_all_results_action = QAction("导入所有结果")
 
         icon_nucleus = QtGui.QIcon()
         icon_nucleus.addPixmap(QtGui.QPixmap("logo/cell_segment.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
@@ -140,6 +141,7 @@ class BasicSlideViewer(QFrame):
         self.menu.addAction(self.load_heatmap_action)
         self.menu.addAction(self.load_nucleus_diff_action)
         self.menu.addAction(self.load_nucleus_action)
+        self.menu.addAction(self.load_all_results_action)
 
         self.menu.addSeparator()
 

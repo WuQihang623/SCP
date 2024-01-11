@@ -69,6 +69,7 @@ class SlideWindow(QFrame):
         self.mainViewer.load_heatmap_action.triggered.connect(lambda : self.controller.load_heatmap_signal_fn(True))
         self.mainViewer.load_contour_action.triggered.connect(lambda : self.controller.load_contour_signal_fn(True))
         self.mainViewer.load_nucleus_diff_action.triggered.connect(lambda : self.controller.load_nucleus_diff_signal_fn(True))
+        self.mainViewer.load_all_results_action.triggered.connect(lambda : self.controller.load_all_results_signal_fn(True))
 
         self.controller.mainViewerloadNucleusSignal.connect(self.mainViewer.load_nucleus_slot)
         self.controller.mainViewerloadheatmapSignal.connect(self.mainViewer.load_heatmap_slot)
@@ -98,6 +99,7 @@ class SlideWindow(QFrame):
         self.sideViewer.load_heatmap_action.triggered.connect(lambda: self.controller.load_heatmap_signal_fn(False))
         self.sideViewer.load_contour_action.triggered.connect(lambda: self.controller.load_contour_signal_fn(False))
         self.sideViewer.load_nucleus_diff_action.triggered.connect(lambda: self.controller.load_nucleus_diff_signal_fn(False))
+        self.sideViewer.load_all_results_action.triggered.connect(lambda : self.controller.load_all_results_signal_fn(False))
 
         self.controller.sideViewerloadNucleusSignal.connect(self.sideViewer.load_nucleus_slot)
         self.controller.sideViewerloadheatmapSignal.connect(self.sideViewer.load_heatmap_slot)
