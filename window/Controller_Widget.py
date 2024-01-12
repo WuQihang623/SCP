@@ -579,9 +579,12 @@ class Controller(QTabWidget):
             QMessageBox.warning(self, '警告', "properties中的downsample应为一个int类型的值")
             return
 
-        if len(properties["heatmap_info"]) != len(heatmap_info):
+        try:
+            if len(properties["heatmap_info"]) != len(heatmap_info):
+                QMessageBox.warning(self, '警告', "properties 与 结果对应不上")
+                return
+        except:
             QMessageBox.warning(self, '警告', "properties 与 结果对应不上")
-            return
 
         self.controller_widget.add_heatmap_widget(properties)
         self.controller_widget.heatmap_widget.showItemSignal.connect(self.show_heatmap_signal_fn)
@@ -625,7 +628,7 @@ class Controller(QTabWidget):
                 QMessageBox.warning(self, '警告', "properties 文件缺失")
                 return
         try:
-            if contour_info["contour"].shape[0] != contour_info["type"].shape[0]:
+            if len(contour_info["contour"]) != len(contour_info["type"]):
                 QMessageBox.warning(self, '警告', "区域轮廓结果错误")
                 return
         except:

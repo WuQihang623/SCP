@@ -123,10 +123,11 @@ class SlideWindow(QFrame):
         """
             将WSI加载到sideViewer中
         """
+        if not hasattr(self.sideViewer, "slide_name"):
+            self.sideViewerInitSignalSlotConnections()
+            self.sideViewer.addAction2Menu([])
         self.sideViewer.loadSlide(slide_path=slide_path, zoom_step=zoom_step)
         self.controller.setSideViewerName(slide_path=slide_path)
-        self.sideViewerInitSignalSlotConnections()
-        self.sideViewer.addAction2Menu([])
 
         # 显示副窗口
         if not self.splitter_viewer.widget(1).isVisible():
@@ -208,8 +209,8 @@ class SlideWindow(QFrame):
                 transform_matrix = self.manualFindMatchPoint()
 
                 # 设置slide_viewer关闭标点模式
-                self.slide_viewer.ToolManager.set_registration_flag(False)
-                self.slide_viewer_pair.ToolManager.set_registration_flag(False)
+                self.mainViewer.ToolManager.set_registration_flag(False)
+                self.sideViewer.ToolManager.set_registration_flag(False)
 
                 self.lockMoveModeSignal.emit(False)
                 if transform_matrix is None:

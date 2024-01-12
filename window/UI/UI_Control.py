@@ -141,7 +141,7 @@ class UI_Controller(QFrame):
             self.removeAllItems(self.heatmap_layout)
             self.heatmap_widget = None
         heatmap_names = []
-        for name, _ in heatmap_info.items():
+        for name in heatmap_info["heatmap_info"]:
             heatmap_names.append(name)
         label = QLabel("热力图：")
         self.heatmap_layout.addWidget(label)
