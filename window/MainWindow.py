@@ -88,7 +88,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # 当切换子窗口时，要设置工具栏
         self.mdiArea.subWindowActivated.connect(self.set_window_status)
         # 设置ROI尺寸
-        # self.rect_resiz_action.triggered.connect(self.setRoiSize)
+        self.rect_resiz_action.triggered.connect(self.setRoiSize)
         # 关闭
         self.quit.triggered.connect(self.close)
 
@@ -453,7 +453,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.setStyleSheet("""* {font-family: 宋体; font-size: 14px;}""")
 
     def setRoiSize(self):
-        from window.slide_window.utils.SizeInputDialog import SizeInputDialog
+        from window.dialog.SizeInputDialog import SizeInputDialog
         dialog = SizeInputDialog()
         if dialog.exec_() == QDialog.Accepted:
             width, height = dialog.get_size()
