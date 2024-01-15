@@ -417,6 +417,19 @@ class SlideViewer(BasicSlideViewer):
                     break
         self.show_contour_slot(showItem, True)
 
+    def reset_load_nucleus(self):
+        """
+            scence.clear后需要将载入的细胞给清空
+        """
+        self.NucleiContourLoader.last_nuclei = None
+        self.NucleusMarkLoader.last_nucleus = None
+
+    def reshowView(self, heatmap=None, heatmap_downsample=None):
+        super().reshowView(heatmap, heatmap_downsample)
+        self.reset_load_nucleus()
+        self.show_nuclei()
+        self.show_contour()
+
     def addContourItem(self, item):
         """
             向场景中添加组织轮廓

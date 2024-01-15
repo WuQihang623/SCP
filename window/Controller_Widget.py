@@ -6,7 +6,7 @@ import pickle
 from enum import Enum
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QColor, QPixmap, QIcon
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLabel, QTabWidget, QFileDialog, QMessageBox, QDialog
+from PyQt5.QtWidgets import QApplication, QTabWidget, QFileDialog, QMessageBox, QDialog
 
 from window.UI.UI_annotation import UI_Annotation
 from window.UI.UI_Control import UI_Controller
