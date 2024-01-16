@@ -11,6 +11,7 @@ from PyQt5.QtGui import QWheelEvent, QMouseEvent,  QPixmap, QColor, QPen
 from function.heatmap_background import get_colormap_background, numpy_to_pixmap
 from window.slide_window.BasicSlideViewer import BasicSlideViewer
 from window.Tools import ToolManager
+from window.TileLoader.PatchLineLoader import PatchLineLoader
 from window.TileLoader.NucleusMarkLoader import NucleusMarkLoader
 from window.TileLoader.RegionContourLoader import RegionContourLoader
 from window.TileLoader.NucleiContourLoader import NucleiContourLoader
@@ -34,6 +35,9 @@ class SlideViewer(BasicSlideViewer):
         self.RegionContourLoader = RegionContourLoader(scene=self.scene)
         self.RegionContourLoader.addContourItemSignal.connect(self.addContourItem)
         self.RegionContourLoader.removeItemSignal.connect(self.removeContourItem)
+        self.PatchLineLoader = PatchLineLoader(self.scene)
+        self.PatchLineLoader.addLineItemSignal.connect(self.addContourItem)
+        self.PatchLineLoader.removeLineItemSignal.connect(self.removeContourItem)
         # 细胞核轮廓加载器
         self.NucleiContourLoader = NucleiContourLoader(scene=self.scene)
         self.NucleusMarkLoader = NucleusMarkLoader(scene=self.scene)
@@ -162,6 +166,7 @@ class SlideViewer(BasicSlideViewer):
 
             # 重新绘制区域分割结果
             self.show_contour()
+            self.show_line()
 
     def loadAllAnnotation(self):
         """
@@ -387,6 +392,16 @@ class SlideViewer(BasicSlideViewer):
                                                  show_types=showItem,
                                                  remove_types=removeType)
 
+    def show_grid_slot(self, is_show, patch_size=None, stride=None, Opacity=None):
+        dimension_X, dimension_Y = self.slide_helper.level_dimensions[0]
+        self.PatchLineLoader.load_line(dimension_X, dimension_Y,
+                                       current_level=self.current_level,
+                                       current_downsample=self.current_downsample,
+                                       patch_size=patch_size,
+                                       stride=stride,
+                                       Opacity=Opacity,
+                                       show=is_show)
+
     def show_nuclei(self):
         """
             当视图移动，视图缩放等操作的时候，要加载未载入到当前视图中的细胞核轮廓
@@ -417,6 +432,9 @@ class SlideViewer(BasicSlideViewer):
                     break
         self.show_contour_slot(showItem, True)
 
+    def show_line(self):
+        self.show_grid_slot(self.PatchLineLoader.show)
+
     def reset_load_nucleus(self):
         """
             scence.clear后需要将载入的细胞给清空
@@ -429,6 +447,7 @@ class SlideViewer(BasicSlideViewer):
         self.reset_load_nucleus()
         self.show_nuclei()
         self.show_contour()
+        self.show_line()
 
     def addContourItem(self, item):
         """

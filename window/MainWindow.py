@@ -185,6 +185,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         self.slide_file_dir = os.path.dirname(file_path)
         sub_active.widget().sideViewerLoadSlide(file_path)
+        sub_active.widget().hookSlideViewer()
 
     def selete_path(self, title):
         options = QFileDialog.Options()

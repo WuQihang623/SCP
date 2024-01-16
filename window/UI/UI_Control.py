@@ -1,7 +1,11 @@
+import json
+import os
 import sys
 from PyQt5.QtWidgets import QFrame, QVBoxLayout, QScrollArea, QApplication, QWidget, QLabel, QSpacerItem, QSizePolicy
 
+import constants
 from window.utils.FolderSelector import FolderSelector
+from window.utils.LineEditWidget import LineEditWidget
 from window.utils.controller_ComboBox import MulitSeleteComboBox, SigleSeleteCombox
 
 
@@ -13,6 +17,20 @@ class UI_Controller(QFrame):
         self.nucleus_diff_widget = None
         self.heatmap_widget = None
         self.contour_widget = None
+        self.grid_param_path = os.path.join(constants.cache_path, "grid_param.json")
+        if os.path.exists(self.grid_param_path):
+            try:
+                with open(self.grid_param_path, 'r') as f:
+                    data = json.load(f)
+                    f.close()
+                self.patch_size = data["patch_size"]
+                self.stride = data["stride"]
+            except:
+                self.patch_size = 512
+                self.stride = 416
+        else:
+            self.patch_size = 512
+            self.stride = 416
         self.init_UI()
 
     def init_UI(self):
@@ -28,6 +46,7 @@ class UI_Controller(QFrame):
 
         self.title_label = QLabel("结果文件目录")
         self.folder_seletector = FolderSelector(False)
+        self.grid_controll_widget = LineEditWidget("图像块大小:", self.patch_size, "图像块步长：", self.stride, self.grid_param_path)
         self.nucleus_layout = QVBoxLayout()
         self.nucleus_diff_layout = QVBoxLayout()
         self.heatmap_layout = QVBoxLayout()
@@ -36,6 +55,7 @@ class UI_Controller(QFrame):
 
         content_layout.addWidget(self.title_label)
         content_layout.addWidget(self.folder_seletector)
+        content_layout.addWidget(self.grid_controll_widget)
         content_layout.addLayout(self.nucleus_layout)
         content_layout.addLayout(self.nucleus_diff_layout)
         content_layout.addLayout(self.heatmap_layout)

@@ -1,7 +1,6 @@
-from PyQt5.QtCore import QPointF
+from PyQt5.QtCore import QPointF, Qt
 from PyQt5.QtGui import QPolygonF, QBrush, QColor, QPen
-from PyQt5.QtWidgets import QGraphicsPathItem, QGraphicsEllipseItem, QGraphicsPolygonItem
-
+from PyQt5.QtWidgets import QGraphicsPathItem, QGraphicsEllipseItem, QGraphicsPolygonItem, QGraphicsLineItem
 
 class ContourPathItem(QGraphicsPathItem):
     """
@@ -61,3 +60,21 @@ class CircleItem(QGraphicsEllipseItem):
         pen = QPen(QColor(*color))
         # 设置圆形的边框
         self.setPen(pen)
+
+class LineItem(QGraphicsLineItem):
+    """
+        细胞核分割切patch的线条图元
+    """
+    def __init__(self, x1, y1, x2, y2, color, level, is_region=False, category="Line"):
+        super().__init__(x1, y1, x2, y2)
+        pen = QPen(QColor(*color))
+        pen.setStyle(Qt.DashLine)
+        pen.setWidth(1)
+        self.setPen(pen)
+        self.category = category
+        self.level = level
+        self.is_region = is_region
+        self.setZValue(35)
+
+    def setColor(self, color):
+        self.setColor(QColor(*color))

@@ -81,6 +81,9 @@ class SlideWindow(QFrame):
         self.controller.viewerShowContourSignal.connect(self.mainViewer.show_contour_slot)
         self.controller.viewerShowNucleusDiffSignal.connect(self.mainViewer.show_nucleus_diff_slot)
 
+        self.controller.controller_widget.grid_controll_widget.paramChangedSignal.connect(self.mainViewer.show_grid_slot)
+
+
         """快捷键"""
         # self.saveAnnShortcut = QShortcut(QKeySequence("Ctrl+S"), self)
         # self.stopDrawShortcut = QShortcut(QKeySequence(Qt.Key_Escape), self)
@@ -110,6 +113,8 @@ class SlideWindow(QFrame):
         self.controller.viewerShowHeatmapSignal.connect(self.sideViewer.show_heatmap_slot)
         self.controller.viewerShowContourSignal.connect(self.sideViewer.show_contour_slot)
         self.controller.viewerShowNucleusDiffSignal.connect(self.sideViewer.show_nucleus_diff_slot)
+
+        self.controller.controller_widget.grid_controll_widget.paramChangedSignal.connect(self.sideViewer.show_grid_slot)
 
     def mainViewerLoadSlide(self, slide_path, zoom_step=1.15):
         """
