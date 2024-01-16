@@ -57,6 +57,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.open_file_manager_action.triggered.connect(self.open_file_watcher)
         self.change_file_manager_action.triggered.connect(self.change_file_watcher_dir)
         self.open_paired_action.triggered.connect(self.openSideViewer)
+        self.open_same_action.triggered.connect(self.openSameSideViewer)
         self.open_paired_win_action.triggered.connect(self.showSideVierwer)
         self.close_paired_win_action.triggered.connect(self.hideSideViewer)
         self.synchronization_action.triggered.connect(self.Registration_match)
@@ -186,6 +187,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.slide_file_dir = os.path.dirname(file_path)
         sub_active.widget().sideViewerLoadSlide(file_path)
         sub_active.widget().hookSlideViewer()
+
+    def openSameSideViewer(self):
+        sub_active = self.mdiArea.activeSubWindow()
+        slide_path = sub_active.widget().mainViewer.slide_helper.slide_path
+        sub_active.widget().sideViewerLoadSlide(slide_path)
+        if sub_active.widget().mainViewer.Registration:
+            sub_active.widget().cancelRegistration()
+        sub_active.widget().RegistrationSigalSlotConnections(np.array([[1, 0, 0],
+                                                                       [0, 1, 0],
+                                                                       [0, 0, 1]]))
 
     def selete_path(self, title):
         options = QFileDialog.Options()

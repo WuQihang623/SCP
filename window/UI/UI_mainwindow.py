@@ -89,6 +89,8 @@ class Ui_MainWindow(object):
 
         self.open_paired_action = QtWidgets.QAction(MainWindow)
         self.open_paired_action.setObjectName("open_paired_action")
+        self.open_same_action = QtWidgets.QAction(MainWindow)
+        self.open_same_action.setObjectName("open_same_action")
         self.open_paired_win_action = QtWidgets.QAction(MainWindow)
         self.open_paired_win_action.setObjectName("open_paired_win_action")
         self.close_paired_win_action = QtWidgets.QAction(MainWindow)
@@ -130,6 +132,7 @@ class Ui_MainWindow(object):
         self.convert_color_space_action.setIcon(icon11)
         self.convert_color_space_action.setObjectName("convert_color_space_action")
         self.paired_slide_menu.addAction(self.open_paired_action)
+        self.paired_slide_menu.addAction(self.open_same_action)
         self.paired_slide_menu.addAction(self.open_paired_win_action)
         self.paired_slide_menu.addAction(self.close_paired_win_action)
         self.paired_slide_menu.addAction(self.synchronization_action)
@@ -200,6 +203,7 @@ class Ui_MainWindow(object):
         self.move_action.setText(_translate("MainWindow", "移动"))
 
         self.open_paired_action.setText(_translate("MainWindow", "导入同步图像"))
+        self.open_same_action.setText(_translate("MainWindow", "导入相同图像"))
         self.open_paired_win_action.setText(_translate("MainWindow", "显示同步图像"))
         self.close_paired_win_action.setText(_translate("MainWindow", "关闭同步图像"))
         self.synchronization_action.setText(_translate("MainWindow", "同步"))
@@ -218,6 +222,7 @@ class Ui_MainWindow(object):
     # 只有在载入图像的叶片中激活这些功能
     def action_enabel(self, enable=True):
         self.open_paired_action.setEnabled(enable)
+        self.open_same_action.setEnabled(enable)
         self.open_paired_win_action.setEnabled(enable)
         self.close_paired_win_action.setEnabled(enable)
         self.fixed_rect_action.setEnabled(enable)
