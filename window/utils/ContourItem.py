@@ -69,7 +69,7 @@ class LineItem(QGraphicsLineItem):
         super().__init__(x1, y1, x2, y2)
         pen = QPen(QColor(*color))
         pen.setStyle(Qt.DashLine)
-        pen.setWidth(1)
+        pen.setWidth(2)
         self.setPen(pen)
         self.category = category
         self.level = level
