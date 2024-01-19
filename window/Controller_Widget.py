@@ -135,9 +135,13 @@ class Controller(QTabWidget):
         # 如果存在标注，则清除掉所有标注
         self.clear_annotaiton_slot()
 
-        with open(path, 'r') as f:
-            annotation = json.load(f)
-            f.close()
+        try:
+            with open(path, 'r') as f:
+                annotation = json.load(f)
+                f.close()
+        except:
+            QMessageBox.warning(self, '警告', '标注文件缺失！')
+            return
 
         # 判断标注文件的格式
         if annotation.get("image_path") is None or annotation.get("color_and_type") is None or annotation.get("annotation") is None:
@@ -174,7 +178,7 @@ class Controller(QTabWidget):
         self.annotation[f"标注{annIdx}"] = annotation
         self.annotation_widget.addItem2AnnotationTreeWidget(annotation, annIdx, is_choosed, is_switch)
         if sync2ToolManager:
-            self.syncAnnotationSignal.emit(annotation, annIdx ,annIdx if is_choosed else -1)
+            self.syncAnnotationSignal.emit(annotation.copy(), annIdx ,annIdx if is_choosed else -1)
 
     def update_choosed_annotation_slot(self, annIdx):
         self.choosedIdx = annIdx
