@@ -8,14 +8,12 @@ import numpy as np
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import QPoint, Qt, QEvent, pyqtSignal, QPointF, QSize
 from PyQt5.QtGui import QWheelEvent, QMouseEvent,  QPixmap, QColor, QPen
-from function.heatmap_background import get_colormap_background, numpy_to_pixmap
 from window.slide_window.BasicSlideViewer import BasicSlideViewer
 from window.Tools import ToolManager
 from window.TileLoader.PatchLineLoader import PatchLineLoader
 from window.TileLoader.NucleusMarkLoader import NucleusMarkLoader
 from window.TileLoader.RegionContourLoader import RegionContourLoader
 from window.TileLoader.NucleiContourLoader import NucleiContourLoader
-from window.slide_window.utils.ChangeAnnotationDialog import ChangeAnnotationDiaglog
 
 class SlideViewer(BasicSlideViewer):
     """
@@ -66,6 +64,8 @@ class SlideViewer(BasicSlideViewer):
         self.nucleus_diff_color_dict = None
         self.showItemNucleusDiff = set([])
 
+        self.modify_nucleus_flag = False
+
 
     # 载入slide
     def loadSlide(self, slide_path, zoom_step=1.25):
@@ -115,8 +115,7 @@ class SlideViewer(BasicSlideViewer):
                 if hasattr(self, 'ToolManager'):
                     if self.ToolManager.TOOL_FLAG == 1:
                         # TODO: 允许修改细胞核结果
-                        pass
-                        # reply = self.modify_nuclei(event.pos())
+                        reply = self.modify_nucleus(event.pos())
                 if hasattr(self, "ToolManager"):
                     if reply is False:
                         self.ToolManager.mouseDoubleClickEvent(event, self.current_downsample)
@@ -463,56 +462,53 @@ class SlideViewer(BasicSlideViewer):
         """
         self.scene.removeItem(item)
 
-    # # 修改细胞核的类型
-    # def modify_nuclei(self, event_point):
-    #     point = self.view.mapToScene(event_point)
-    #     if self.cell_contour_ann is not None and self.current_level < 1:
-    #         distance = np.square(np.array([point.x()]) - self.cell_centers_ann[:, 0]) +\
-    #             np.square(np.array([point.y()]) - self.cell_centers_ann[:, 1])
-    #         nearest_idx = np.where(distance == distance.min())
-    #         this_type = self.cell_type_ann[nearest_idx][0]
-    #         this_contour = self.cell_contour_ann[nearest_idx][0]
-    #         # 如果这个细胞之前被修改过则不可再修改
-    #         if this_type not in [0, 1, 2, 3, 4]:
-    #             return
-    #         # 判断点是否在细胞核轮廓内部
-    #         if cv2.pointPolygonTest(this_contour, (int(point.x()), int(point.y())), False) > 0:
-    #             if os.path.exists(os.path.join(constants.cache_path, "AnnotationTypes.json")):
-    #                 with open(os.path.join(constants.cache_path, "AnnotationTypes.json"), 'r') as f:
-    #                     type_dict = json.load(f)
-    #                     f.close()
-    #             else:
-    #                 type_dict = {"背景类别": [166, 84, 2], "表皮细胞": [255, 0, 0], "淋巴细胞": [0, 255, 0],
-    #                              "基质细胞": [228, 252, 4], "中性粒细胞": [0, 0, 255]}
-    #
-    #             # 弹出对话框选择修改类型
-    #             dialog = ChangeAnnotationDiaglog(type_dict, "表皮细胞")
-    #             # 点击确定，修改类别
-    #             if dialog.exec_() == QDialog.Accepted:
-    #                 item = self.view.itemAt(event_point)
-    #                 type_name = dialog.get_text()
-    #                 new_type = dialog.get_idx()
-    #                 this_contour = this_contour.tolist()
-    #                 # 更改细胞核结果文件
-    #                 self.cell_type_ann[nearest_idx] = int(-this_type)
-    #                 # 绘制标注
-    #                 annotation_item, control_point_items, text_item = \
-    #                     self.ToolManager.draw_polygon.draw(this_contour, QColor(*type_dict[type_name]),
-    #                                                    4, self.current_downsample, True)
-    #                 annotation = {"location": this_contour,
-    #                               "color": type_dict[type_name],
-    #                               'tool': "多边形",
-    #                               "type": type_name,
-    #                               "annotation_item": annotation_item,
-    #                               'control_point_items': control_point_items,
-    #                               'text_item': text_item}
-    #                 self.ToolManager.addAnnotation(annotation, self.current_downsample)
-    #                 # 删除绘制的细胞核
-    #                 if hasattr(item, 'category') and hasattr(item, 'is_region'):
-    #                     if item.category == this_type and item.is_region == False:
-    #                         self.scene.removeItem(item)
-    #             return True
-    #     return False
+    # 修改细胞核的类型
+    def modify_nucleus(self, event_point):
+        if self.mainViewerFlag is False:
+            return False
+        if self.nucleus_center is None or self.nucleus_properties is None:
+            return False
+        item = self.view.itemAt(event_point)
+        if item is None:
+            return False
+        if not hasattr(item, "is_contour") or not hasattr(item, "is_region"):
+            return
+        if item.is_region:
+            return False
+
+        # 获取与之对应的细胞核
+        point = self.view.mapToScene(event_point)
+        distance = np.square(np.array([point.x()]) - self.nucleus_center[:, 0]) + np.square(np.array([point.y()]) - self.nucleus_center[:, 1])
+        nucleus_idx = np.where(distance == distance.min())[0]
+        nucleus_contour = self.nucleus_contour[nucleus_idx][0]
+        # 判断细胞是否在轮廓内
+        if cv2.pointPolygonTest(nucleus_contour, (int(point.x()), int(point.y())), False) <= 0:
+            return False
+
+        from window.dialog.changeNucleusDialog import ChangeNucleusDiaglog
+        dialog = ChangeNucleusDiaglog(self.nucleus_properties)
+        if dialog.exec_() != QDialog.Accepted:
+            return True
+
+        self.modify_nucleus_flag = True
+        nucleus_type_name = dialog.get_text()
+        nucleus_type = self.nucleus_properties[nucleus_type_name]["type"]
+        nucleus_color = self.nucleus_properties[nucleus_type_name]["color"]
+        self.nucleus_type[nucleus_idx] = nucleus_type
+        # 绘制标注
+        annotation_item, control_point_items, text_item = self.ToolManager.draw_polygon.draw(nucleus_contour, QColor(*nucleus_color), 4, self.current_downsample, True)
+        annotation = {
+            "location": nucleus_contour.tolist(),
+            "color": nucleus_color,
+            "tool": "多边形",
+            "type": nucleus_type_name,
+            "annotation_item": annotation_item,
+            "control_point_items": control_point_items,
+            "text_item": text_item
+        }
+        self.ToolManager.addAnnotation(annotation, self.current_downsample)
+        item.set_path_item_pen(nucleus_color, 3)
+        return True
 
     # 更改heatmap权重
     def change_heatmap_alpha(self):
@@ -525,8 +521,42 @@ class SlideViewer(BasicSlideViewer):
             self.heatmap_alpha = dialog.get_slider_value()
             self.TileLoader.change_heatmap_alpha(self.heatmap_alpha)
 
+    def save_nucleus_info(self):
+        if self.modify_nucleus_flag is False or self.nucleus_properties is None or self.mainViewerFlag is False:
+            return
+        from window.dialog.AffirmDialog import CloseDialog
+        text = f"是否保存窗口{self.slide_name}的细胞核结果"
+        dialog = CloseDialog(text)
+        if dialog.exec_() != QDialog.Accepted:
+            return
+        options = QFileDialog.Options()
+        path, _ = QFileDialog.getSaveFileName(self, '保存细胞核分割结果',
+                                              f'{constants.micro_path}/{self.slide_name}_nucleus.pkl',
+                                              'PKL Files(*.pkl)', options=options)
+        if path == "":
+            return
+        from function.check_write_permission import check_write_permission
+        permission = check_write_permission(os.path.dirname(path))
+        if permission is False:
+            QMessageBox.warning(self, "警告", "该文件夹没有写权限！")
+            return
+        nucleus_info = {"properties": {"nucleus_info": self.nucleus_properties},
+                        "nucleus_info": {
+                            "type": self.nucleus_type,
+                            "center": self.nucleus_center,
+                            "contour": self.nucleus_contour
+                        }}
+        with open(path, 'wb') as f:
+            pickle.dump(nucleus_info, f)
+            f.close()
+
     def closeEvent(self, *args, **kwargs):
-        super().closeEvent()
+        if self.mainViewerFlag:
+            self.save_nucleus_info()
+        if hasattr(self, "TileLoader"):
+            self.scene.clear()
+            self.TileLoader.__del__()
+            print("closeEvent")
         del self.nucleus_center
         del self.nucleus_contour
         del self.nucleus_type

@@ -6,7 +6,7 @@ class ContourPathItem(QGraphicsPathItem):
     """
         区域与细胞轮廓的图元
     """
-    def __init__(self, category, level, is_region=True):
+    def __init__(self, category, level, is_region=True, is_contour=True):
         """
         :param category: 类型的标志（肿瘤区域，基质区域； 表皮细胞，淋巴细胞）
         :param level: 当前的level
@@ -16,6 +16,15 @@ class ContourPathItem(QGraphicsPathItem):
         self.category = category
         self.level = level
         self.is_region = is_region
+        self.is_contour = is_contour
+
+    def set_path_item_pen(self, color, width):
+        if isinstance(color, list):
+            color = QColor(*color)
+        pen = QPen()
+        pen.setColor(color)
+        pen.setWidth(width)
+        self.setPen(pen)
 
 class EllipseItem(QGraphicsEllipseItem):
     """

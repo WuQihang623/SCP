@@ -115,10 +115,7 @@ class NucleiContourLoader():
         color = QColor(*self.color_dict[int(type)])
         pathItem = ContourPathItem(type, current_level, False)
         path = QPainterPath()
-        pen = QPen()
-        pen.setColor(color)
-        pen.setWidth(width)
-        pathItem.setPen(pen)
+        pathItem.set_path_item_pen(color, width)
         for idx, point in enumerate(contour):
             if idx == 0:
                 path.moveTo(point[0] / current_downsample, point[1] / current_downsample)

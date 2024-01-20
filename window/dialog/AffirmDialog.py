@@ -41,4 +41,4 @@ class CloseDialog(QDialog):
 
     def no(self):
         self.text = '不保存'
-        self.accept()
+        self.reject()

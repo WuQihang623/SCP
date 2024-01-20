@@ -93,10 +93,7 @@ class RegionContourLoader(QThread):
                         width = 4
                         pathItem = ContourPathItem(type, current_level)
                         path = QPainterPath()
-                        pen = QPen()
-                        pen.setColor(QColor(color[0], color[1], color[2]))
-                        pen.setWidth(width)
-                        pathItem.setPen(pen)
+                        pathItem.set_path_item_pen(color, width)
                         for idx, point in enumerate(contour):
                             if idx == 0:
                                 path.moveTo(point[0] / current_downsample, point[1] / current_downsample)
