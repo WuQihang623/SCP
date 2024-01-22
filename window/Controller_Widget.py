@@ -543,7 +543,7 @@ class Controller(QTabWidget):
         for nucleus_name, item in properties.items():
             properties[nucleus_name]["number"] = int((nucleus_info["type"] == item["type"]).sum())
 
-        self.controller_widget.add_nucleus_widget(properties)
+        self.controller_widget.add_nucleus_widget(properties, main_viewer)
         self.controller_widget.nucleus_widget.showItemSignal.connect(self.show_nucleus_signal_fn)
         if main_viewer:
             self.mainViewerloadNucleusSignal.emit(properties, nucleus_info)

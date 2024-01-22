@@ -1,7 +1,7 @@
 import json
 import os
 import sys
-from PyQt5.QtWidgets import QFrame, QVBoxLayout, QScrollArea, QApplication, QWidget, QLabel, QSpacerItem, QSizePolicy
+from PyQt5.QtWidgets import QFrame, QVBoxLayout, QScrollArea, QApplication, QWidget, QLabel, QSpacerItem, QSizePolicy, QGridLayout
 
 import constants
 from window.utils.FolderSelector import FolderSelector
@@ -48,6 +48,7 @@ class UI_Controller(QFrame):
         self.folder_seletector = FolderSelector(False)
         self.grid_controll_widget = LineEditWidget("图像块大小:", self.patch_size, "图像块步长：", self.stride, self.grid_param_path)
         self.nucleus_layout = QVBoxLayout()
+        self.nucleus_number_layout = QGridLayout()
         self.nucleus_diff_layout = QVBoxLayout()
         self.heatmap_layout = QVBoxLayout()
         self.contour_layout = QVBoxLayout()
@@ -89,7 +90,7 @@ class UI_Controller(QFrame):
         #             "downsample": int,
         #         })
 
-    def add_nucleus_widget(self, nucleus_info: dict):
+    def add_nucleus_widget(self, nucleus_info: dict, mainViewer=True):
         """
             载入了细胞核分割结果后， 读取了文件中的properties，知道了有哪些类型的细胞，以及细胞的颜色
             生成一个与细胞类型以及颜色一直的选择框
@@ -104,6 +105,7 @@ class UI_Controller(QFrame):
         if self.nucleus_widget is not None:
             self.removeAllItems(self.nucleus_layout)
             self.nucleus_widget = None
+        self.remove_column(self.nucleus_number_layout, 0 if mainViewer else 1)
         nucleus_names = []
         nucleus_colors = []
         nucleus_numbers = []
@@ -115,9 +117,16 @@ class UI_Controller(QFrame):
         self.nucleus_layout.addWidget(label)
         self.nucleus_widget = MulitSeleteComboBox(nucleus_names, nucleus_colors)
         self.nucleus_layout.addWidget(self.nucleus_widget)
-        for name, number in zip(nucleus_names, nucleus_numbers):
-            label = QLabel(f"{name}的数量：{number}")
-            self.nucleus_layout.addWidget(label)
+
+        if mainViewer:
+            for idx, (name, number) in enumerate(zip(nucleus_names, nucleus_numbers)):
+                label = QLabel(f"{name}的数量：{number}")
+                self.nucleus_number_layout.addWidget(label, idx, 0, 1, 1)
+        else:
+            for idx, (name, number) in enumerate(zip(nucleus_names, nucleus_numbers)):
+                label = QLabel(f"{name}的数量：{number}")
+                self.nucleus_number_layout.addWidget(label, idx, 1, 1, 1)
+        self.nucleus_layout.addLayout(self.nucleus_number_layout)
 
     def add_nucleus_diff_widget(self, nucleus_diff):
         """
@@ -196,6 +205,14 @@ class UI_Controller(QFrame):
             item = layout.takeAt(0)
             widget = item.widget()
             if widget:
+                widget.deleteLater()
+
+    def remove_column(self, layout, column_idx):
+        for row in range(layout.rowCount()):
+            item = layout.itemAtPosition(row, column_idx)
+            if item:
+                widget = item.widget()
+                layout.removeWidget(widget)
                 widget.deleteLater()
 
 if __name__ == "__main__":
