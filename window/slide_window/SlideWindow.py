@@ -85,13 +85,13 @@ class SlideWindow(QFrame):
 
 
         """快捷键"""
-        # self.saveAnnShortcut = QShortcut(QKeySequence("Ctrl+S"), self)
-        # self.stopDrawShortcut = QShortcut(QKeySequence(Qt.Key_Escape), self)
-        # self.deleteAnnShortcut = QShortcut(QKeySequence(Qt.Key_Delete), self)
+        self.saveAnnShortcut = QShortcut(QKeySequence("Ctrl+S"), self)
+        self.stopDrawShortcut = QShortcut(QKeySequence(Qt.Key_Escape), self)
+        self.deleteAnnShortcut = QShortcut(QKeySequence(Qt.Key_Delete), self)
         # self.full_screenShortcut = QShortcut(QKeySequence(Qt.Key_Q), self)
-        # self.saveAnnShortcut.activated.connect(self.saveAnnotations)
-        # self.stopDrawShortcut.activated.connect(self.stopDraw)
-        # self.deleteAnnShortcut.activated.connect(self.deleteAnnotation)
+        self.saveAnnShortcut.activated.connect(self.saveAnnotations)
+        self.stopDrawShortcut.activated.connect(self.stopDrawAnnotation)
+        self.deleteAnnShortcut.activated.connect(self.deleteAnnotation)
         # self.full_screenShortcut.activated.connect(self.full_screen)
 
     def sideViewerInitSignalSlotConnections(self):
@@ -283,6 +283,7 @@ class SlideWindow(QFrame):
         """
             快捷键保存标注
         """
+        self.controller.save_annotation_slot()
         # if hasattr(self, 'annotation'):
         #     # 如果当前激活的是标注模式
         #     if self.splitter.widget(0).isVisible():
@@ -293,6 +294,7 @@ class SlideWindow(QFrame):
         """
             快捷键： 停止进行当前标注
         """
+        self.mainViewer.ToolManager.cancel_drawing()
         # if hasattr(self, 'annotation'):
         #     # 如果时标注模式
         #     if self.splitter.widget(0).isVisible():
@@ -328,6 +330,7 @@ class SlideWindow(QFrame):
         """
             快捷键--删除选中标注
         """
+        self.controller.remove_annotation_slot()
         # if hasattr(self, 'annotation'):
         #     # 如果时标注模式
         #     if self.splitter.widget(0).isVisible():

@@ -490,6 +490,7 @@ class Controller(QTabWidget):
         path = self.selete_path(main_viewer, "选择结果")
         if path is None or path == "":
             return
+
         with open(path, 'rb') as f:
             data = pickle.load(f)
             f.close()
@@ -515,10 +516,13 @@ class Controller(QTabWidget):
             path = self.selete_path(main_viewer, "选择细胞核分割结果")
             if path is None or path == "":
                 return
-
-        with open(path, 'rb') as f:
-            data = pickle.load(f)
-            f.close()
+        try:
+            with open(path, 'rb') as f:
+                data = pickle.load(f)
+                f.close()
+        except:
+            QMessageBox.warning(self, '警告', "结果文件读取出错")
+            return
 
         # 检查文件是否正确
         properties = data.get("properties", {}).get("nucleus_info")
@@ -569,9 +573,13 @@ class Controller(QTabWidget):
             if path is None or path == "":
                 return
 
-        with open(path, 'rb') as f:
-            data = pickle.load(f)
-            f.close()
+        try:
+            with open(path, 'rb') as f:
+                data = pickle.load(f)
+                f.close()
+        except:
+            QMessageBox.warning(self, '警告', "结果文件读取出错")
+            return
 
         properties = data.get("properties", {}).get("heatmap_info")
         heatmap_info = data.get("heatmap_info")
@@ -617,9 +625,13 @@ class Controller(QTabWidget):
             if path is None or path == "":
                 return
 
-        with open(path, 'rb') as f:
-            data = pickle.load(f)
-            f.close()
+        try:
+            with open(path, 'rb') as f:
+                data = pickle.load(f)
+                f.close()
+        except:
+            QMessageBox.warning(self, '警告', "结果文件读取出错")
+            return
 
         properties = data.get("properties", {}).get("contour_info")
         contour_info = data.get("contour_info")
@@ -665,9 +677,14 @@ class Controller(QTabWidget):
             if path is None or path == "":
                 return
 
-        with open(path, 'rb') as f:
-            data = pickle.load(f)
-            f.close()
+        try:
+            with open(path, 'rb') as f:
+                data = pickle.load(f)
+                f.close()
+        except:
+            QMessageBox.warning(self, '警告', "结果文件读取出错")
+            return
+
         properties = data.get("properties", {}).get("nucleus_diff_info")
         nucleus_diff_info = data.get("nucleus_diff_info")
         if properties is None or nucleus_diff_info is None:
@@ -713,6 +730,15 @@ class Controller(QTabWidget):
         file_dir = self.controller_widget.folder_seletector.FileDir()
         if not os.path.isdir(file_dir):
             file_dir = "./"
+
+        if self.controller_widget.auto_load_checkbox.isChecked():
+            if mainViewer:
+                path = os.path.join(file_dir, self.mainViewer_name+'.pkl')
+            else:
+                path = os.path.join(file_dir, self.sideViewer_name+'.pkl')
+            if os.path.exists(path):
+                return path
+
         options = QFileDialog.Options()
         path, _ = QFileDialog.getOpenFileName(self, title, file_dir, "结果(*.pkl)", options=options)
         if path == "":

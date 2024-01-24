@@ -171,6 +171,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
             slide_window.lockMoveModeSignal.connect(self.lock_mode)
 
+            self.activate_color_action1.trigger()
+
         except Exception as e:
             QMessageBox.warning(self, '警告', str(e))
 

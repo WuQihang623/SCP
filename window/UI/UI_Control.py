@@ -1,7 +1,7 @@
 import json
 import os
 import sys
-from PyQt5.QtWidgets import QFrame, QVBoxLayout, QScrollArea, QApplication, QWidget, QLabel, QSpacerItem, QSizePolicy, QGridLayout
+from PyQt5.QtWidgets import QFrame, QVBoxLayout, QScrollArea, QApplication, QWidget, QLabel, QSpacerItem, QSizePolicy, QGridLayout, QCheckBox
 
 import constants
 from window.utils.FolderSelector import FolderSelector
@@ -45,6 +45,8 @@ class UI_Controller(QFrame):
         content_layout = QVBoxLayout(content_widget)
 
         self.title_label = QLabel("结果文件目录")
+        self.auto_load_checkbox = QCheckBox("自动填充路径")
+        self.auto_load_checkbox.setChecked(True)
         self.folder_seletector = FolderSelector(False)
         self.grid_controll_widget = LineEditWidget("图像块大小:", self.patch_size, "图像块步长：", self.stride, self.grid_param_path)
         self.nucleus_layout = QVBoxLayout()
@@ -55,6 +57,7 @@ class UI_Controller(QFrame):
         null = QSpacerItem(20, 20, QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         content_layout.addWidget(self.title_label)
+        content_layout.addWidget(self.auto_load_checkbox)
         content_layout.addWidget(self.folder_seletector)
         content_layout.addWidget(self.grid_controll_widget)
         content_layout.addLayout(self.nucleus_layout)
