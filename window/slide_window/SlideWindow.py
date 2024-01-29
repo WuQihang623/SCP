@@ -244,7 +244,12 @@ class SlideWindow(QFrame):
 
             if dialog.get_mode() == "manual":
                 slide_name = os.path.splitext(os.path.basename(self.mainViewer.slide_helper.slide_path))[0]
-                np.save(f"{constants.cache_path}/{slide_name}.npy", np.linalg.inv(transform_matrix))
+                options = QFileDialog.Options()
+                path, _ = QFileDialog.getSaveFileName(self, '保存标注',
+                                                      f"{constants.cache_path}/{slide_name}.npy",
+                                                      'npy Files(*.npy)', options=options)
+                if path != "":
+                    np.save(path, np.linalg.inv(transform_matrix))
 
         else:
             return
