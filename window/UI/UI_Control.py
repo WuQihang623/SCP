@@ -47,7 +47,7 @@ class UI_Controller(QFrame):
         self.title_label = QLabel("结果文件目录")
         self.auto_load_checkbox = QCheckBox("自动填充路径")
         self.auto_load_checkbox.setChecked(True)
-        self.folder_seletector = FolderSelector(False)
+        self.folder_seletector = FolderSelector(2)
         self.grid_controll_widget = LineEditWidget("图像块大小:", self.patch_size, "图像块步长：", self.stride, self.grid_param_path)
         self.nucleus_layout = QVBoxLayout()
         self.nucleus_number_layout = QGridLayout()

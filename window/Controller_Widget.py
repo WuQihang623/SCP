@@ -3,6 +3,7 @@ import os
 import re
 import sys
 import pickle
+import constants
 from enum import Enum
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QColor, QPixmap, QIcon
@@ -10,6 +11,7 @@ from PyQt5.QtWidgets import QApplication, QTabWidget, QFileDialog, QMessageBox, 
 
 from window.UI.UI_annotation import UI_Annotation
 from window.UI.UI_Control import UI_Controller
+# from window.UI.UI_Diagnose import UI_Diagnose
 
 class AnnotationMode(Enum):
     MOVE = 1
@@ -47,12 +49,17 @@ class Controller(QTabWidget):
     viewerShowContourSignal = pyqtSignal(list)
     viewerShowNucleusDiffSignal = pyqtSignal(list, bool)
 
+    # 将待标注的wsi路径传递给mainwindow
+    openSlideSignal = pyqtSignal(str)
+
     def __init__(self):
         super().__init__()
         self.annotation_widget = UI_Annotation()
         self.controller_widget = UI_Controller()
+        # self.diagnose_widget = UI_Diagnose()
         self.addTab(self.annotation_widget, "标注桌面")
         self.addTab(self.controller_widget, "可视化桌面")
+        # self.addTab(self.diagnose_widget, "诊断桌面")
 
         # 初始化变量
         self.mainViewer_name = None
@@ -66,6 +73,11 @@ class Controller(QTabWidget):
 
         # 初始化annotationTypeDict
         self.initAnnotationTypeDictTree()
+
+        # 初始化待标注文件
+        self.slide_info_path = None
+        self.slide_info = None
+        self.init_slide_info()
 
         self.controllSignalConnections()
 
@@ -90,6 +102,11 @@ class Controller(QTabWidget):
         self.annotation_widget.updateChoosedAnnotationSignal.connect(self.update_choosed_annotation_slot)
 
         self.annotation_widget.annotationTypeTree.itemClicked.connect(self.clickedAnnotationTypeTable)
+
+        # 待标注的wsi
+        self.annotation_widget.load_slide_info_btn.clicked.connect(self.load_slide_info)
+        self.annotation_widget.refresh_slide_info_btn.clicked.connect(self.refresh_slide_info)
+        self.annotation_widget.slideTree.itemDoubleClicked.connect(self.open_window)
 
     def setMainViewerName(self, slide_path):
         """
@@ -128,7 +145,7 @@ class Controller(QTabWidget):
             载入标注文件
         """
         options = QFileDialog.Options()
-        path, _ = QFileDialog.getOpenFileName(self, "选择标注文件", self.annotation_widget.folderselector.FileDir(),"标注 (*.json)", options=options)
+        path, _ = QFileDialog.getOpenFileName(self, "选择标注文件", self.annotation_widget.annofolderselector.FileDir(),"标注 (*.json)", options=options)
         if not os.path.exists(path):
             return
 
@@ -422,6 +439,17 @@ class Controller(QTabWidget):
             f.write(json.dumps(annotation, indent=2, ensure_ascii=False))
             f.close()
 
+        if self.slide_info is None:
+            return
+        slide_name = os.path.basename(self.mainViewer_slidePath)
+        if self.slide_info.get(slide_name) is None:
+            return
+        self.slide_info[slide_name] = "已标注"
+        with open(self.slide_info_path, 'w') as f:
+            f.write(json.dumps(self.slide_info, indent=2))
+            f.close()
+        self.refresh_slide_info()
+
     def clear_annotaiton_slot(self):
         """
             清空标注
@@ -441,6 +469,74 @@ class Controller(QTabWidget):
             self.deleteAnnotationSignal.emit(row)
         self.annotation = {}
         self.annotation_widget.annotationTree.clear()
+
+    def init_slide_info(self):
+        json_path = f'{constants.cache_path}/cache_dir.json'
+        if not os.path.exists(json_path):
+            return
+        with open(json_path, 'r') as f:
+            data = json.load(f)
+            f.close()
+        self.slide_info_path = data.get("slide_info")
+        self.refresh_slide_info()
+
+    def load_slide_info(self):
+        """
+            载入带标注的wsi信息
+            代表著的wsi信息格式： {
+                slide_name: annotation_status
+            }
+        """
+        options = QFileDialog.Options()
+        path, _ = QFileDialog.getOpenFileName(self, "选择待标注文件", f"{constants.cache_path}", "待标注文件(*.json)", options=options)
+        if not os.path.exists(path):
+            return
+
+        data = self.valid_slide_info(path)
+        if data is None:
+            return
+
+        from function.utils import saveResultFileDir
+        saveResultFileDir(path, 4)
+        self.slide_info_path = path
+        self.slide_info = data
+        self.annotation_widget.set_slide_tree(self.slide_info, self.annotation_widget.slideFolderSelector.FileDir())
+
+    def valid_slide_info(self, path):
+        with open(path, 'r') as f:
+            data = json.load(f)
+            f.close()
+        if not isinstance(data, dict):
+            QMessageBox.warning(self, "警告", "加载的文件结果不是字典结构")
+            return None
+        for key, value in data.items():
+            if (not isinstance(key, str)) or (not ((value=="已标注") or (value=="待标注"))):
+                QMessageBox.warning(self, "警告", "加载的文件结果不正确")
+                return None
+        return data
+
+    def refresh_slide_info(self):
+        """
+            如果待标注的slide在其他的窗口中修改了，那么这里可以通过刷新重新加载
+        """
+        if self.slide_info_path is None:
+            return
+        data = self.valid_slide_info(self.slide_info_path)
+        if data is None:
+            return
+        self.slide_info = data
+        self.annotation_widget.set_slide_tree(self.slide_info, self.annotation_widget.slideFolderSelector.FileDir())
+
+    def open_window(self, item, column):
+        """
+            双击待标注区域，打开新的窗口
+        """
+        slide_name = item.text(0)
+        slide_path = os.path.join(self.annotation_widget.slideFolderSelector.FileDir(), slide_name)
+        if not os.path.exists(slide_path):
+            QMessageBox.warning(self, "警告", f"{slide_path}不存在")
+            return
+        self.openSlideSignal.emit(slide_path)
 
     """
         结果文件的格式

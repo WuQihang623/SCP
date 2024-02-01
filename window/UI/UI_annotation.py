@@ -47,16 +47,34 @@ class UI_Annotation(QFrame):
         header.setSectionResizeMode(2, QHeaderView.Stretch)
         header.setSectionResizeMode(3, QHeaderView.Stretch)
         header.setSectionResizeMode(4, QHeaderView.Stretch)
-        self.folderselector = FolderSelector(annotation=True)
+        self.annofolderselector = FolderSelector(mode=1)
+        self.label1 = QLabel("标注目录：")
         self.save_btn = QPushButton('保存标注')
         self.loadAnnotation_btn = QPushButton('导入标注')
         self.clearAnnotation_btn = QPushButton('清空标注')
         self.annotaion_layout = QGridLayout()
         self.annotaion_layout.addWidget(self.annotationTree, 0, 0, 1, 3)
-        self.annotaion_layout.addWidget(self.folderselector, 1, 0, 1, 3)
+        self.annotaion_layout.addWidget(self.label1, 1, 0, 1, 1)
+        self.annotaion_layout.addWidget(self.annofolderselector, 1, 1, 1, 2)
         self.annotaion_layout.addWidget(self.save_btn, 2, 1, 1, 1)
         self.annotaion_layout.addWidget(self.loadAnnotation_btn, 2, 0, 1, 1)
         self.annotaion_layout.addWidget(self.clearAnnotation_btn, 2, 2, 1, 1)
+
+        self.label2 = QLabel("待标注切片目录：")
+        self.slideFolderSelector = FolderSelector(mode=3)
+        self.slideTree = QTreeWidget()
+        self.slideTree.setHeaderLabels(["名称", "标注状态"])
+        header = self.slideTree.header()
+        header.setSectionResizeMode(0, QHeaderView.Stretch)
+        header.setSectionResizeMode(1, QHeaderView.Stretch)
+        self.slide_layout = QGridLayout()
+        self.slide_layout.addWidget(self.label2, 0, 0, 1, 1)
+        self.slide_layout.addWidget(self.slideFolderSelector, 0, 1, 1, 1)
+        self.load_slide_info_btn = QPushButton("载入待标注切片")
+        self.refresh_slide_info_btn = QPushButton("刷新")
+        self.slide_layout.addWidget(self.load_slide_info_btn, 1, 0, 1, 1)
+        self.slide_layout.addWidget(self.refresh_slide_info_btn, 1, 1, 1, 1)
+        self.slide_layout.addWidget(self.slideTree, 2, 0, 1, 2)
 
         self.type_widget = QWidget()
         self.type_widget.setLayout(self.type_layout)
@@ -64,12 +82,14 @@ class UI_Annotation(QFrame):
         self.annotation_widget = QWidget()
         self.annotation_widget.setLayout(self.annotaion_layout)
         self.splitter.addWidget(self.annotation_widget)
-        self.splitter.setSizes([1000, 2000])
+        self.slide_widget = QWidget()
+        self.slide_widget.setLayout(self.slide_layout)
+        self.splitter.addWidget(self.slide_widget)
+        self.splitter.setSizes([1000, 3000, 1000])
         self.main_layout.addWidget(self.splitter)
 
         # 设置删除按键
         self.delete_type_action = QAction("删除")
-        # self.delete_type_action.triggered.connect(self.delete_annotationTypeItem)
         self.change_type_name_action = QAction("修改标注")
         self.change_type_color_action = QAction("修改颜色")
         self.annotationTypeTree_menu = QMenu()
@@ -179,6 +199,21 @@ class UI_Annotation(QFrame):
             pixmap = QPixmap(20, 20)
             pixmap.fill(color)
             item.setIcon(3, QIcon(pixmap))
+
+    def set_slide_tree(self, slide_info, slide_dir):
+        """
+            Args:
+                slide_info: 是一个字典，key是文件名, value是标注状态
+                slide_dir: 是文件存放路径
+        """
+        self.slideTree.clear()
+        for slide_name, slide_status in slide_info.items():
+            slide_path = os.path.join(slide_dir, slide_name)
+            if not os.path.exists(slide_path):
+                continue
+            item = QTreeWidgetItem(self.slideTree)
+            item.setText(0, slide_name)
+            item.setText(1, slide_status)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

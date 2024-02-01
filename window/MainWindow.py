@@ -155,11 +155,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             # 向最近文件中添加文件
             self.add_recent_path(file_path)
 
-            # TODO: 设置一些标注工具的信号
+            # 设置一些标注工具的信号
             slide_window.controller.annotationTypeChooseSignal.connect(self.set_color_action_checked)
             slide_window.controller.updateAnnotationTypeSignal.connect(self.bindAnnotationColor)
+            # 打开待标注的wsi
+            slide_window.controller.openSlideSignal.connect(self.openSlide)
 
-            # TODO: 设置工具栏上的图像块的颜色
+            # 设置工具栏上的图像块的颜色
             self.annotaionColorConnections()
             self.bindAnnotationColor(slide_window.controller.annotationTypeDict)
 

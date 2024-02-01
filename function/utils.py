@@ -99,28 +99,44 @@ class NpEncoder(json.JSONEncoder):
             return super(NpEncoder, self).default(obj)
 
 # 读取缓存文件，即存放结果的路径
-def setResultFileDir(annotation=False):
-    if annotation is False:
-        load_path = f'{constants.cache_path}/results_dir.json'
-    else:
-        load_path = f'{constants.cache_path}/annotation_dir.json'
-    if os.path.exists(load_path):
-        with open(load_path, 'r') as f:
-            path = json.load(f)
-            f.close()
-        return path
-    else:
-        return './'
+def setResultFileDir(mode=1):
+    json_path = f'{constants.cache_path}/cache_dir.json'
+    if not os.path.exists(json_path):
+        return "./"
 
+    with open(json_path, 'r') as f:
+        data = json.load(f)
+        f.close()
+
+    if mode == 1:
+        path = data.get("anno_dir")
+    elif mode == 2:
+        path = data.get("result_dir")
+    elif mode == 3:
+        path = data.get("slide_dir")
+    else:
+        return "./"
+    path = "./" if path is None else path
+    return path
 
 # 写缓存文件，即存放结果的路径
-def saveResultFileDir(path, annotation=False):
-    if annotation is False:
-        save_path = f'{constants.cache_path}/results_dir.json'
-    else:
-        save_path = f'{constants.cache_path}/annotation_dir.json'
-    with open(save_path, 'w') as f:
-        f.write(json.dumps(path))
+def saveResultFileDir(path, mode):
+    json_path = f'{constants.cache_path}/cache_dir.json'
+    data = {}
+    if os.path.exists(json_path):
+        with open(json_path, 'r') as f:
+            data = json.load(f)
+            f.close()
+    if mode == 1:
+        data["anno_dir"] = path
+    elif mode == 2:
+        data["result_dir"] = path
+    elif mode == 3:
+        data["slide_dir"] = path
+    elif mode == 4:
+        data["slide_info"] = path
+    with open(json_path, 'w') as f:
+        f.write(json.dumps(data))
         f.close()
 
 def setFileWatcherDir():
