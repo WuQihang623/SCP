@@ -482,9 +482,9 @@ class Controller(QTabWidget):
 
     def load_slide_info(self):
         """
-            载入带标注的wsi信息
+            载入带标注的wsi信息，json文件
             代表著的wsi信息格式： {
-                slide_name: annotation_status
+                slide_name: annotation_status （"已标注"或者"待标注"）
             }
         """
         options = QFileDialog.Options()
@@ -521,6 +521,9 @@ class Controller(QTabWidget):
         """
         if self.slide_info_path is None:
             return
+        if not os.path.exists(self.slide_info_path):
+            self.slide_info_path = None
+            return
         data = self.valid_slide_info(self.slide_info_path)
         if data is None:
             return
@@ -553,7 +556,7 @@ class Controller(QTabWidget):
                     "FP": {"color": [0, 255, 0]},
                 }
                 "heatmap_info": {
-                    "heatmap": ["组织区域热力图", "边界区域热力图"],
+                    "heatmap_info[": ["组织区域热力图", "边界区域热力图"],
                     "downsample": int,
                 },
                 "contour_info": {
@@ -693,6 +696,7 @@ class Controller(QTabWidget):
                 return
         except:
             QMessageBox.warning(self, '警告', "properties 与 结果对应不上")
+            return
 
         self.controller_widget.add_heatmap_widget(properties)
         self.controller_widget.heatmap_widget.showItemSignal.connect(self.show_heatmap_signal_fn)
