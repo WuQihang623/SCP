@@ -54,6 +54,7 @@ class UI_Controller(QFrame):
         self.nucleus_diff_layout = QVBoxLayout()
         self.heatmap_layout = QVBoxLayout()
         self.contour_layout = QVBoxLayout()
+        self.wsi_status_layout = QGridLayout()
         null = QSpacerItem(20, 20, QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         content_layout.addWidget(self.title_label)
@@ -64,6 +65,7 @@ class UI_Controller(QFrame):
         content_layout.addLayout(self.nucleus_diff_layout)
         content_layout.addLayout(self.heatmap_layout)
         content_layout.addLayout(self.contour_layout)
+        content_layout.addLayout(self.wsi_status_layout)
         content_layout.addSpacerItem(null)
         content_layout.setSpacing(15)
 
@@ -201,6 +203,16 @@ class UI_Controller(QFrame):
         self.contour_layout.addWidget(label)
         self.contour_widget = MulitSeleteComboBox(contour_name, contour_color)
         self.contour_layout.addWidget(self.contour_widget)
+
+    def load_wsi_status_widget(self, status: dict, mainViewer=True):
+        self.remove_column(self.wsi_status_layout, 0 if mainViewer else 1)
+        if mainViewer:
+            column = 0
+        else:
+            column = 1
+        for idx, (key, value) in enumerate(status.items()):
+            label = QLabel(f"{key}：{value}")
+            self.wsi_status_layout.addWidget(label, idx, column, 1, 1)
 
     def removeAllItems(self, layout):
         # 从布局中移除所有子项并释放资源

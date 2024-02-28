@@ -602,7 +602,9 @@ class Controller(QTabWidget):
             self.load_contour_signal_fn(main_viewer, path)
         if data.get("properties", {}).get("nucleus_diff_info") is not None:
             self.load_nucleus_diff_signal_fn(main_viewer, path)
-
+        if data.get("status") is not None:
+            if isinstance(data["status"], dict):
+                self.controller_widget.load_wsi_status_widget(data["status"], main_viewer)
         return
 
     def load_nucleus_signal_fn(self, main_viewer: bool=True, path=None):
