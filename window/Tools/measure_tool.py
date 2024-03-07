@@ -17,7 +17,7 @@ class MeasureTool(BaseTool):
 
         self.pen = QPen()
         self.pen.setColor(self.COLOR)
-        self.pen.setWidth(4)
+        self.pen.setWidth(self.width)
 
         self.line_item = QGraphicsLineItem()
         self.line_item.setPen(self.pen)

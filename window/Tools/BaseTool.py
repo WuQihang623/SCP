@@ -15,13 +15,14 @@ class BaseTool(QObject):
         self.COLOR = None  # 绘制的颜色
         self.TYPE = None  # 标注的类型
         self.DRAW_FLAG = False
+        self.width = 1
 
     # 绘制时设置初始化(Rect)
     def initialize(self):
         self.DRAW_FLAG = True
         self.pen = QPen()
         self.pen.setColor(self.COLOR)
-        self.pen.setWidth(4)
+        self.pen.setWidth(self.width)
         self.rect_item = QGraphicsRectItem()
         self.rect_item.setPen(self.pen)
         self.control_point_items = []
@@ -37,8 +38,8 @@ class BaseTool(QObject):
 
     # 在scene_pos绘制控制原点
     def addCycle2Scene(self, scene_pos):
-        cycle = self.scene.addEllipse(0, 0, 8, 8)
-        cycle.setPos(QPoint(scene_pos.x() - 4, scene_pos.y() - 4))
+        cycle = self.scene.addEllipse(0, 0, self.width*2, self.width*2)
+        cycle.setPos(QPoint(scene_pos.x() - self.width, scene_pos.y() - self.width))
         cycle.setPen(QPen(self.COLOR))
         cycle.setBrush(QBrush(self.COLOR))
         cycle.setZValue(30)

@@ -177,7 +177,7 @@ class ToolManager(QObject):
                     annotation['annotation_item'].setPath(path)
                 else:
                     return
-                self.control_point_item.setPos(scene_pos.x() - 4, scene_pos.y() - 4)
+                self.control_point_item.setPos(scene_pos.x() - 1, scene_pos.y() - 1)
     # 鼠标释放
     def mouseReleaseEvent(self, event, downsample):
         # 固定矩形工具
@@ -211,7 +211,7 @@ class ToolManager(QObject):
 
     # 当scene改变后，需要重新绘制当前绘制的这个形状
     def redraw(self, level, downsample):
-        width = int(4 / self.view.transform().m11())
+        width = int(1 / self.view.transform().m11())
         # 重新绘制当前绘制的标注
         if self.TOOL_FLAG == 2:
             self.draw_fixedRect.redraw(downsample, width)
@@ -292,7 +292,7 @@ class ToolManager(QObject):
                 downsample: 当前scene的下采样倍数
                 choosed_index: 当前选中的标注索引
         """
-        width = 4
+        width = 1
         text_size = 15
 
         # 设置绘制标注的颜色

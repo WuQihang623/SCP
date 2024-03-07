@@ -22,7 +22,7 @@ class DrawPolygon(BaseTool):
 
         self.pen = QPen()
         self.pen.setColor(self.COLOR)
-        self.pen.setWidth(4)
+        self.pen.setWidth(self.width)
         self.PathItem = QGraphicsPathItem()
         self.path = QPainterPath()
         self.PathItem.setPen(self.pen)
@@ -122,7 +122,7 @@ class DrawPolygon(BaseTool):
             if self.CONTINUE_FLAG:
                 distance = self.mearsureDistance(last_pos, scene_pos)
                 # 距离大于10，则记录当前鼠标位置为顶点
-                if distance > 10:
+                if distance > 8:
                     self.continueDrawLine(scene_pos, downsample)
                     return
 
@@ -136,20 +136,20 @@ class DrawPolygon(BaseTool):
                 start_pos = [start_point[0] / downsample, start_point[1] / downsample]
                 distance = self.mearsureDistance(start_pos, scene_pos)
                 # 如果与初始距离小于5，则将CLOSE_FLAG设置为True
-                if distance < 5:
+                if distance < 3:
                     self.CLOSE_FLAG = True
                     # 绘制终点指示
                     if not hasattr(self, 'close_cycle'):
-                        self.close_cycle = self.scene.addEllipse(0, 0, 10, 10)
-                        self.close_cycle.setPos(QPoint(start_pos[0] - 5, start_pos[1] - 5))
+                        self.close_cycle = self.scene.addEllipse(0, 0, 6, 6)
+                        self.close_cycle.setPos(QPoint(start_pos[0] - 3, start_pos[1] - 3))
                         color = QColor(*self.CLOSE_CYCLE_COLOR)
                         self.close_cycle.setPen(QPen(color))
                         self.close_cycle.setBrush(QBrush(color))
                         self.close_cycle.setZValue(35)
                     # 如果scene被clear了，那么终点位置还是要重画
                     elif self.scene.clear_flag:
-                        self.close_cycle = self.scene.addEllipse(0, 0, 10, 10)
-                        self.close_cycle.setPos(QPoint(start_pos[0] - 5, start_pos[1] - 5))
+                        self.close_cycle = self.scene.addEllipse(0, 0, 6, 6)
+                        self.close_cycle.setPos(QPoint(start_pos[0] - 3, start_pos[1] - 3))
                         color = QColor(*self.CLOSE_CYCLE_COLOR)
                         self.close_cycle.setPen(QPen(color))
                         self.close_cycle.setBrush(QBrush(color))
