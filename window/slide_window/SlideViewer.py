@@ -468,12 +468,19 @@ class SlideViewer(BasicSlideViewer):
             return False
         if self.nucleus_center is None or self.nucleus_properties is None:
             return False
-        item = self.view.itemAt(event_point)
-        if item is None:
+        items = self.view.items(event_point)
+        if items is None:
             return False
-        if not hasattr(item, "is_contour") or not hasattr(item, "is_region"):
-            return
-        if item.is_region:
+
+        flag = False
+        for item in items:
+            if hasattr(item, "is_contour") and hasattr(item, "is_region"):
+                if item.is_region:
+                    return False
+                else:
+                    flag = True
+                    break
+        if flag is False:
             return False
 
         # 获取与之对应的细胞核
@@ -494,9 +501,9 @@ class SlideViewer(BasicSlideViewer):
         nucleus_type_name = dialog.get_text()
         nucleus_type = self.nucleus_properties[nucleus_type_name]["type"]
         nucleus_color = self.nucleus_properties[nucleus_type_name]["color"]
-        self.nucleus_type[nucleus_idx] = nucleus_type
+        self.nucleus_type[nucleus_idx] = -nucleus_type
         # 绘制标注
-        annotation_item, control_point_items, text_item = self.ToolManager.draw_polygon.draw(nucleus_contour, QColor(*nucleus_color), 4, self.current_downsample, True)
+        annotation_item, control_point_items, text_item = self.ToolManager.draw_polygon.draw(nucleus_contour, QColor(*nucleus_color), 1, self.current_downsample, True)
         annotation = {
             "location": nucleus_contour.tolist(),
             "color": nucleus_color,
@@ -507,7 +514,8 @@ class SlideViewer(BasicSlideViewer):
             "text_item": text_item
         }
         self.ToolManager.addAnnotation(annotation, self.current_downsample)
-        item.set_path_item_pen(nucleus_color, 3)
+        self.scene.removeItem(item)
+        # item.set_path_item_pen(nucleus_color, 3)
         return True
 
     # 更改heatmap权重
