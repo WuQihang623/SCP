@@ -5,13 +5,14 @@ import sys
 import pickle
 import constants
 from enum import Enum
-from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QColor, QPixmap, QIcon
 from PyQt5.QtWidgets import QApplication, QTabWidget, QFileDialog, QMessageBox, QDialog
 
 from window.UI.UI_annotation import UI_Annotation
 from window.UI.UI_Control import UI_Controller
 # from window.UI.UI_Diagnose import UI_Diagnose
+from window.dialog.ActivateLabelDialog import ActivateLabelDialog
 
 class AnnotationMode(Enum):
     MOVE = 1
@@ -96,6 +97,7 @@ class Controller(QTabWidget):
 
 
         self.annotation_widget.loadAnnotation_btn.clicked.connect(self.load_annotation_slot)
+        self.annotation_widget.loadActivateAnnotation_btn.clicked.connect(self.load_activate_annotation_slot)
         self.annotation_widget.clearAnnotation_btn.clicked.connect(self.clear_annotaiton_slot)
         self.annotation_widget.save_btn.clicked.connect(self.save_annotation_slot)
 
@@ -139,6 +141,54 @@ class Controller(QTabWidget):
                 "其他区域": [142, 255, 111, 255]
             }
         self.annotation_widget.setAnnotationTypeDictTreeWidget(self.annotationTypeDict)
+
+    # 用于主动学习，提示应该更改标注的地方
+    def load_activate_annotation_slot(self):
+        self.load_annotation_slot()
+        dialog = ActivateLabelDialog(self.annotationTypeDict)
+        dialog.correctAnnotationSignal.connect(self.correctLabel)
+        dialog.setWindowFlag(Qt.WindowStaysOnTopHint, True)
+        activateIdx = 0
+        dialog.set_combobox_top(self.annotation[f"标注{activateIdx}"]["type"])
+        while activateIdx<len(self.annotation):
+            self.update_choosed_annotation_slot(activateIdx)
+            dialog.update_annIdx(activateIdx)
+            dialog.set_combobox_top(self.annotation_widget.annotationTree.topLevelItem(activateIdx).text(1))
+            # 生成一个对话框，显示当前模型输出的结果，以及期望改成什么结果
+            dialog.show()
+            reply = dialog.exec_()
+            if reply == QDialog.Rejected:
+                break
+            elif reply == 1:
+                activateIdx += 1
+            else:
+                activateIdx -= 1
+                if activateIdx < 0:
+                    activateIdx = 0
+
+        if activateIdx >= len(self.annotation):
+            self.save_annotation_slot()
+
+    # 修改标注类型
+    def correctLabel(self, row_idx, new_type, new_color):
+        """
+            修改标注的类别和颜色
+        """
+        item = self.annotation_widget.annotationTree.topLevelItem(row_idx)
+        old_type = item.text(1)
+
+        if old_type == new_type:
+            return
+
+        self.annotation[f'标注{row_idx}']['type'] = new_type
+        self.annotation[f"标注{row_idx}"]['color'] = new_color
+        item.setText(1, new_type)
+        pixmap = QPixmap(20, 20)
+        color = QColor(*new_color)
+        pixmap.fill(color)
+        item.setIcon(3, QIcon(pixmap))
+
+        self.changeAnnotaionSignal.emit(row_idx, new_type, new_color)
 
     def load_annotation_slot(self):
         """
@@ -197,6 +247,7 @@ class Controller(QTabWidget):
         if sync2ToolManager:
             self.syncAnnotationSignal.emit(annotation.copy(), annIdx ,annIdx if is_choosed else -1)
 
+    # 跳转到标注annIdx上
     def update_choosed_annotation_slot(self, annIdx):
         self.choosedIdx = annIdx
         self.updateChoosedAnnotationSignal.emit(annIdx)
@@ -386,6 +437,7 @@ class Controller(QTabWidget):
         """
         self.annotation[f"标注{choosed_idx}"] = annotation
 
+    # 修改标注类型
     def modify_annotation_category(self):
         """
             修改标注的类别和颜色

@@ -289,10 +289,6 @@ class SlideWindow(QFrame):
             快捷键保存标注
         """
         self.controller.save_annotation_slot()
-        # if hasattr(self, 'annotation'):
-        #     # 如果当前激活的是标注模式
-        #     if self.splitter.widget(0).isVisible():
-        #         self.annotation.saveAnnotations()
 
     # 快捷键--停止当前标注
     def stopDrawAnnotation(self):
@@ -300,10 +296,7 @@ class SlideWindow(QFrame):
             快捷键： 停止进行当前标注
         """
         self.mainViewer.ToolManager.cancel_drawing()
-        # if hasattr(self, 'annotation'):
-        #     # 如果时标注模式
-        #     if self.splitter.widget(0).isVisible():
-        #         self.mainViewer.ToolManager.cancel_drawing()
+
 
     def fullScreen(self):
         """
@@ -336,10 +329,6 @@ class SlideWindow(QFrame):
             快捷键--删除选中标注
         """
         self.controller.remove_annotation_slot()
-        # if hasattr(self, 'annotation'):
-        #     # 如果时标注模式
-        #     if self.splitter.widget(0).isVisible():
-        #         self.annotation.deleteAnnotation()
 
     def closeEvent(self, event):
         """
